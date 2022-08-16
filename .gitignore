@@ -127,3 +127,42 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# exports
+.pdf
+*.pdf
+
+*.png
+.png
+
+# data files typically images
+
+*.dat
+.dat
+
+.bmp
+*.bmp
+
+.jpg
+*.jpg
+
+.mat
+*.mat
+
+.tif
+*.tif
+
+*.pdf
+.pdf
+
+.npy
+*.npy
+
+# setings
+.ini
+*.ini
+
+.sifx
+*.sifx
+.sif
+*.sif
