@@ -10,6 +10,7 @@ example showing how to compute indefinite integral numerically
 #%% imports
 import numpy as np
 from scipy.integrate import quad
+
 import matplotlib.pyplot as plt
 from functools import partial
 

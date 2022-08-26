@@ -3,6 +3,8 @@
 Created on Thu Aug 25 09:45:31 2022
 
 @author: Marijn L. Venderbosch
+
+script plots FFT of real-valued time signal
 """
 
 #%% imports
