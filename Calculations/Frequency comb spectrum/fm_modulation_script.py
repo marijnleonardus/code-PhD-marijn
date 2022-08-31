@@ -5,6 +5,7 @@ Created on Wed Aug 31 10:16:43 2022
 @author: Marijn Venderbosch
 
 script plots spectrum of frequency modulated laser, generating a broadband comb
+it does this by computing the modulated laser in the time domain and computing FFT
 """
 
 #%% imports
@@ -12,7 +13,6 @@ script plots spectrum of frequency modulated laser, generating a broadband comb
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.fft import fft,fftfreq
-from scipy.special import jv
 
 #%% variables
 
@@ -23,7 +23,7 @@ time_window = 1e-3 # s
 t = np.arange(0, time_window, 1 / sampling_frequency) # s
 
 modulation_frequency = 20e3 # 1/s
-carrier_frequency = 2e6 # 1/s
+carrier_frequency = 2e6 # 1/s for computational reasons this is lower. will only shift peak x coordinate
 modulation_index = 75
 
 number_sampling_points = int(sampling_frequency * time_window)
@@ -39,35 +39,26 @@ def FM_modulation(t):
 Y = fft(FM_modulation(t))
 xf = fftfreq(number_sampling_points, T)[:number_sampling_points // 2]
 
-def bessel_function_firstkind(order, index):
-    return jv(order, index)
-
-# initialize empty matrices
-indices = np.linspace(- modulation_index -5, 
-                      modulation_index + 5,
-                      2 * modulation_index + 11) 
-
-amplitude_array = bessel_function_firstkind(indices, modulation_index)
-
-fig, ax = plt.subplots()
-ax.stem(indices, abs(amplitude_array), markerfmt = " ", basefmt = "b")
-ax.set_xlabel('comb line')
-ax.set_ylabel('amplitude [a.u.]')
-
 #%% plotting
 
 fig, ax = plt.subplots()
 ax.stem(xf, 2.0 / number_sampling_points * np.abs(Y[0 : number_sampling_points // 2]), 
         markerfmt = " ",
         basefmt = "b")
+
 ax.set_xlim(carrier_frequency - 1.5 * modulation_index * modulation_frequency, 
             carrier_frequency + 1.5 * modulation_index * modulation_frequency)
-
-frequency_axis = indices * 20e3 / 1e6 #convert to MHz
+ax.set_xlabel('frequency [Hz]')
+ax.set_ylabel('amplitude [a.u.]')
+ax.set_title('amplitude')
 
 fig, ax = plt.subplots()
-ax.stem(frequency_axis, abs(amplitude_array)**2, 
+ax.stem(xf, 2.0 / number_sampling_points * np.abs(Y[0 : number_sampling_points // 2])**2, 
         markerfmt = " ",
         basefmt = "b")
-ax.set_xlabel('frequency offset [MHz]')
-ax.set_ylabel('relative intensity [a.u.]')
+
+ax.set_xlim(carrier_frequency - 1.5 * modulation_index * modulation_frequency, 
+            carrier_frequency + 1.5 * modulation_index * modulation_frequency)
+ax.set_xlabel('frequency [Hz]')
+ax.set_ylabel('intensity [a.u.]')
+ax.set_title('intensity')
