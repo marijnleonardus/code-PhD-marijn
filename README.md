@@ -1,2 +1,5 @@
 # code-PhD-marijn
-code for analysis and calculations of PhD work of Marijn Venderbosch
+
+Scripts for calculations, plots and data analysis of my PhD research. 
+
+For the Python scripts I recommend running the spyder IDE in an anaconda distribution. Preferably in a separate virtual conda environment. 
