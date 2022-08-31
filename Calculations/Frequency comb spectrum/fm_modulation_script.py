@@ -29,12 +29,14 @@ modulation_index = 75
 number_sampling_points = int(sampling_frequency * time_window)
 T = time_window / number_sampling_points
 
-#%% manipulation
+#%% modulate FM spectruma and plot FFT
 
-phi = 2 * np.pi * carrier_frequency * t + modulation_index * np.sin(2 * np.pi * modulation_frequency * t)
-FM = np.cos(phi)
+def FM_modulation(t):
+    phi = 2 * np.pi * carrier_frequency * t + modulation_index * np.sin(2 * np.pi * modulation_frequency * t)
+    FM = np.cos(phi)
+    return FM
 
-Y = fft(FM)
+Y = fft(FM_modulation(t))
 xf = fftfreq(number_sampling_points, T)[:number_sampling_points // 2]
 
 def bessel_function_firstkind(order, index):
