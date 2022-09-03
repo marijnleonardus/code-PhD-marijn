@@ -63,3 +63,5 @@ ax2.stem(frequency_axis, intensity_array,
          basefmt="b")
 ax2.set_xlabel('frequency offset [MHz]')
 ax2.set_ylabel('relative intensity [a.u.]')
+
+plt.show()
