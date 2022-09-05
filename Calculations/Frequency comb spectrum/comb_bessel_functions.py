@@ -16,9 +16,11 @@ from scipy.special import jv
 
 # %% variables
 
+modulation_frequency = 20e3  #  two pi * Hz
+laser_power_689 = 10e-3  # watt
+
 modulation_index = 75
 extra_indices = 5  # extend plotting windows beyond just modulation index
-modulation_frequency = 20e3
 
 # %% computation bessel functions
 
@@ -33,7 +35,7 @@ def bessel_function_firstkind(order, index):
 
 
 amplitude_array = bessel_function_firstkind(comb_line_matrix, modulation_index)
-intensity_array = amplitude_array ** 2
+power_array = amplitude_array ** 2
 
 
 def statistics(array):
@@ -42,26 +44,36 @@ def statistics(array):
     return mean, stddev
 
 
-mean_intensity, spread_intensity = statistics(intensity_array)
-min_intensity = np.min(intensity_array)
-max_intensity = np.max(intensity_array)
+mean_power, spread_power = statistics(power_array)
+print(spread_power * 10e3)
 
 # %% plotting
 
-fig1, ax1 = plt.subplots()
-ax1.stem(comb_line_matrix, abs(amplitude_array),
-         markerfmt=" ",
-         basefmt="b")
-ax1.set_xlabel('comb line')
-ax1.set_ylabel('amplitude [a.u.]')
+#  plot as a function of comb line
+#  fig1, ax1 = plt.subplots()
+#  ax1.stem(comb_line_matrix, abs(amplitude_array),
+#           markerfmt=" ",
+#           basefmt="b")
+#  ax1.set_xlabel('comb line')
+#  ax1.set_ylabel('amplitude [a.u.]')
 
+#  plot as a function of frequency
 frequency_axis = comb_line_matrix * modulation_frequency / 1e6  # convert Hz to MHz
 
 fig2, ax2 = plt.subplots()
-ax2.stem(frequency_axis, intensity_array,
+ax2.stem(frequency_axis, np.abs(amplitude_array),
          markerfmt=" ",
          basefmt="b")
 ax2.set_xlabel('frequency offset [MHz]')
-ax2.set_ylabel('relative intensity [a.u.]')
+ax2.set_ylabel('relative amplitude [a.u.]')
+ax2.set_title('electric field amplitude')
+
+fig3, ax3 = plt.subplots()
+ax3.stem(frequency_axis, power_array,
+         markerfmt=" ",
+         basefmt="b")
+ax3.set_xlabel('frequency offset [MHz]')
+ax3.set_ylabel('relative power [a.u.]')
+ax3.set_title('power')
 
 plt.show()
