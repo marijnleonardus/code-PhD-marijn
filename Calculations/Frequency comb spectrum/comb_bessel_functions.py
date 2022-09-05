@@ -16,11 +16,16 @@ from scipy.special import jv
 
 # %% variables
 
-modulation_frequency = 20e3  #  two pi * Hz
-laser_power_689 = 10e-3  # watt
+modulation_frequency = 20e3  # two pi * Hz
+laser_power_689 = 10  # mW
 
-modulation_index = 75
+modulation_index = 70
 extra_indices = 5  # extend plotting windows beyond just modulation index
+
+saturation_intensity = 0.0295  # W/m^2
+beam_waist = 5e-3  # m
+
+s_parameter = 4  # s = I/I_sat
 
 # %% computation bessel functions
 
@@ -35,7 +40,10 @@ def bessel_function_firstkind(order, index):
 
 
 amplitude_array = bessel_function_firstkind(comb_line_matrix, modulation_index)
-power_array = amplitude_array ** 2
+relative_power_array = amplitude_array ** 2
+power_array = laser_power_689 * relative_power_array
+
+saturation_power_mw = saturation_intensity * np.pi * beam_waist ** 2 * 1e3
 
 
 def statistics(array):
@@ -71,9 +79,15 @@ ax2.set_title('electric field amplitude')
 fig3, ax3 = plt.subplots()
 ax3.stem(frequency_axis, power_array,
          markerfmt=" ",
-         basefmt="b")
+         basefmt="b",
+         label='power')
 ax3.set_xlabel('frequency offset [MHz]')
-ax3.set_ylabel('relative power [a.u.]')
-ax3.set_title('power')
+ax3.set_ylabel('power [mW]')
+ax3.set_title('power per comb line')
+ax3.axhline(y=s_parameter * saturation_power_mw,
+            color='r',
+            linestyle='-',
+            label='saturation power')
+ax3.legend()
 
 plt.show()
