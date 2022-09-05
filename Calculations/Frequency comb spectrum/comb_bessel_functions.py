@@ -90,4 +90,38 @@ ax3.axhline(y=s_parameter * saturation_power_mw,
             label='saturation power')
 ax3.legend()
 
+# %% include tranmission AOM
+
+# Up until now we assumed 100% transmission of the fiber AOM
+# Already for 2 MHz deviation there is some loss
+# Model this loss as a parabola which could describe picture in G&H catalogue
+
+
+def parabola(x, offset, x_0, a):
+    return offset + a * (x - x_0) ** 2
+
+
+insertion_loss_db = parabola(frequency_axis, 0, 0, 0.03)
+transmission_linear = 10 ** -insertion_loss_db
+
+fig4, ax4 = plt.subplots()
+ax4.plot(frequency_axis, transmission_linear)
+ax4.set_xlabel('frequency offset [MHz]')
+ax4.set_ylabel('Normalized transmission')
+ax4.set_title('tranmission fiber AOM')
+
+fig5, ax5 = plt.subplots()
+ax5.stem(frequency_axis, transmission_linear * power_array,
+         markerfmt=" ",
+         basefmt="b",
+         label='power')
+ax5.set_xlabel('frequency offset [MHz]')
+ax5.set_ylabel('power [mW]')
+ax5.set_title('power per comb line')
+ax5.axhline(y=s_parameter * saturation_power_mw,
+            color='r',
+            linestyle='-',
+            label='saturation power')
+ax5.legend()
+
 plt.show()
