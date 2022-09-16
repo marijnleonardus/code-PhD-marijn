@@ -121,7 +121,7 @@ ax5.set_title('power per comb line')
 ax5.axhline(y=s_parameter * saturation_power_mw,
             color='r',
             linestyle='-',
-            label='saturation power')
+            label=r'$s=I/I_{sat}=4$')
 ax5.legend()
 
 plt.show()
