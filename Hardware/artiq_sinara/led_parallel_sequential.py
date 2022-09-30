@@ -1,10 +1,10 @@
-# script to demonstrate difference between running timing sequences in parallel vs sequential
-
-
 from artiq.experiment import *
 
 
 class LED(EnvExperiment):
+    """LED Parallel Sequential"""
+
+    """shows difference between running parallel and sequential"""
     def build(self):
         self.setattr_device("core")
         self.setattr_device("led0")
