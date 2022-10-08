@@ -4,8 +4,8 @@ Created on Fri Sep  2 13:23:12 2022
 
 @author: Marijn Venderbosch
 
-copied from https://python-laser-cooling-physics.readthedocs.io/en/latest/examples/MOTs/10_recoil_limited_MOT.html
-simulates working principle recoil-limited mot. e.g. Sr88 red MOT
+based on the following example of the recoil-limited Sr88 MOT
+https://python-laser-cooling-physics.readthedocs.io/en/latest/examples/MOTs/10_recoil_limited_MOT.html
 """
 
 # %% imports
