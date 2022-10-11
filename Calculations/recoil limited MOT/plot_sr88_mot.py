@@ -15,24 +15,24 @@ import matplotlib.pyplot as plt
 # %% variables
 
 # red transition paramters 
-wavelength = 689e-9 *1e2                                # cm
-linewidth = 2 * pi * 7.4e3                              # rad/s, thus kHz linewidth
+wavelength = 689e-9 *1e2  # cm
+linewidth = 2 * pi * 7.4e3  # rad/s, thus kHz linewidth
 
 # laser cooling settings
-detuning = -200/7.5                                     # dimensionless
-saturation = 25                                         # ,,
+detuning = -200/7.5  # dimensionless
+saturation = 25   # ,,
 
 # constants
-bohr_magneton = cts.value('Bohr magneton in Hz/T')      # Hz/T
-atomic_mass_unit = cts.value('atomic mass constant')    # kg
+bohr_magneton = cts.value('Bohr magneton in Hz/T')  # Hz/T
+atomic_mass_unit = cts.value('atomic mass constant')  # kg
 
 # characteristic length/time scales
-wavenumber = 2 * pi / wavelength                        # 1/cm
-length = 1 / wavenumber                                 # cm
-time = 1 / linewidth                                    # s
+wavenumber = 2 * pi / wavelength  # 1/cm
+length = 1 / wavenumber  # cm
+time = 1 / linewidth  # s
 
 # dependent variables
-alpha = 1.5 * bohr_magneton * 1e-4 * 8 * length / (linewidth / (2 * pi))
+alpha = 1.5 * bohr_magneton * 1e-4 * 8 * length / (linewidth / (2 * pi))  
 mass = 87.8 * atomic_mass_unit * (length * 1e-2)**2 / hbar / time
 
 
