@@ -12,6 +12,7 @@ from arc import *
 # user defined
 red_mot_linewidth = 2 * pi * 7.4e3
 
+
 # ARC
 Sr88 = Strontium88()
 wavelength_red_mot = Sr88.getTransitionWavelength(5, 0, 0,  # initial n, l, j
@@ -36,6 +37,8 @@ def saturation_intensity(linewidth, wavelength):
     return 2 * pi**2 * hbar * c * linewidth / 3 / wavelength**3
 
 sat_int_red_mot = saturation_intensity(red_mot_linewidth, wavelength_red_mot)
+sat_int_clock = saturation_intensity(0.19, 698e-9)
+sat_int_679 = saturation_intensity(2*pi*1.42*10**6,679*10**(-9))
 
 
 
