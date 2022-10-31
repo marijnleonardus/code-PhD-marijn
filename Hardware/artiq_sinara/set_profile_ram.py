@@ -28,7 +28,7 @@ start = 0
 end = 1024-1
 step = int(12)
 profile = 0
-mode = 1
+mode = 4
 nodwell_high = 0
 zero_crossing=0
 
