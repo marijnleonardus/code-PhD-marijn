@@ -1,9 +1,9 @@
-# author: Marijn Venderbosch
-# October 2022
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Oct 26 09:34:37 2022
 
-
-"""script used to figure out what gets called when the function `set_profile_ram` is called
-from https://m-labs.hk/artiq/manual-beta/core_drivers_reference.html?highlight=ad9910#module-artiq.coredevice.ad9910"""
+@author: farubidium
+"""
 
 """Set the RAM profile settings.
 
@@ -22,26 +22,22 @@ from https://m-labs.hk/artiq/manual-beta/core_drivers_reference.html?highlight=a
 :const:`RAM_MODE_CONT_RAMPUP`, default:
 :const:`RAM_MODE_RAMPUP`)
 """
-
-# %% variables
-start = 0
+start = 2
 end = 1024-1
-step = int(12)
+step = 0000000000001100
 profile = 0
-mode = 4
+mode = 1
 nodwell_high = 0
 zero_crossing=0
-
-# high and low
 hi = (step << 8) | (end >> 2)
 lo = ((end << 30) | (start << 14) | (nodwell_high << 5) |(zero_crossing << 3) | mode)
+#print(bin(hi).replace("0b", ""))
+#print(bin(lo).replace("0b", ""))
+s = (bin(hi).replace("0b", "")[-32:]+bin(lo).replace("0b", "")[-32:])[::-1]
 
-# bitsequence
-bit_sequence = (bin(hi).replace("0b", "")[-32:] + bin(lo).replace("0b", "")[-32:])[::-1]
-print("Binary string: " + str(bit_sequence))
-
-# timestep
-timestep_binary = bit_sequence[40:56][::-1]
-print("Step (Binary): " + str(timestep_binary))
-print("Step value (M in datasheet): "+ str(int(timestep_binary,2)))
-print("Step value (ns): "+str(4 * int(timestep_binary, 2)))
+stepBin = s[40:56][::-1]
+print("Binary string: " + str(s))
+print("Step (Binary): "+str(stepBin))
+print("Step value (M in datasheet): "+str(int(stepBin,2)))
+print("Step value (ns): "+str(4*int(stepBin,2)/1E9*1E9))
+#print(len(bin(step).replace("0b", "")))

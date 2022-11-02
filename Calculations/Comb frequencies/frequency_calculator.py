@@ -17,11 +17,13 @@ f7 = c / 679e-9
 offset = (f1 / freq_RR - int(f1 / freq_RR)) / int(f1 / freq_RR) * freq_RR + freq_CEO / (f1 / freq_RR)
 
 def beat(fn, n):
-    return ((freq_RR + offset + freq_RR**2 / f1 * n) * int(fn / freq_RR) - fn) / freq_RR - np.round(((freq_RR + offset + freq_RR**2 / f1 * n) * int(fn / freq_RR) - fn) / freq_RR,
-                                                                                                                  decimals = 0)
+    first_term = ((freq_RR + offset + freq_RR**2 / f1 * n) * int(fn / freq_RR) - fn) / freq_RR
+    second_term= np.round(((freq_RR + offset + freq_RR**2 / f1 * n) * int(fn / freq_RR) - fn) / freq_RR,
+                          decimals = 0)
+    return first_term - second_term
 
 
-for i in range(1000000):
+for i in range(5000):
     list_plus_beats = [np.abs(beat(f1, i)),
                        np.abs(beat(f2, i)),
                        np.abs(beat(f3, i)),
