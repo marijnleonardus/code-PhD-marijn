@@ -3,7 +3,7 @@ from scipy.constants import c
 
 
 # %% variables
-freq_RR = 250e6
+freq_RR = 251e6
 freq_CEO = 35e6
 
 f1 = c / 922e-9
