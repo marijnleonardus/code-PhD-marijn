@@ -171,3 +171,4 @@ dmypy.json
 *.sifx
 .sif
 *.sif
+Plots/Knife edge method/data.csv
