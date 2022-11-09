@@ -71,17 +71,22 @@ fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2,
 plt.subplots_adjust(wspace=0.5)
 
 ax1.grid()
-ax1.plot(n_array, rydberg_energy_eV)
+ax1.plot(n_array, rydberg_energy_eV, label=r'$E-E_{ionize}$')
 ax1.set_xlabel('principal quantum number $n$')
-ax1.set_ylabel('energy [J]')
+ax1.set_ylabel('energy [eV]')
+ax1.legend()
 
 ax2.grid()
-ax2.plot(n_array, wavelength_array * 1e9)
+ax2.plot(n_array, wavelength_array * 1e9, label=r'$\lambda_{{}^3P_0-r}$')
 ax2.set_xlabel('principal quantum number $n$')
 ax2.set_ylabel(r'$\lambda$ [nm]')
-ax2.axvspan(51, 65, color = 'red', alpha=0.2)
+ax2.legend()
 
-plt.savefig('rydberg_energies.pdf',
+# highlight accesible ranges
+ax2.axvspan(51, 65, color = 'red', alpha=0.2)
+ax2.axvspan(40, 46, color = 'green', alpha=0.2)
+
+plt.savefig('rydberg_energies.png',
             bbox_inches='tight',
             dpi=300)
 plt.show()
