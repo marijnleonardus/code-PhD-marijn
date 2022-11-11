@@ -1,0 +1,27 @@
+# python cache
+__pycache__/
+artiq-master/__pycache__/
+artiq-master/repository/__pycache__/
+
+# results
+*.h5
+
+# nix shell (local on pc)
+*.nix
+
+# dir
+bootloader.bin
+runtime.elf
+runtime.fbi
+top.bit
+
+# pycharm stuff
+*.xml
+*.iml
+*.name
+*.idea
+
+# artiq header file not sure what it is
+last_rid.pyon
+database_db.pyon
+*.pyon
