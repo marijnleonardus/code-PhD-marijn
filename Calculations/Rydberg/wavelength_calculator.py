@@ -86,7 +86,7 @@ ax2.legend()
 ax2.axvspan(51, 65, color = 'red', alpha=0.2)
 ax2.axvspan(40, 46, color = 'green', alpha=0.2)
 
-plt.savefig('rydberg_energies.png',
+plt.savefig('output/rydberg_energies.png',
             bbox_inches='tight',
             dpi=300)
 plt.show()
