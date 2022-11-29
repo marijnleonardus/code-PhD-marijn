@@ -62,8 +62,18 @@ rydberg_energy_eV = rydberg_energy_joule / e  # eV
 wavelength_array = 2 * pi * hbar * c / transition_energy_joule  # J
 wavelength_difference = np.diff(wavelength_array) * 1e9  # nm
 
-print("min. wavelength hop:" + str(np.min(wavelength_difference)))
-print("max. wavelegnth hop:" + str(np.max(wavelength_difference)))
+print("min. wavelength hop:" + 
+      str(np.min(
+          abs(np.round(wavelength_difference, decimals=3)))
+          ) + ' nm')
+
+print("max. wavelegnth hop:" +
+      str(np.max(
+          abs(np.round(wavelength_difference, decimals=3)))
+          ) + ' nm')
+
+# assume centered around n = 61
+wavelength_n61 = wavelength_array[61 - n_lower]
 
 # %% plotting
 fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2,
@@ -82,9 +92,13 @@ ax2.set_xlabel('principal quantum number $n$')
 ax2.set_ylabel(r'$\lambda$ [nm]')
 ax2.legend()
 
-# highlight accesible ranges
-ax2.axvspan(51, 65, color = 'red', alpha=0.2)
-ax2.axvspan(40, 46, color = 'green', alpha=0.2)
+# highlight accessible range
+#ax2.axvspan(wavelength_n61 / 1e9 - 0.035, 
+          #  wavelength_n61 / 1e9 + 0.035, color = 'red', alpha=0.2)
+condition = (wavelength_array > wavelength_n61)
+          
+ax2.fill_between(n_array, 0, 1, where=(wavelength_array > wavelength_n61), color='green', alpha=0.5, transform=ax2.get_xaxis_transform())
+ax2.set_ylim(316.4, 317.2)
 
 plt.savefig('output/rydberg_energies.png',
             bbox_inches='tight',
