@@ -12,10 +12,10 @@ from arc import *
 # user defined
 linewidth_689 = 2 * pi * 7.4e3
 
-# source: https://link.aps.org/accepted/10.1103/PhysRevA.92.043418
+# source: https://link.aps.org/accepted/10.1103/PhysRevA.92.043418 and its ref.
 linewidth_688 = 2 * pi * 4.3e6
 linewidth_679 = 2 * pi * 1.4e6
-linewidth_707 = 2 * pi * 7e6
+linewidth_707 = 2 * pi * 7.0e6
 
 # ARC
 Sr88 = Strontium88()
