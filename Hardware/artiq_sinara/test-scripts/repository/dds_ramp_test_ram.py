@@ -27,39 +27,48 @@ class DDSFrequencyRampRAM(EnvExperiment):
 		self.setattr_device("urukul1_cpld") 
 
 		# 2nd Urukul module, channel 0 (first one)
-		self.setattr_device("urukul1_ch0")
-		self.dds = self.urukul1_ch0
- 
+		self.setattr_device("urukul1_ch3")
+		self.dds = self.urukul1_ch3
+
+		# load variables
+		self.setattr_argument("state", 
+                              BooleanValue(False))
+
+		self.setattr_argument("center_frequency",
+                              NumberValue(100.0*MHz, unit='MHz', scale=MHz, min=70*MHz, max=220*MHz))
+		
+		self.setattr_argument("modulation_depth",
+                              NumberValue(3.0*MHz, unit='MHz', scale=MHz, min=0.1*MHz, max=10*MHz))
+
+		self.setattr_argument("modulation_frequency",
+							  NumberValue(20*kHz, unit='kHz', scale=kHz, min=1*kHz, max=500*kHz))
+
+		self.setattr_argument("rf_amplitude",
+							  NumberValue(0.6, scale=kHz, min=0.1, max=1.0, step = 0.05))
+
+		self.setattr_argument("attenuation", NumberValue(10*dB, unit='dB', scale=dB, min=0*dB, max=31*dB))
+
 	def prepare(self):
 
 		# ram size in bits
 		self.ram_length = 1024
 
-		# carrier frequency, which is the highest frequency sent to the AOM
-		# and modulation depth or max. frequency difference
-		self.freq_high = 80 * MHz
-		self.mod_depth = 3 * MHz
-
 		# frequency modulation limits
-		self.freq_low = self.freq_high - self.mod_depth
+		self.freq_low = self.center_frequency - self.modulation_depth
 
 		# create list of frequencies in Frequency Tunning Word (FTW) format
 		# to write to RAM
 		self.freq_index = [0.] * self.ram_length
 		self.freq_ram = [0] * self.ram_length
  
-		mod_depth = self.freq_high - self.freq_low
-		freq_step = mod_depth / self.ram_length
+		freq_step = self.modulation_depth / self.ram_length
  
 		for i in range(self.ram_length):
 			self.freq_index[i] = self.freq_low + i * freq_step
 		self.dds.frequency_to_ram(self.freq_index, self.freq_ram)
 
-		# modulation frequency
-		self.freq_mod = 20 * kHz
-
 		# sweep time
-		self.sweep_time = 1 / self.freq_mod
+		self.sweep_time = 1 / self.modulation_frequency
 
 		# time step dt, for definition see ad9910 datasheet
 		self.dt = self.sweep_time / self.ram_length
@@ -110,8 +119,8 @@ class DDSFrequencyRampRAM(EnvExperiment):
 						  ram_enable=1,
 						  ram_destination=ad9910.RAM_DEST_FTW,
 						  manual_osk_external=0, osk_enable=1, select_auto_osk=0) 
-		self.dds.set_amplitude(1.)
-		self.dds.set_att(20.*dB)
+		self.dds.set_amplitude(self.rf_amplitude)
+		self.dds.set_att(self.attenuation)
 		self.dds.cpld.io_update.pulse_mu(8)
  
 		# switch on DDS channel
