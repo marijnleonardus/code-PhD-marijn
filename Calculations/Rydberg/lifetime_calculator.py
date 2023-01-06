@@ -30,12 +30,13 @@ linewidth_omega = linewidth_array / (2 * np.pi)
     
 # %% plot result
 
-#plt.style.use('default')
+plt.style.use('default')
 fig, ax = plt.subplots()
 
 ax.grid()
-ax.plot(n_array, linewidth_omega/1e3, label = '${}^3P_0-(ns5s)^3S_1$')
+ax.plot(n_array, linewidth_omega/1e3, label='${}^3P_0-(ns5s)^3S_1$')
 ax.set_xlabel('$n$')
 ax.set_ylabel('Natural linewidth [kHz $\cdot 2\pi$]')
 ax.legend()
-    
+
+plt.show()
