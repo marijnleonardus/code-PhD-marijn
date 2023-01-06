@@ -9,7 +9,16 @@ from qutip import *
 import numpy as np
 import matplotlib.pyplot as plt
 
-# coherent state N, alpha
-x = coherent(5, 0.5-0.5j)
-print(x)
-result = x.check_herm()
+vac = basis(5, 0)
+print(vac)
+
+a = destroy(5)
+print(a)
+
+print(a*vac)
+
+c = create(5)
+print(c *c* vac)
+
+number_operator =c * a
+print(number_operator)
