@@ -31,7 +31,7 @@ linewidth_omega = linewidth_array / (2 * np.pi)
 # %% plot result
 
 plt.style.use('default')
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize = (5,4))
 
 ax.grid()
 ax.plot(n_array, linewidth_omega/1e3, label='${}^3P_0-(ns5s)^3S_1$')

@@ -41,19 +41,31 @@ def compute_natural_linewidths(array, l1, j1,
 linewidths_3p0 = compute_natural_linewidths(n_array, 0, 1, 
                                             5, 1, 0)
 
+linewidths_3p1 = compute_natural_linewidths(n_array, 0, 1,
+                                            5, 1, 1)
+                                            
+linewidths_3p2 = compute_natural_linewidths(n_array, 0, 1,
+                                            5, 1, 2)
     
 # %% plot result
 
-#plt.style.use('default')
+
 
 # plot linewidhts
+
+# arc messing with settings
+plt.style.use('default')
+
 fig, ax = plt.subplots()
 
 ax.grid()
 
 ax.plot(n_array, linewidths_3p0 / 2 / np.pi, label = '${}^3P_0-(ns5s)^3S_1$')
+ax.plot(n_array, linewidths_3p1 / 2 / np.pi, label = '${}^3P_1-(ns5s)^3S_1$')
+ax.plot(n_array, linewidths_3p2 / 2 / np.pi, label = '${}^3P_2-(ns5s)^3S_1$')
 
 ax.set_xlabel('$n$')
 ax.set_ylabel('Natural linewidth [Hz $\cdot 2\pi$]')
 ax.legend()
-    
+
+plt.show()
