@@ -14,21 +14,23 @@ atom = Strontium88()
 
 # range of principal quantum numbers n 
 n_lower = int(40)
-n_higher = int(70)
+n_higher = int(100)
 n_span = n_higher - n_lower 
 n_array = np.linspace(n_lower, n_higher, n_span + 1)
 
 # definition rydberg constant (see thesis Madjarov)
 rydberg_constant = (1 - electron_mass / atom.mass) * C_Rydberg
 
+wavelength_tuning_range = 0.07 * 1e-9 # m
+
 # %% calculations
 
 # Rydberg
-rydberg_energy_list = []
-
-
 def get_rydberg_energy(input_array):
     pre_factor = - 2 * pi * hbar * c * rydberg_constant
+    
+    # empty list
+    rydberg_energy_list = []
     
     for n in input_array:
         defect_n = atom.getQuantumDefect(n, l=0, j=1)
@@ -88,5 +90,15 @@ ax3.plot(wavelength_array * 1e9, n_array, label='Accessible Rydberg states')
 
 ax3.set_xlabel(r'$\lambda$ [nm]')
 ax3.set_ylabel('$n$')
+ax3.set_ylim(40, 70)
+
+# highlight particular section
+ax3.axvspan((wavelength_n61 - wavelength_tuning_range / 2)*1e9, 
+            (wavelength_n61 + wavelength_tuning_range / 2)*1e9,
+            alpha=0.5, color='green',
+            label='Fiber laser tuning range around $n=61$')
+ax3.axhspan(58, 64,
+            color='red', alpha=0.3)
+ax3.legend()
 
 plt.show()
