@@ -86,7 +86,7 @@ ax2.legend()
 fig3, ax3 = plt.subplots()
 ax3.grid()
 
-ax3.plot(wavelength_array * 1e9, n_array, label='Accessible Rydberg states')
+ax3.plot(wavelength_array * 1e9, n_array, label='Rydberg excitation wavelength')
 
 ax3.set_xlabel(r'$\lambda$ [nm]')
 ax3.set_ylabel('$n$')
@@ -98,7 +98,8 @@ ax3.axvspan((wavelength_n61 - wavelength_tuning_range / 2)*1e9,
             alpha=0.5, color='green',
             label='Fiber laser tuning range around $n=61$')
 ax3.axhspan(58, 64,
-            color='red', alpha=0.3)
+            color='red', alpha=0.3, 
+            label='accessible Rydberg states')
 ax3.legend()
 
 plt.show()
