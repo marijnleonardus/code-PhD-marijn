@@ -1,11 +1,13 @@
 # author: Robert de Keijzer
 # January 2022
 
-"""script for fitting experimental data for radial dipole matrix elements
+"""
+script for fitting experimental data for radial dipole matrix elements
 this is for 3P1 - 3S1, which are equivalent to 3P0 - 3S1 up to a Clebsch Gordan coefficient
 in this case 1/sqrt(3)
 
-I copied and slightly edited this script from Robert de keijzer"""
+I copied and slightly edited this script from Robert de keijzer
+"""
 
 # %% Imports
 
@@ -16,7 +18,7 @@ from numpy import genfromtxt
 from scipy.constants import c
 
 # user defined
-from classes.unit_conversion.conversion_functions import rdme_to_rate
+from Classes.unit_conversion.conversion_functions import rdme_to_rate
 
 
 # %% importing and fitting data
@@ -29,7 +31,7 @@ def fit_func_rdme(x, a1, a2, b1, b2):
 # Data from  Canzhu Tan et al 2022 Chinese Phys. Lett. 39 093202
 # These are RDME values between 5s5p3P1 and 5s5n3S1
 n_values = np.arange(19, 41)
-rdme_values = genfromtxt("data/data_Tan2022.csv", delimiter=',')
+rdme_values = genfromtxt("calculations/rydberg/data/data_Tan2022.csv", delimiter=',')
 popt_rdme, pcov_rdme = curve_fit(fit_func_rdme, n_values, rdme_values, [0.05, 0.06, 0.05, 0.005])
 
 n_values_plot = np.arange(19, 70)
@@ -54,6 +56,7 @@ fig, ax = plt.subplots()
 ax.scatter(n_values, rdme_values, label='data')
 ax.plot(n_values_plot, rdme_values_fit, 'g--',
         label='fit: a1=%5.3f, a2=%5.3f, b1=%5.3f, b2=%5.3f' % tuple(popt_rdme))
+
 ax.grid()
 ax.set_xlim(18, 70)
 ax.set_xlabel('$n$')
@@ -67,6 +70,14 @@ ax2.set_xlabel('$n$')
 ax2.set_ylabel('Einstein coefficient [$2\pi \cdot Hz$]')
 ax2.scatter(n_values, einstein_coefficients)
 ax2.plot(n_values_plot, einstein_coefficients_fit)
+
+
+# %% Print result
+
+# print n=61:
+index_61 = np.where(n_values_plot==61)
+rate_61 = einstein_coefficients_fit[index_61]
+print(rate_61 / 2 / np.pi)
 
 
 """this part is for the energies, which is commented for now"""
