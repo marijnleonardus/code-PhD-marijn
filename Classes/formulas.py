@@ -2,6 +2,7 @@
 # january 2022
 
 import numpy as np
+from scipy.constants import c
 
 
 def beam_intensity(waist, power):

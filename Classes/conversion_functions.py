@@ -17,7 +17,7 @@ def rate_to_rdme(Aki, J, En1, En2):
     #from Einstein coefficient to Radial density matrix element
     #See Eq. 27 from DOI: 10.1119/1.12937
     
-    rdme = np.sqrt(3 * np.pi * eps0 * hbar * c**3 / (a0**2 * e0** 2 *np.abs(En1 - En2)**3) * (2 * J + 1) * Aki)
+    rdme = np.sqrt(3 * np.pi * eps0 * hbar * c**3 / (a0**2 * e0* 2 *np.abs(En1 - En2)**3) * (2 * J + 1) * Aki)
     return rdme
 
 
@@ -31,7 +31,7 @@ def rdme_to_rate(rdme, J, En1, En2):
 def rabi_freq_to_rate(intensity, rabi_freq, omega21):
     # given intensity and transition frequency
     
-    rate = hbar *  omega21**3 * rabi_freq**2 / (6 * np.pi * c**3 * intensity)
+    rate = hbar *  omega21**3 * rabi_freq**2 / (6 * np.pi * c**2 * intensity)
     return rate
 
 

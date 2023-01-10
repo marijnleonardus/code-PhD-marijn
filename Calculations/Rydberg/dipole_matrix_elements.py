@@ -15,6 +15,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from numpy import genfromtxt
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset, InsetPosition
 from scipy.constants import c
 
 # user defined
@@ -23,9 +24,14 @@ from Classes.formulas import beam_intensity
 from Classes.fitting_functions import fit_func_rdme
 
 
+# %% variables
+
+madjarov_power = 30e-3
+madjarov_waist = 18e-6
+madjarov_rabi = 2 * np.pi * 6.8e6
+wavelength_rydberg = 317e-9
+
 # %% importing and fitting data
-
-
 
 # Data from  Canzhu Tan et al 2022 Chinese Phys. Lett. 39 093202
 # These are RDME values between 5s5p3P1 and 5s5n3S1
@@ -53,8 +59,7 @@ einstein_coefficients_fit = rdme_to_rate(rdme_values_fit, 0, omega21, 0)
 fig, ax = plt.subplots()
 
 ax.scatter(n_values, rdme_values, label='data')
-ax.plot(n_values_plot, rdme_values_fit, 'g--',
-        label='fit: a1=%5.3f, a2=%5.3f, b1=%5.3f, b2=%5.3f' % tuple(popt_rdme))
+ax.plot(n_values_plot, rdme_values_fit, 'g--')
 
 ax.grid()
 ax.set_xlim(18, 70)
@@ -70,6 +75,14 @@ ax2.set_ylabel('Einstein coefficient [$2\pi \cdot Hz$]')
 ax2.scatter(n_values, einstein_coefficients)
 ax2.plot(n_values_plot, einstein_coefficients_fit)
 
+# insert zoom
+# axins = zoomed_inset_axes(ax2, 3, loc='upper right', 
+#                           axes_kwargs={"facecolor" : "lightgray"})
+
+# axins.plot(n_values_plot, einstein_coefficients_fit /2 / np.pi)
+# axins.set_xlim(55, 65)
+# axins.set_ylim(0, 500)
+
 
 # %% Print result
 
@@ -79,16 +92,13 @@ rate_61 = einstein_coefficients_fit[index_61]
 print(rate_61 / 2 / np.pi)
 
 # compare result madjarov
-
 # intensity
-madjarov_power = 30e-3
-madjarov_waist = 18e-6
 madjarov_intensity = beam_intensity(madjarov_waist, madjarov_power)
 
 # rate/linewidth from rabi frequency
-madjarov_rabi = 2 * np.pi * 6.8e6
-omega21 = 2 * np.pi * c / 317e-9
+omega21 = 2 * np.pi * c / wavelength_rydberg
 rate_from_madjarov = rabi_freq_to_rate(madjarov_intensity, madjarov_rabi, omega21)
+print(rate_from_madjarov / 2 / np.pi)
 
 """this part is for the energies, which is commented for now"""
 # energy_5s5p3P0=14317.507
