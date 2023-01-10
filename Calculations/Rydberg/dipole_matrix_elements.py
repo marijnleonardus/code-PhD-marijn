@@ -18,14 +18,13 @@ from numpy import genfromtxt
 from scipy.constants import c
 
 # user defined
-from Classes.unit_conversion.conversion_functions import rdme_to_rate
+from Classes.conversion_functions import rdme_to_rate, rabi_freq_to_rate
+from Classes.formulas import beam_intensity
+from Classes.fitting_functions import fit_func_rdme
 
 
 # %% importing and fitting data
 
-# function for fitting exp. data
-def fit_func_rdme(x, a1, a2, b1, b2):
-    return a1 * np.exp(-b1 * x) + a2 * np.exp(-b2*x**2)
 
 
 # Data from  Canzhu Tan et al 2022 Chinese Phys. Lett. 39 093202
@@ -79,6 +78,17 @@ index_61 = np.where(n_values_plot==61)
 rate_61 = einstein_coefficients_fit[index_61]
 print(rate_61 / 2 / np.pi)
 
+# compare result madjarov
+
+# intensity
+madjarov_power = 30e-3
+madjarov_waist = 18e-6
+madjarov_intensity = beam_intensity(madjarov_waist, madjarov_power)
+
+# rate/linewidth from rabi frequency
+madjarov_rabi = 2 * np.pi * 6.8e6
+omega21 = 2 * np.pi * c / 317e-9
+rate_from_madjarov = rabi_freq_to_rate(madjarov_intensity, madjarov_rabi, omega21)
 
 """this part is for the energies, which is commented for now"""
 # energy_5s5p3P0=14317.507
