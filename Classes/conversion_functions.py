@@ -1,12 +1,14 @@
 # author: Robert de Keijzer, Marijn Venderbosch
 
 import numpy as np
+from scipy.constants import electron_mass, c, alpha
 
 # hartree energy
 Eh = 4.35974394e-18
 
 # atomic unit dipole
 a0 = 5.2918e-11
+t=c**2 * alpha**2
 
 from scipy.constants import hbar, c
 from scipy.constants import epsilon_0 as eps0

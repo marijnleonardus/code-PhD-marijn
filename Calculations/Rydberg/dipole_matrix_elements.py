@@ -19,9 +19,9 @@ from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset,
 from scipy.constants import c
 
 # user defined
-from Classes.conversion_functions import rdme_to_rate, rabi_freq_to_rate
-from Classes.formulas import beam_intensity
-from Classes.fitting_functions import fit_func_rdme
+from classes.conversion_functions import rdme_to_rate, rabi_freq_to_rate
+from classes.formulas import beam_intensity
+from classes.fitting_functions import fit_func_rdme, fit_gr_dependence
 
 
 # %% variables
@@ -37,13 +37,17 @@ wavelength_rydberg = 317e-9
 # These are RDME values between 5s5p3P1 and 5s5n3S1
 n_values = np.arange(19, 41)
 rdme_values = genfromtxt("calculations/rydberg/data/data_Tan2022.csv", delimiter=',')
-popt_rdme, pcov_rdme = curve_fit(fit_func_rdme, n_values, rdme_values, [0.05, 0.06, 0.05, 0.005])
 
+# fit data with two functions
+popt_rdme, pcov_rdme = curve_fit(fit_func_rdme, n_values, rdme_values, [0.05, 0.06, 0.05, 0.005])
+popt_rdme2, _ = curve_fit(fit_gr_dependence, n_values, rdme_values, [0.1, 0.1])
+
+# generate extrapolation by extenting fit data to higher n
 n_values_plot = np.arange(19, 70)
 rdme_values_fit = fit_func_rdme(n_values_plot, *popt_rdme)
+rdme_values_fit2= fit_gr_dependence(n_values_plot, *popt_rdme2)
 
 # convert to einstein coefficients
-
 # transition frequency 
 omega21 = 2 * np.pi * c / 317e-9
 
@@ -51,7 +55,7 @@ omega21 = 2 * np.pi * c / 317e-9
 einstein_coefficients = rdme_to_rate(rdme_values, 0, omega21, 0)
 
 # einstein coefficients fit
-einstein_coefficients_fit = rdme_to_rate(rdme_values_fit, 0, omega21, 0)
+einstein_coefficients_fit = rdme_to_rate(rdme_values_fit2, 0, omega21, 0)
 
 # %% Plotting
 
@@ -60,6 +64,7 @@ fig, ax = plt.subplots()
 
 ax.scatter(n_values, rdme_values, label='data')
 ax.plot(n_values_plot, rdme_values_fit, 'g--')
+ax.plot(n_values_plot, rdme_values_fit2)
 
 ax.grid()
 ax.set_xlim(18, 70)
