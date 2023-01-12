@@ -20,7 +20,8 @@ n_array = np.linspace(start_n, end_n, number_n)
 defect_list = []
 
 for n in n_array:
-    defect = atom.getQuantumDefect(n, 1, 1, s=1)
+    # n, l, j. s=1 becaues triplet
+    defect = atom.getQuantumDefect(n, 0, 1, s=1)
     defect_list.append(defect)
     
 defect_array = np.array(defect_list)
