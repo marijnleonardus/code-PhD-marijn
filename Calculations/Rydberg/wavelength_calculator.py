@@ -3,7 +3,7 @@
 
 from scipy.constants import electron_mass, hbar, c, pi, e
 from arc import Strontium88, C_Rydberg
-from classes.conversion_functions import rdme_to_rate, rabi_freq_to_rate, energy_to_wavelength
+from classes.conversion_functions import energy_to_wavelength
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
