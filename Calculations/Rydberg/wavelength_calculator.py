@@ -3,6 +3,7 @@
 
 from scipy.constants import electron_mass, hbar, c, pi, e
 from arc import Strontium88, C_Rydberg
+from classes.conversion_functions import rdme_to_rate, rabi_freq_to_rate, energy_to_wavelength
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
@@ -50,7 +51,7 @@ clock_energy_joule = atom.getEnergy(5, 1, 0, s=1) * e  # J
 transition_energy_joule = rydberg_energy_joule - clock_energy_joule  # J
 rydberg_energy_eV = rydberg_energy_joule / e  # eV
 
-wavelength_array = 2 * pi * hbar * c / transition_energy_joule  # J
+wavelength_array = energy_to_wavelength(transition_energy_joule)  # J
 wavelength_difference = np.diff(wavelength_array) * 1e9  # nm
 
 # assume centered around n = 61

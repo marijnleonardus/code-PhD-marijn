@@ -37,6 +37,20 @@ def rabi_freq_to_rate(intensity, rabi_freq, omega21):
     return rate
 
 
+def wavelength_to_freq(wavelength):
+    # wavelength in m to frequency in Hz
+
+    frequency = 2 * np.pi * c / wavelength
+    return frequency
+
+
+def energy_to_wavelength(transition_energy):
+    # transition energy in joule, wavelength in m
+    
+    wavelength = 2 * np.pi * hbar * c / transition_energy
+    return wavelength
+
+
 
 # #magnetic field in Gauss to magnetic field in Tesla
 # def gauss_to_tesla(B):
@@ -97,10 +111,6 @@ def rabi_freq_to_rate(intensity, rabi_freq, omega21):
 # #frequency in Hz to energy in Joule
 # def frequency_to_joule(f):
 #     return f*hbar
-
-# #wavelength in m to frequency in Hz
-# def wavelength_to_freq(w):
-#     return 2*np.pi*c/w
 
 # #frequency in Hz to wavelength in m
 # def frequency_to_wavelength(w):
