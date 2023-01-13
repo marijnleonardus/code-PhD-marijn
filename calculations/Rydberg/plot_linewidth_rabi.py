@@ -11,7 +11,6 @@ from functions.conversion_functions import (wavelength_to_freq,
                                             gaussian_beam_intensity,
                                             rdme_to_rabi)
 
-
 # %% variables
 
 rdme_values = genfromtxt('calculations/rydberg/data/rdme_values.csv', delimiter=',')
@@ -21,8 +20,10 @@ n_values_plot = genfromtxt('calculations/rydberg/data/n_values_plot.csv', delimi
 
 waist = 20e-6
 laser_power = 20e-3
+power_array = [1, 10, 100, 1000]
 
-# Computatoins 
+
+# %% Compute linewidths and rabi frequencies 
 
 # intensity
 intensity = gaussian_beam_intensity(waist, laser_power)
@@ -38,6 +39,21 @@ einstein_coefficients_fit = rdme_to_rate(rdme_values_fit, 0, omega21, 0)
 # compute rabi frequency
 rabi_freqs = rdme_to_rabi(rdme_values, intensity)
 rabi_freqs_fit = rdme_to_rabi(rdme_values_fit, intensity)
+
+# compute rabi freq as a function of power for n=61
+n_61 = np.where(n_values_plot==61)
+rdme_61 = rdme_values_fit[n_61]
+
+
+rabi_list = []
+
+for power in power_array:
+    intensity = gaussian_beam_intensity(50e-6, power)
+    rabi = rdme_to_rabi(rdme_61, intensity)
+    rabi_list.append(rabi)
+    
+rabi_array = np.array(rabi_list)
+    
 
 # %% Plotting
 
@@ -82,3 +98,9 @@ ax3.set_ylabel(r'Rabi frequency $\Omega$ [$2 \pi \cdot$ MHz]')
 # axins.plot(n_values_plot, einstein_coefficients_fit /2 / np.pi)
 # axins.set_xlim(55, 65)
 # axins.set_ylim(0, 500)
+
+# Rabi vs beam power
+fig4, ax4 = plt.subplots()
+ax4.grid()
+
+ax4.scatter(power_array, rabi_array)
