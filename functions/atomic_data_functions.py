@@ -30,25 +30,25 @@ def calculate_c6_coefficients(n, l, j, mj):
     - 61, 0, 1, 0, 1
     """
     
-    calc = PairStateInteractions(
-                                 Strontium88(),
+    calc = PairStateInteractions(Strontium88(),
                                  n, l, j,
                                  n, l, j,
                                  mj, mj,
-                                 s=1
-                                 )
+                                 s=1)
     theta = 0
     phi = 0
-    deltaN = 5
+    deltaN = 6
     deltaE = 30e9 # in Hz
     
-    c6, eigenvectors = calc.getC6perturbatively(theta, phi, 5,
-                                                deltaE,
+    c6, eigenvectors = calc.getC6perturbatively(theta, phi, 
+                                                deltaN, deltaE,
                                                 degeneratePerturbation=True)
     # getC6perturbatively returns the C6 coefficients
     # expressed in units of GHz mum^6.
+    
     # Conversion to atomic units:
-    c6 = c6 / 1.4458e-19
+    #c6 = c6 / 1.4458e-19
+    
     # These results should still be divided by n^{11}
     # to be plotted as in Fig. 2(c).
     return c6

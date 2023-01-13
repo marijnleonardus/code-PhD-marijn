@@ -1,7 +1,6 @@
 # author: Marijn Venderbosch
 # january 2023
 
-
 import numpy as np
 from functions.atomic_data_functions import calculate_c6_coefficients
 import matplotlib.pyplot as plt
