@@ -20,7 +20,7 @@ n_values_plot = genfromtxt('calculations/rydberg/data/n_values_plot.csv', delimi
 
 waist = 20e-6
 laser_power = 20e-3
-power_array = [1, 10, 100, 1000]
+power_array = np.linspace(0.001, 1, 100)
 
 
 # %% Compute linewidths and rabi frequencies 
@@ -86,10 +86,12 @@ ax2.legend()
 fig3, ax3 = plt.subplots()
 ax3.grid()
 
-ax3.plot(n_values_plot, rabi_freqs_fit / (2*np.pi) / 1e6) # convert to 2 pi * MHz
+ax3.plot(n_values_plot, rabi_freqs_fit / (2*np.pi) / 1e6, # convert to 2 pi * MHz
+         label='$P=20$ mW, $w_0 = 20$ $\mu$m')
 
 ax3.set_xlabel('$n$')
 ax3.set_ylabel(r'Rabi frequency $\Omega$ [$2 \pi \cdot$ MHz]')
+ax3.legend()
 
 # insert zoom
 # axins = zoomed_inset_axes(ax2, 3, loc='upper right', 
@@ -103,4 +105,10 @@ ax3.set_ylabel(r'Rabi frequency $\Omega$ [$2 \pi \cdot$ MHz]')
 fig4, ax4 = plt.subplots()
 ax4.grid()
 
-ax4.scatter(power_array, rabi_array)
+ax4.plot(power_array / 1e-3, # convert to mW
+         rabi_array / (2*np.pi) / 1e6,
+         label='$n=61$')
+
+ax4.set_xlabel('Laser power [mW]')
+ax4.set_ylabel(r'Rabi frequency $\Omega$ [$2\pi \cdot$ MHz]')
+ax4.legend()
