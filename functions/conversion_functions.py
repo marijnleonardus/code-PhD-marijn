@@ -4,7 +4,7 @@
 import numpy as np
 from scipy.constants import electron_mass, c, alpha, hbar, alpha
 from scipy.constants import epsilon_0 as eps0
-from scipy.constants import e as e0
+from scipy.constants import elementary_charge as e0
 import scipy.constants
 
 
@@ -53,6 +53,31 @@ def energy_to_wavelength(transition_energy):
     
     wavelength = 2 * np.pi * hbar * c / transition_energy
     return wavelength
+
+
+def rdme_to_rabi(rdme, intensity):
+    """inputs
+        intensity [W]: gaussian beam intensity
+        RDME [atomic units]: radial dipole matrix element <g|r|e>
+    
+    returns:
+        Rabi frequency [Hz]
+    """
+    
+    rabi = (rdme * e0 * a0) / hbar * np.sqrt(2 / c / eps0) * np.sqrt(intensity) 
+    return rabi
+
+
+def gaussian_beam_intensity(beam_waist, power):
+    """inputs:
+        beam_waist [m]
+        power [W]
+        
+    returns:
+        I0 (max intensity) [W/m^2]"""
+    
+    I0 = 2 * power / (np.pi * beam_waist**2)
+    return I0
 
 
 
