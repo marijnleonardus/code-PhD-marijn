@@ -8,7 +8,6 @@ from scipy.constants import elementary_charge as e0
 import scipy.constants
 
 
-
 # %% variables
 
 a0 = scipy.constants.physical_constants['Bohr radius'][0] # m

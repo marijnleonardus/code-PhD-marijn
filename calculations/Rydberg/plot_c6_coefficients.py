@@ -43,9 +43,11 @@ c6_array = np.array(c6_list)
 
 # %% fit data
 
-popt, _ = curve_fit(fit_n11_dependence, n_array, abs(c6_array[:,0]), p0=[0, 10**8])
-c6_fit_result = fit_n11_dependence(n_array, *popt)
-
+# =============================================================================
+# popt, _ = curve_fit(fit_n11_dependence, n_array, abs(c6_array[:,0]), p0=[0, 10**8])
+# c6_fit_result = fit_n11_dependence(n_array, *popt)
+# 
+# =============================================================================
 # %% plotting
 
 matplotlib.rcParams['font.family'] = 'sansserif'
@@ -62,12 +64,12 @@ ax.set_ylabel('$C_6 / n^{11}$ coefficients [atomic units]')
 fig2, ax2= plt.subplots()
 
 ax2.grid()
-ax2.scatter(n_array, abs(c6_array[:,0]))
-ax2.plot(n_array, c6_fit_result)
+ax2.plot(n_array, abs(c6_array[:,0]))
+# ax2.plot(n_array, c6_fit_result)
 
 ax2.set_yscale('log')
 ax2.set_xlabel('$n$')
-ax2.set_ylabel('$C_6$ [GHz $\mu$m$^6$]')
+ax2.set_ylabel('$|C_6|$ [GHz $\mu$m$^6$]')
 
 plt.show()
 

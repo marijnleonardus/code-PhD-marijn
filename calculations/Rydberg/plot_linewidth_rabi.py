@@ -9,6 +9,7 @@ import numpy as np
 from functions.conversion_functions import (wavelength_to_freq, 
                                             rdme_to_rate,
                                             gaussian_beam_intensity,
+                                            cylindrical_gaussian_beam,
                                             rdme_to_rabi)
 
 # %% variables
@@ -18,9 +19,16 @@ rdme_values_fit = genfromtxt('calculations/rydberg/data/rdme_values_fit.csv', de
 n_values = genfromtxt('calculations/rydberg/data/n_values.csv', delimiter = ',')
 n_values_plot = genfromtxt('calculations/rydberg/data/n_values_plot.csv', delimiter=',')
 
-waist = 20e-6
-laser_power = 20e-3
-power_array = np.linspace(0.001, 1, 100)
+# paramters Madjarov
+waist = 20e-6  # m
+laser_power = 20e-3  # m
+
+# producing rabi freq vs power plot
+power_array = np.linspace(0.001, 1, 100)  # W
+rabi_plot_waist = 200e-6  # m
+
+# cylindrical beam
+waist_y = 20e-6  # m
 
 
 # %% Compute linewidths and rabi frequencies 
@@ -44,15 +52,25 @@ rabi_freqs_fit = rdme_to_rabi(rdme_values_fit, intensity)
 n_61 = np.where(n_values_plot==61)
 rdme_61 = rdme_values_fit[n_61]
 
-
+# compute gaussian beam rabi frequencies
 rabi_list = []
 
 for power in power_array:
-    intensity = gaussian_beam_intensity(50e-6, power)
+    intensity = gaussian_beam_intensity(rabi_plot_waist, power)
     rabi = rdme_to_rabi(rdme_61, intensity)
     rabi_list.append(rabi)
     
 rabi_array = np.array(rabi_list)
+
+# compute cylindrical beam rabi frequencies
+cylindrical_rabi_list = []
+
+for power in power_array:
+    intensity = cylindrical_gaussian_beam(rabi_plot_waist, waist_y, power)
+    rabi = rdme_to_rabi(rdme_61, intensity)
+    cylindrical_rabi_list.append(rabi)
+    
+rabi_array_cylindrical = np.array(cylindrical_rabi_list)
     
 
 # %% Plotting
@@ -107,7 +125,10 @@ ax4.grid()
 
 ax4.plot(power_array / 1e-3, # convert to mW
          rabi_array / (2*np.pi) / 1e6,
-         label='$n=61$')
+         label=f'$n=61$, $w_0={rabi_plot_waist*1e6}$ $\mu$m')
+ax4.plot(power_array / 1e-3,
+         rabi_array_cylindrical / (2*np.pi) / 1e6,
+         label=f'$n=61$, $w_x={rabi_plot_waist*1e6}$ $\mu$m, $w_y={waist_y*1e6}$ $\mu$m')
 
 ax4.set_xlabel('Laser power [mW]')
 ax4.set_ylabel(r'Rabi frequency $\Omega$ [$2\pi \cdot$ MHz]')
