@@ -36,8 +36,8 @@ einstein_coefficients = rdme_to_rate(rdme_values, 0, omega21, 0)
 einstein_coefficients_fit = rdme_to_rate(rdme_values_fit, 0, omega21, 0)
 
 # compute rabi frequency
-rabi_freqs = rdme_to_rabi(intensity, rdme_values)
-rabi_freqs_fit = rdme_to_rabi(intensity, rdme_values_fit)
+rabi_freqs = rdme_to_rabi(rdme_values, intensity)
+rabi_freqs_fit = rdme_to_rabi(rdme_values_fit, intensity)
 
 # %% Plotting
 
@@ -70,10 +70,10 @@ ax2.legend()
 fig3, ax3 = plt.subplots()
 ax3.grid()
 
-ax3.plot(n_values_plot, rabi_freqs_fit / (2*np.pi))
+ax3.plot(n_values_plot, rabi_freqs_fit / (2*np.pi) / 1e6) # convert to 2 pi * MHz
 
 ax3.set_xlabel('$n$')
-ax3.set_ylabel(r'$\Omega$ [$2 \pi \cdot$ Hz]')
+ax3.set_ylabel(r'Rabi frequency $\Omega$ [$2 \pi \cdot$ MHz]')
 
 # insert zoom
 # axins = zoomed_inset_axes(ax2, 3, loc='upper right', 

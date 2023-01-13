@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      8140,        236]
-NotebookOptionsPosition[      7192,        200]
-NotebookOutlinePosition[      7543,        215]
-CellTagsIndexPosition[      7500,        212]
+NotebookDataLength[      9203,        246]
+NotebookOptionsPosition[      8331,        212]
+NotebookOutlinePosition[      8682,        227]
+CellTagsIndexPosition[      8639,        224]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -29,23 +29,24 @@ Cell[BoxData[
  RowBox[{
   RowBox[{"intensityeq", " ", "=", " ", 
    RowBox[{"intensity", "\[Equal]", 
-    RowBox[{
-    ".5", " ", "*", " ", "c", " ", "*", " ", "\[Epsilon]0", " ", "*", " ", 
-     SuperscriptBox["electricfield", "2"]}]}]}], ";"}]], "Input",
+    RowBox[{"c", " ", "\[Epsilon]0", " ", 
+     RowBox[{
+      SuperscriptBox["electricfield", "2"], "/", "2"}]}]}]}], ";"}]], "Input",
  CellChangeTimes->{{3.8825905836275992`*^9, 3.88259062134062*^9}, {
   3.8825907438821096`*^9, 3.882590752386193*^9}, {3.8825941214493227`*^9, 
-  3.8825941241909723`*^9}}],
+  3.8825941241909723`*^9}, {3.882595116165936*^9, 3.8825951176069684`*^9}, {
+  3.882595250950032*^9, 3.882595266051736*^9}}],
 
 Cell[BoxData[
  RowBox[{
   RowBox[{"rabieq", "=", 
    RowBox[{"rabi", "\[Equal]", 
-    RowBox[{"electricfield", "*", " ", "echarge", "*", " ", 
-     FractionBox["a0", "\[HBar]"], "*", "rdme"}]}]}], ";"}]], "Input",
+    RowBox[{"electricfield", " ", "echarge", " ", 
+     FractionBox["a0", "\[HBar]"], "rdme"}]}]}], ";"}]], "Input",
  CellChangeTimes->{{3.882590624529956*^9, 3.8825906549471436`*^9}, {
    3.8825907181867757`*^9, 3.882590725410367*^9}, {3.882590815364654*^9, 
    3.882590816780634*^9}, 3.882594127859331*^9, {3.8825942199228086`*^9, 
-   3.882594224083709*^9}}],
+   3.882594224083709*^9}, {3.882595269918692*^9, 3.8825952741342773`*^9}}],
 
 Cell[CellGroupData[{
 
@@ -65,24 +66,11 @@ Cell[BoxData[
   3.8825908692005634`*^9}, {3.882594149914121*^9, 3.882594163697196*^9}}],
 
 Cell[BoxData[
- TemplateBox[{
-  "Solve","ratnz",
-   "\"Solve was unable to solve the system with inexact coefficients. The \
-answer was obtained by solving a corresponding exact system and numericizing \
-the result.\"",2,106,26,30112504080933145778,"Local"},
-  "MessageTemplate"]], "Message", "MSG",
- CellChangeTimes->{{3.882590711694946*^9, 3.882590727855585*^9}, {
-   3.882590762731933*^9, 3.8825907882821693`*^9}, 3.8825908198273306`*^9, 
-   3.8825908694929886`*^9, {3.882593285167251*^9, 3.882593294952964*^9}, {
-   3.882593351448948*^9, 3.882593372783081*^9}, 3.88259396694823*^9, {
-   3.882594144337644*^9, 3.882594163978257*^9}, {3.882594209129917*^9, 
-   3.8825942367104845`*^9}, 3.8825943420126386`*^9}],
-
-Cell[BoxData[
  RowBox[{"{", 
   RowBox[{"rabi", "\[Rule]", 
    FractionBox[
-    RowBox[{"1.4142135623730951`", " ", "a0", " ", "echarge", " ", 
+    RowBox[{
+     SqrtBox["2"], " ", "a0", " ", "echarge", " ", 
      SqrtBox["intensity"], " ", "rdme"}], 
     RowBox[{
      SqrtBox["c"], " ", 
@@ -92,7 +80,9 @@ Cell[BoxData[
    3.882590869508277*^9, {3.882593285186127*^9, 3.8825932949726*^9}, {
    3.8825933514677105`*^9, 3.8825933728015413`*^9}, 3.8825939669654555`*^9, {
    3.8825941443548603`*^9, 3.882594163995511*^9}, {3.882594209148532*^9, 
-   3.8825942367303047`*^9}, 3.882594342031021*^9}]
+   3.8825942367303047`*^9}, 3.882594342031021*^9, 3.8825945558837614`*^9, 
+   3.882594985315241*^9, {3.8825950753232956`*^9, 3.882595119674775*^9}, 
+   3.882595275317138*^9, 3.882596030986102*^9}]
 }, Open  ]],
 
 Cell["find beam intensity", "Text",
@@ -104,28 +94,29 @@ Cell[BoxData[{
  RowBox[{
   RowBox[{"power", "=", 
    RowBox[{"20", "*", 
-    RowBox[{"10", "^", 
-     RowBox[{"-", "3"}]}]}]}], ";"}], "\[IndentingNewLine]", 
+    SuperscriptBox["10", 
+     RowBox[{"-", "3"}]]}]}], ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"waist", "=", 
    RowBox[{"20", "*", 
-    RowBox[{"10", "^", 
-     RowBox[{"-", "6"}]}]}]}], ";"}], "\[IndentingNewLine]", 
+    SuperscriptBox["10", 
+     RowBox[{"-", "6"}]]}]}], ";"}], "\[IndentingNewLine]", 
  RowBox[{"intensityvalue", "=", 
   RowBox[{
-   RowBox[{
-    RowBox[{"(", 
-     RowBox[{"2", "*", "power"}], ")"}], "/", 
-    RowBox[{"(", 
-     RowBox[{"Pi", " ", "*", " ", 
-      SuperscriptBox["waist", "2"]}], ")"}]}], "//", "N"}]}]}], "Input",
+   FractionBox[
+    RowBox[{"2", "power"}], 
+    RowBox[{"\[Pi]", " ", "*", " ", 
+     SuperscriptBox["waist", "2"]}]], "//", "N"}]}]}], "Input",
  CellChangeTimes->{{3.882593969813946*^9, 3.88259401694757*^9}, {
-  3.8825941431201024`*^9, 3.8825941434652414`*^9}}],
+  3.8825941431201024`*^9, 3.8825941434652414`*^9}, {3.882595222353216*^9, 
+  3.8825952424783792`*^9}, {3.8825960220426826`*^9, 3.8825960296668587`*^9}}],
 
 Cell[BoxData["3.1830988618379068`*^7"], "Output",
  CellChangeTimes->{{3.8825940001078467`*^9, 3.882594019328876*^9}, 
    3.882594144362838*^9, {3.8825942091570573`*^9, 3.8825942367434998`*^9}, 
-   3.8825943420420303`*^9}]
+   3.8825943420420303`*^9, 3.8825945558964148`*^9, 3.882594985327919*^9, {
+   3.8825950753322926`*^9, 3.8825951196861205`*^9}, 3.882595243256839*^9, 
+   3.8825952753251114`*^9, 3.8825960309943914`*^9}]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -137,20 +128,26 @@ Cell[BoxData[
 
 Cell[BoxData[
  FractionBox[
-  RowBox[{"1.4142135623730951`", " ", "a0", " ", "echarge", " ", 
+  RowBox[{
+   SqrtBox["2"], " ", "a0", " ", "echarge", " ", 
    SqrtBox["intensity"], " ", "rdme"}], 
   RowBox[{
    SqrtBox["c"], " ", 
    SqrtBox["\[Epsilon]0"], " ", "\[HBar]"}]]], "Output",
  CellChangeTimes->{{3.8825941837549024`*^9, 3.8825942367560844`*^9}, 
-   3.8825943420562134`*^9}]
+   3.8825943420562134`*^9, 3.8825945559099503`*^9, 3.8825949853390107`*^9, {
+   3.8825950753407893`*^9, 3.882595119694912*^9}, 3.8825952753347783`*^9, 
+   3.882596031003496*^9}]
 }, Open  ]],
 
 Cell["\<\
 find numerical value for rabi freq * 2Pi
-Value from https://doi.org/10.1038/s41567-020-0903-z is 6.8 * 2pi * MHz\
+Value from https://doi.org/10.1038/s41567-020-0903-z is 6.8 * 2pi * MHz
+
+rdme value estimated from script `fit experimental rdme values.py`\
 \>", "Text",
- CellChangeTimes->{{3.882594313607767*^9, 3.882594338976267*^9}}],
+ CellChangeTimes->{{3.882594313607767*^9, 3.882594338976267*^9}, {
+  3.882594563316021*^9, 3.8825945754127655`*^9}}],
 
 Cell[CellGroupData[{
 
@@ -159,47 +156,62 @@ Cell[BoxData[
   RowBox[{"rabifreq", "/", 
    RowBox[{"(", 
     RowBox[{"2", "Pi"}], ")"}]}], "/.", 
-  RowBox[{"{", 
+  RowBox[{"{", "\[IndentingNewLine]", 
    RowBox[{
     RowBox[{"intensity", "\[Rule]", "intensityvalue"}], ",", 
     "\[IndentingNewLine]", 
     RowBox[{"c", "\[Rule]", 
-     RowBox[{"2.998", "*", 
-      RowBox[{"10", "^", "8"}]}]}], ",", "\[IndentingNewLine]", 
+     RowBox[{"QuantityMagnitude", "[", 
+      RowBox[{"UnitConvert", "[", 
+       RowBox[{"Quantity", "[", "\"\<SpeedOfLight\>\"", "]"}], "]"}], "]"}]}],
+     ",", "\[IndentingNewLine]", 
     RowBox[{"\[HBar]", "\[Rule]", 
-     RowBox[{"10", "^", 
-      RowBox[{"-", "34"}]}]}], ",", "\[IndentingNewLine]", 
-    RowBox[{"rdme", "\[Rule]", "0.0025"}], ",", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"QuantityMagnitude", "[", 
+       RowBox[{"UnitConvert", "[", 
+        RowBox[{"Quantity", "[", "\"\<PlanckConstant\>\"", "]"}], "]"}], 
+       "]"}], "/", 
+      RowBox[{"(", 
+       RowBox[{"2", "\[Pi]"}], ")"}]}]}], ",", "\[IndentingNewLine]", 
+    RowBox[{"rdme", "\[Rule]", "0.0029"}], ",", "\[IndentingNewLine]", 
     RowBox[{"echarge", "\[Rule]", 
-     RowBox[{"1.6", "*", 
-      RowBox[{"10", "^", 
-       RowBox[{"-", "19"}]}]}]}], ",", "\[IndentingNewLine]", 
+     RowBox[{"QuantityMagnitude", "[", 
+      RowBox[{"UnitConvert", "[", 
+       RowBox[{"Quantity", "[", "\"\<ElementaryCharge\>\"", "]"}], "]"}], 
+      "]"}]}], ",", "\[IndentingNewLine]", 
     RowBox[{"a0", "\[Rule]", 
-     RowBox[{"5.3", "*", 
-      RowBox[{"10", "^", 
-       RowBox[{"-", "11"}]}]}]}], ",", "\[IndentingNewLine]", 
+     RowBox[{"QuantityMagnitude", "[", 
+      RowBox[{"UnitConvert", "[", 
+       RowBox[{"Quantity", "[", "\"\<BohrRadius\>\"", "]"}], "]"}], "]"}]}], 
+    ",", "\[IndentingNewLine]", 
     RowBox[{"\[Epsilon]0", "\[Rule]", 
-     RowBox[{"8.8", "*", 
-      RowBox[{"10", "^", 
-       RowBox[{"-", "12"}]}]}]}]}], "}"}]}]], "Input",
+     RowBox[{"QuantityMagnitude", "[", 
+      RowBox[{"UnitConvert", "[", 
+       RowBox[{"Quantity", "[", "\"\<VacuumPermittivity\>\"", "]"}], "]"}], 
+      "]"}]}]}], "\[IndentingNewLine]", "}"}]}]], "Input",
  CellChangeTimes->{{3.8825908765533395`*^9, 3.8825909015148263`*^9}, {
   3.8825931660209723`*^9, 3.882593367232036*^9}, {3.882593960018078*^9, 
   3.882593961081458*^9}, {3.882594022671839*^9, 3.8825940279928017`*^9}, {
   3.882594059440863*^9, 3.882594097554093*^9}, {3.8825942347792172`*^9, 
-  3.8825942622199845`*^9}}],
+  3.8825942622199845`*^9}, {3.882594551590952*^9, 3.8825945520768695`*^9}, {
+  3.882594973694191*^9, 3.8825949808280616`*^9}, {3.8825950454214053`*^9, 
+  3.8825950914284687`*^9}, {3.882595211495858*^9, 3.8825952144455256`*^9}, {
+  3.8825956665212984`*^9, 3.8825957694744773`*^9}, {3.882595850315892*^9, 
+  3.8825960058259497`*^9}}],
 
-Cell[BoxData["5.241298615611865`*^6"], "Output",
+Cell[BoxData["5.746571882540749`*^6"], "Output",
  CellChangeTimes->{{3.882593231527727*^9, 3.882593250788026*^9}, {
    3.8825932852609625`*^9, 3.8825933728166056`*^9}, 3.882594101899063*^9, 
    3.882594144380025*^9, {3.8825942091742887`*^9, 3.8825942625845275`*^9}, 
-   3.8825943420682592`*^9}]
-}, Open  ]],
-
-Cell[BoxData[""], "Input",
- CellChangeTimes->{{3.8825942461806035`*^9, 3.8825942653840714`*^9}}]
+   3.8825943420682592`*^9, 3.8825945559231353`*^9, {3.882594982915291*^9, 
+   3.88259498535133*^9}, {3.8825950753494616`*^9, 3.882595119703682*^9}, 
+   3.8825952753417716`*^9, {3.882595741817672*^9, 3.8825957699565325`*^9}, {
+   3.882595859551394*^9, 3.882595877825659*^9}, {3.8825959148290772`*^9, 
+   3.8825959335307326`*^9}, {3.882596007234499*^9, 3.882596031024102*^9}}]
+}, Open  ]]
 },
 WindowSize->{759, 833},
-WindowMargins->{{Automatic, -1054}, {-32, Automatic}},
+WindowMargins->{{Automatic, -1708}, {-13, Automatic}},
 FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
 StyleDefinitions->"Default.nb"
 ]
@@ -216,31 +228,27 @@ CellTagsIndex->{}
 Notebook[{
 Cell[558, 20, 137, 2, 30, "Input"],
 Cell[698, 24, 109, 1, 30, "Text"],
-Cell[810, 27, 427, 9, 30, "Input"],
-Cell[1240, 38, 457, 9, 49, "Input"],
+Cell[810, 27, 505, 10, 33, "Input"],
+Cell[1318, 39, 490, 9, 49, "Input"],
 Cell[CellGroupData[{
-Cell[1722, 51, 538, 13, 30, "Input"],
-Cell[2263, 66, 711, 12, 39, "Message"],
-Cell[2977, 80, 706, 14, 57, "Output"]
+Cell[1833, 52, 538, 13, 30, "Input"],
+Cell[2374, 67, 849, 17, 57, "Output"]
 }, Open  ]],
-Cell[3698, 97, 105, 1, 30, "Text"],
+Cell[3238, 87, 105, 1, 30, "Text"],
 Cell[CellGroupData[{
-Cell[3828, 102, 667, 20, 73, "Input"],
-Cell[4498, 124, 221, 3, 30, "Output"]
+Cell[3368, 92, 713, 19, 89, "Input"],
+Cell[4084, 113, 395, 5, 63, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[4756, 132, 154, 3, 30, "Input"],
-Cell[4913, 137, 323, 8, 57, "Output"]
+Cell[4516, 123, 154, 3, 30, "Input"],
+Cell[4673, 128, 468, 11, 57, "Output"]
 }, Open  ]],
-Cell[5251, 148, 202, 4, 49, "Text"],
+Cell[5156, 142, 321, 7, 87, "Text"],
 Cell[CellGroupData[{
-Cell[5478, 156, 1302, 32, 145, "Input"],
-Cell[6783, 190, 294, 4, 30, "Output"]
-}, Open  ]],
-Cell[7092, 197, 96, 1, 30, "Input"]
+Cell[5502, 153, 2169, 46, 183, "Input"],
+Cell[7674, 201, 641, 8, 30, "Output"]
+}, Open  ]]
 }
 ]
 *)
-
-(* End of internal cache information *)
 

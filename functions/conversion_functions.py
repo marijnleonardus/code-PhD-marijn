@@ -64,7 +64,7 @@ def rdme_to_rabi(rdme, intensity):
         Rabi frequency [Hz]
     """
     
-    rabi = (rdme * e0 * a0) / hbar * np.sqrt(2 / c / eps0) * np.sqrt(intensity) 
+    rabi = (rdme * e0 * a0) / hbar * np.sqrt(2 / (c * eps0)) * np.sqrt(intensity) 
     return rabi
 
 
