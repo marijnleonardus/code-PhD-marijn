@@ -20,48 +20,90 @@ t = c**2 * alpha**2
 
 
 def rate_to_rdme(Aki, J, En1, En2):
-    #from Einstein coefficient to Radial density matrix element
-    #See Eq. 27 from DOI: 10.1119/1.12937
+    """
+    from Einstein coefficient to Radial density matrix element
+    See Eq. 27 from DOI: 10.1119/1.12937
+    
+    inputs
+    - Aki: einstein coefficient [Hz]
+    - J: quantum number
+    - En1 and En2 [Hz] transition energy/h
+    
+    returns:
+    - radial dipole matrix element in atomic units [a0*e]
+    """
     
     rdme = np.sqrt(3 * np.pi * eps0 * hbar * c**3 / (a0**2 * e0* 2 *np.abs(En1 - En2)**3) * (2 * J + 1) * Aki)
     return rdme
 
 
 def rdme_to_rate(rdme, J, En1, En2):
-    # looks like Energies are actually angular frequnecies (so not multiplied by hbar)
+    """
+    Other way around
+    
+    inputs
+    - rdme: matrix element in atomic units
+    - J: quantum number
+    - En1 and En2 [Hz] transition energy/h
+    
+    returns:
+    - rabi frequency in Hz
+    """
     
     rate = np.abs(En1 - En2)**3 * e0**2 / (3 * np.pi * eps0 * hbar* c**3 *(2 * J + 1)) * (a0 * rdme)**2
     return rate
 
 
 def rabi_freq_to_rate(intensity, rabi_freq, omega21):
-    # given intensity and transition frequency
+    """
+    inputs:
+    - intensity [W/m^2]
+    - Rabi freq [Hz]
+    - Transition angular freq omega21 [rad/s]
+    
+    returns:
+    - einstein coefficient [Hz]
+    """
     
     rate = hbar *  omega21**3 * rabi_freq**2 / (6 * np.pi * c**2 * intensity)
     return rate
 
 
 def wavelength_to_freq(wavelength):
-    # wavelength in m to frequency in Hz
+    """
+    inputs:
+    - wavelength [m]
+    
+    returns:
+    - angular freq [rad/s]
+    """
 
     frequency = 2 * np.pi * c / wavelength
     return frequency
 
 
 def energy_to_wavelength(transition_energy):
-    # transition energy in joule, wavelength in m
+    """
+    inputs:
+    - transition energy [J]
+    - wavelength [m]
+    
+    returns:
+    - transition wavelength
+    """
     
     wavelength = 2 * np.pi * hbar * c / transition_energy
     return wavelength
 
 
 def rdme_to_rabi(rdme, intensity):
-    """inputs
-        intensity [W]: gaussian beam intensity
-        RDME [atomic units]: radial dipole matrix element <g|r|e>
+    """
+    inputs
+    - intensity [W]: gaussian beam intensity
+    - RDME [atomic units]: radial dipole matrix element <g|r|e>
     
     returns:
-        Rabi frequency [Hz]
+    - Rabi frequency [Hz]
     """
     
     rabi = (rdme * e0 * a0) / hbar * np.sqrt(2 / (c * eps0)) * np.sqrt(intensity) 
@@ -69,14 +111,32 @@ def rdme_to_rabi(rdme, intensity):
 
 
 def gaussian_beam_intensity(beam_waist, power):
-    """inputs:
-        beam_waist [m]
-        power [W]
+    """
+    inputs:
+    - beam_waist [m]
+    - power [W]
         
     returns:
-        I0 (max intensity) [W/m^2]"""
+    - I0 (max intensity) [W/m^2]
+    """
     
     I0 = 2 * power / (np.pi * beam_waist**2)
+    return I0
+
+
+def cylindrical_gaussian_beam(waist_x, waist_y, power):
+    """
+    gaussian beam but waist in x and y are not the same (cylindrical)
+    
+    inputs:
+    - beam_waist in x and y directoins [m]
+    - power [W]
+        
+    returns:
+    - I0 (max intensity) [W/m^2]
+    """
+        
+    I0 = 2 * power / (np.pi * waist_x * waist_y)
     return I0
 
 
