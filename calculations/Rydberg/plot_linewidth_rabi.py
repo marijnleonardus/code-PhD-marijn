@@ -44,9 +44,14 @@ omega21 = wavelength_to_freq(317e-9)
 einstein_coefficients = rdme_to_rate(rdme_values, 0, omega21, 0)
 einstein_coefficients_fit = rdme_to_rate(rdme_values_fit, 0, omega21, 0)
 
-# compute rabi frequency
+# compute rabi frequency as a function of n for madajarov parameters
 rabi_freqs = rdme_to_rabi(rdme_values, intensity)
 rabi_freqs_fit = rdme_to_rabi(rdme_values_fit, intensity)
+
+# compute rabi frequency as a function of n for our parameters and save result
+intensity_ourparameters = cylindrical_gaussian_beam(rabi_plot_waist, waist_y, laser_power)
+rabi_fres_ourparam = rdme_to_rabi(rdme_values_fit, intensity_ourparameters)
+np.savetxt('calculations/Rydberg/data/rabi_freq_vs_n.csv', rabi_fres_ourparam, delimiter=',')
 
 # compute rabi freq as a function of power for n=61
 n_61 = np.where(n_values_plot==61)
@@ -100,7 +105,7 @@ ax2.set_xlabel('$n$')
 ax2.set_ylabel('Einstein coefficient [$2\pi \cdot Hz$]')
 ax2.legend()
 
-# Rabi frequency 
+# Rabi frequency vs n
 fig3, ax3 = plt.subplots()
 ax3.grid()
 
@@ -110,14 +115,6 @@ ax3.plot(n_values_plot, rabi_freqs_fit / (2*np.pi) / 1e6, # convert to 2 pi * MH
 ax3.set_xlabel('$n$')
 ax3.set_ylabel(r'Rabi frequency $\Omega$ [$2 \pi \cdot$ MHz]')
 ax3.legend()
-
-# insert zoom
-# axins = zoomed_inset_axes(ax2, 3, loc='upper right', 
-#                           axes_kwargs={"facecolor" : "lightgray"})
-
-# axins.plot(n_values_plot, einstein_coefficients_fit /2 / np.pi)
-# axins.set_xlim(55, 65)
-# axins.set_ylim(0, 500)
 
 # Rabi vs beam power
 fig4, ax4 = plt.subplots()
