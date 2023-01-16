@@ -18,8 +18,8 @@ n_values_fit = genfromtxt('calculations/rydberg/data/n_values_plot.csv', delimit
 indices_to_delete = np.where(n_values_fit < 40)
 n_values_plot = np.delete(n_values_fit, indices_to_delete)
 
-# rabi freq vs n
-rabi_freqs_fromimport = genfromtxt('calculations/rydberg/data/rdme_values_fit.csv', delimiter=',')
+# rabi freq vs n unit is in Hz
+rabi_freqs_fromimport = genfromtxt('calculations/rydberg/data/rabi_freq_vs_n.csv', delimiter=',')
 rabi_freqs = np.delete(rabi_freqs_fromimport, indices_to_delete)
 
 # %% compute C6 coefficients and Rydberg blockade radius
@@ -49,7 +49,10 @@ c6_overn11_array = np.array(c6_overn11_list)
 c6_array = np.array(c6_list)
 
 # Blockade radius
-blockade_radius = (abs(c6_array[:,0]) / rabi_freqs)**(1/6)
+
+# C6 coeff in terms of GHz, convert to Hz
+c6_Hz = c6_array[:,0] * 1e9
+blockade_radii = (abs(c6_Hz) / rabi_freqs)**(1/6)
 
 # %% plotting
 
@@ -75,10 +78,13 @@ ax2.set_xlabel('$n$')
 ax2.set_ylabel('$|C_6|$ [GHz $\mu$m$^6$]')
 
 fig3, ax3 = plt.subplots()
-ax3.plot(n_values_plot, rabi_freqs)
+ax3.grid()
+
+ax3.plot(n_values_plot, blockade_radii)
 
 ax3.set_xlabel('$n$')
-ax3.set_ylabel('Rabi frequency')
+ax3.set_ylabel('Blockade radius [$\mu$m]')
+
 
 plt.show()
 
