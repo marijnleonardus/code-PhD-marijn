@@ -42,7 +42,7 @@ def calculate_c6_coefficients(n, l, j, mj):
     
     c6, eigenvectors = calc.getC6perturbatively(theta, phi, 
                                                 deltaN, deltaE,
-                                                degeneratePerturbation=True)
+                                                degeneratePerturbation=False)
     # getC6perturbatively returns the C6 coefficients
     # expressed in units of GHz mum^6.
     
