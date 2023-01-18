@@ -17,7 +17,6 @@ t = c**2 * alpha**2
 
 # %% functions
 
-
 def rate_to_rdme(Aki, J, En1, En2):
     """
     from Einstein coefficient to Radial density matrix element
