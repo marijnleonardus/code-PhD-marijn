@@ -11,6 +11,7 @@ from functions.conversion_functions import (wavelength_to_freq,
                                             gaussian_beam_intensity,
                                             cylindrical_gaussian_beam,
                                             rdme_to_rabi)
+from classes.rates import LightAtomInteraction
 
 # %% variables
 
@@ -29,6 +30,14 @@ rabi_plot_waist = 200e-6  # m
 
 # cylindrical beam
 waist_y = 20e-6  # m
+
+# off-resonant scattering
+off_resonant_linewidth = 2 * np.pi * 32e6  # rad
+
+# detuning from rydberg to 461 nm, relevant for offresonant scattering
+rydberg_wavelength = 317e-9  # m
+blue_wavelength = 461e-9  # m
+off_resonant_detuning = wavelength_to_freq(rydberg_wavelength) - wavelength_to_freq(blue_wavelength)
 
 
 # %% Compute linewidths and rabi frequencies 
@@ -76,7 +85,14 @@ for power in power_array:
     cylindrical_rabi_list.append(rabi)
     
 rabi_array_cylindrical = np.array(cylindrical_rabi_list)
-    
+
+# compute off-resonant scattering rate
+
+scatter_rate = LightAtomInteraction.off_resonant_scattering(off_resonant_linewidth,
+                                                            off_resonant_detuning, 
+                                                            blue_wavelength, 
+                                                            waist_y, 
+                                                            laser_power)
 
 # %% Plotting
 
