@@ -139,6 +139,17 @@ def cylindrical_gaussian_beam(waist_x, waist_y, power):
     return I0
 
 
+def saturation_intensity(lifetime, wavelength):
+    """
+    inputs:
+    - wavelength in m
+    - excited state lifetime tau in s
+
+    returns:
+    - saturation intensity
+    """
+    isat = np.pi * (hbar * 2 * np.pi) * c / (3 * lifetime * wavelength**3)
+    return isat
 
 # #magnetic field in Gauss to magnetic field in Tesla
 # def gauss_to_tesla(B):
