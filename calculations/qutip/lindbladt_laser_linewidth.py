@@ -4,6 +4,7 @@
 import qutip as qt
 import matplotlib.pyplot as plt
 import numpy as np
+from classes.plotting_class import Plotting
 
 # %% variables
 
@@ -32,14 +33,16 @@ rho0 = qt.ket2dm(psi0)
 time = np.linspace(0.0, 50.0, 1000)
 
 # solve equation taking into account loss channel
-lindbladt_spont_em = gamma_r * (qt.sigmaz() - 0.5 * qt.sigmax())
+lindblad_spont_em = gamma_r * (qt.sigmaz() - 0.5 * qt.sigmax())
 
-lindbladt_linewidth = -linewidth * qt.sigmax()
+lindblad_linewidth = -linewidth * qt.sigmax()
 
-lindbladt_total = lindbladt_spont_em + lindbladt_linewidth
+
+lindblad_total = lindblad_spont_em + lindblad_linewidth
+lindblad_total = 0 * qt.sigmax()
 
 result = qt.mesolve(hamiltonian, rho0, time,
-                   c_ops=lindbladt_total)
+                   c_ops=lindblad_total)
 
 population_g = np.real(qt.expect(result.states, qt.projection(2, 1, 1)))
 population_e = np.real(qt.expect(result.states, qt.projection(2, 0, 0)))
@@ -48,18 +51,20 @@ coherence = np.real(qt.expect(result.states, qt.projection(2, 0, 1)))
 
 # %% Plotting
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(4,3))
 ax.grid()
 
 #ax.plot(result.times, population_g, label=r'$\rho_{gg}$')
 ax.plot(result.times, population_e, label=r'$\rho_{ee}$')
 #ax.plot(result.times, coherence, label=r'$\rho_{eg}$')
 
- 
 
 ax.set_xlabel('Time [qutip units]') 
 ax.set_ylabel('Population') 
 ax.set_ylim([0, 1])
 ax.legend()
+
+Plotting.saving('calculations/rydberg/output/',
+                'population_vs_time.png')
 
 plt.show() 
