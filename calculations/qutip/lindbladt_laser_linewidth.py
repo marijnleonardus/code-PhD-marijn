@@ -9,13 +9,13 @@ from classes.plotting_class import Plotting
 # %% variables
 
 rabi = 2 * np.pi * 1
-detuning = 2 * np.pi * 0.1
+detuning = 2 * np.pi * 0.0
 
 # rydberg inverse lifetime
-gamma_r = 2 * np.pi * 0.01
+gamma_r = 2 * np.pi * 0.00000001
 
 # linewidth
-linewidth = 2 * np.pi * (1e3/1e6)
+linewidth = 2 * np.pi * (1e4/1e6)
 
 # %% calculation
 
@@ -30,16 +30,15 @@ psi0 = qt.basis(2, 1)
 rho0 = qt.ket2dm(psi0)
 
 # time matrix
-time = np.linspace(0.0, 50.0, 1000)
+time = np.linspace(0.0, 10.0, 200)
 
 # solve equation taking into account loss channel
 lindblad_spont_em = gamma_r * (qt.sigmaz() - 0.5 * qt.sigmax())
 
 lindblad_linewidth = -linewidth * qt.sigmax()
 
-
 lindblad_total = lindblad_spont_em + lindblad_linewidth
-lindblad_total = 0 * qt.sigmax()
+
 
 result = qt.mesolve(hamiltonian, rho0, time,
                    c_ops=lindblad_total)
@@ -51,20 +50,20 @@ coherence = np.real(qt.expect(result.states, qt.projection(2, 0, 1)))
 
 # %% Plotting
 
-fig, ax = plt.subplots(figsize=(4,3))
+fig, ax = plt.subplots(figsize=(4, 3))
 ax.grid()
 
-#ax.plot(result.times, population_g, label=r'$\rho_{gg}$')
 ax.plot(result.times, population_e, label=r'$\rho_{ee}$')
+#ax.plot(result.times, population_g, label=r'$\rho_{gg}$')
 #ax.plot(result.times, coherence, label=r'$\rho_{eg}$')
 
 
-ax.set_xlabel('Time [qutip units]') 
+ax.set_xlabel(r'Time [$2\pi / \Omega$]') 
 ax.set_ylabel('Population') 
 ax.set_ylim([0, 1])
 ax.legend()
 
-Plotting.saving('calculations/rydberg/output/',
+Plotting.saving('calculations/qutip/output/',
                 'population_vs_time.png')
 
 plt.show() 
