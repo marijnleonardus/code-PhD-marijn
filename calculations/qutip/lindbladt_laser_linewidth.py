@@ -19,7 +19,7 @@ laser_linewidth = 2 * np.pi * 1e6 # Hz
 rydberg_lifetime = 100e-6  # s for n=61 from Madhav paper
 
 # time matrix
-time = np.linspace(0.0, 200., 1000) 
+time = np.linspace(0.0, 100., 1000) 
 
 # %% convert units
 
@@ -73,12 +73,12 @@ coherence = np.real(qt.expect(result.states, qt.projection(2, 0, 1)))
 fig, ax = plt.subplots(figsize=(4, 3))
 ax.grid()
 
-ax.plot(result.times, population_r, label=r'$\rho_{rr}$')
+ax.plot(result.times / (2*np.pi), population_r, label=r'$\rho_{rr}$')
 #ax.plot(result.times, population_g, label=r'$\rho_{gg}$')
 #ax.plot(result.times, coherence, label=r'$\rho_{eg}$')
 
 ax.set_title(r'Population of $|r\rangle = (61sns){}^3S_1$')
-ax.set_xlabel(r'Time [$2\pi/ \Omega$]') 
+ax.set_xlabel(r'Time [$1/ \Omega$]') 
 ax.set_ylabel('Population') 
 ax.set_ylim([0, 1])
 ax.legend()
