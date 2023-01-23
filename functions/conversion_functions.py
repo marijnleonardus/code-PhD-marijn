@@ -192,6 +192,18 @@ def compute_stark_shift(rabi_freq, detuning):
     stark_shift = rabi_freq**2 / (4 *detuning)
     return stark_shift
 
+def get_atomic_pol_unit():
+    """
+    inputs:
+        - bohr radius [m]
+        - hatree energy unit [J]
+    returns:
+        -atomic polarizability unit
+    """
+    
+    au = e0**2 * a0**2 / hartree_energy
+    return au
+
 # #magnetic field in Gauss to magnetic field in Tesla
 # def gauss_to_tesla(B):
 #     return B*10**(-4)

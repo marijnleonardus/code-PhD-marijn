@@ -2,6 +2,8 @@
 # 2023
 
 from arc import Strontium88, PairStateInteractions
+from functions.conversion_functions import get_atomic_pol_unit
+from scipy.constants import c, epsilon_0
 
 
 def calculate_c6_coefficients(n, l, j, mj):
@@ -52,3 +54,24 @@ def calculate_c6_coefficients(n, l, j, mj):
     # These results should still be divided by n^{11}
     # to be plotted as in Fig. 2(c).
     return c6
+
+ 
+def ac_stark_shift_polarizability(alpha, intensity):
+    """    
+    compute AC Stark shift given intensity and polarizability alpha
+    
+    inputs;
+    - polarability alpha
+    - intensity [W/m^2]
+    
+    returns:
+    - AC stark shift"""
+    
+    # atomic polarizability
+    atomic_polarizability = get_atomic_pol_unit()
+    
+    # stark shift
+    shark_shift = alpha * atomic_polarizability / (2 * c * epsilon_0) * intensity
+    return shark_shift
+
+
