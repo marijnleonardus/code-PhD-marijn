@@ -67,6 +67,19 @@ def rabi_freq_to_rate(intensity, rabi_freq, omega21):
     return rate
 
 
+def intensity_to_electric_field(intensity):
+    """
+    inputs:
+    - intensity [W/m^2]
+    
+    returns:
+    - electric field strength [V/m]
+    """
+    electric_field_square = 2 * intensity / (c * eps0)
+    electric_field = np.sqrt(electric_field_square)
+    return electric_field
+
+
 def wavelength_to_freq(wavelength):
     """
     inputs:
@@ -149,6 +162,35 @@ def saturation_intensity(lifetime, wavelength):
     """
     isat = np.pi * (hbar * 2 * np.pi) * c / (3 * lifetime * wavelength**3)
     return isat
+
+
+def compute_rabi_freq(rdme, electric_field):
+    """
+    inputs:
+    - rdme in atomic units [a_0 * e]
+    - intensity in [W / m^2]
+    
+    returns:
+    - rabi frequency
+    """
+    # convert to SI units from atomic
+    rdme_se = abs(rdme *a0 * e0) # coulom * m
+
+    # compute rabi frequency
+    omega = electric_field / hbar * rdme_se
+    return omega
+
+def compute_stark_shift(rabi_freq, detuning):
+    """
+    inputs:
+    - rabi frequency in [Hz]
+    - detuning in [Hz]
+    
+    returns:
+    - AC Stark shift in [Hz]
+    """
+    stark_shift = rabi_freq**2 / (4 *detuning)
+    return stark_shift
 
 # #magnetic field in Gauss to magnetic field in Tesla
 # def gauss_to_tesla(B):

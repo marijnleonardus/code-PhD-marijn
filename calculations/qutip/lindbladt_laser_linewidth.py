@@ -6,14 +6,13 @@
 import qutip as qt
 import matplotlib.pyplot as plt
 import numpy as np
-from classes.plotting_class import Plotting
 
 # %% variables
 
 # laser
-laser_rabi_frequency = 2 * np.pi * 10e6  # Hz
+laser_rabi_frequency = 0
 laser_detuning = 2 * np.pi * 0  # Hz
-laser_linewidth = 2 * np.pi * 1e6 # Hz
+laser_linewidth = 2 * np.pi * 0. # Hz
 
 # rydberg lifetime
 rydberg_lifetime = 100e-6  # s for n=61 from Madhav paper
@@ -53,7 +52,9 @@ def integrate_qubit_population():
 
     # define lindblad operators and the total lindbladt superoperator
     lindblad_spont_em = rydberg_decay_rate * (qt.sigmaz() - 0.5 * qt.sigmax())
+    
     lindblad_linewidth = laser_linewidth * qt.sigmax()
+    
     lindblad_total = [lindblad_spont_em, lindblad_linewidth]
     
     # solve master equation given hamiltonian, initial state rho0, 
@@ -82,8 +83,5 @@ ax.set_xlabel(r'Time [$1/ \Omega$]')
 ax.set_ylabel('Population') 
 ax.set_ylim([0, 1])
 ax.legend()
-
-Plotting.saving('calculations/qutip/output/',
-                'population_vs_time.png')
 
 plt.show() 
