@@ -20,8 +20,6 @@ linewidth_repump = 9e6  # Hz
 
 # %% execution
 
-
-
 def get_rdme():
     
     # get ARC radial dipole matrix element from 3P0, mj=0 to (6sns) 3S1, mj = 0 
@@ -52,7 +50,7 @@ def print_stark_scatter(wavelength, power, numerical_aperture,  detuning, waist,
     
     # compute rabi frequency of transition
     rabi_freq = compute_rabi_freq(rdme, electric_field_strength)
-    
+    print(rabi_freq)
     # compute stark shift
     stark_shift = compute_stark_shift(rabi_freq, detuning)
     print("Stark shift: " + str(stark_shift * 1e-9) + " GHz")

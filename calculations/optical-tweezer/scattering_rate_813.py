@@ -4,6 +4,9 @@
 from scipy.constants import hbar
 from classes.optics_class import Optics
 from functions.atomic_data_functions import ac_stark_shift_polarizability
+from classes.rates import LightAtomInteraction
+import numpy as np
+
 
 # %% variables
 
@@ -14,7 +17,9 @@ polarizability = 286  # [au], atomic units at 813 nm, source: Madjarov thesis
 beam_waist = 0.82e-6  # [m]
 
 # power in 813 AOD beam
-power_atoms = 10e-3  # W
+power_atoms = 10e-3  # Wz
+
+# %% execution
 
 # compute intensity of AOD moveable tweezer
 intensity_813 = Optics.gaussian_beam_intensity(beam_waist, power_atoms)
@@ -24,11 +29,8 @@ ac_stark_shift_joule = ac_stark_shift_polarizability(polarizability, intensity_8
 
 # compute AC stark shift in Hz
 ac_stark_shift_hz = ac_stark_shift_joule / hbar
-print("AC stark shift is: " + str(ac_stark_shift_hz * 1e-6) + " MHz")
+print("AC stark shift is: " + str(np.round(ac_stark_shift_hz * 1e-6,1)) + " MHz")
 
-ac_stark_K = ac_stark_shift_joule / 1.38e-23 
-ac_stark_mK = 1e3 *ac_stark_K
 
- 
 
 
