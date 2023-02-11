@@ -16,9 +16,9 @@ pi=np.pi
 
 def compute_doppler_broadening_fwhm(wavelength, temperature):
     
-    """source: de Leseluc et. al (2018) doi.org/10.1103/PhysRevA.97.053803
-    
-    doppler-broadening as a result of spread in velocity
+    """
+    computes doppler-broadening as a result of spread in velocity
+    source formulaa; de Leseluc et. al (2018) doi.org/10.1103/PhysRevA.97.053803
     
     inputs:
     - wavenumber
@@ -28,12 +28,18 @@ def compute_doppler_broadening_fwhm(wavelength, temperature):
     - doppler-broadening (FWHM) 
     """
     
-    wavenumber=2*np.pi/wavelength
+    wavenumber=2*pi/wavelength
+
+    # assuming 1D-maxwell-boltzmann distribution
     velocity_spread=np.sqrt(Boltzmann*temperature/atom_mass)
-    fwhm = 2*np.log(2)*velocity_spread
+
+    # compute standard deviation in doppler-broadening
+    sigma=wavenumber*velocity_spread
+
+    # convert sigma to fwhm to match defenition linewidth
+    fwhm = 2*np.log(2)*sigma
     return fwhm
 
-doppler_broadening = compute_doppler_broadening(wavelength, temperature)
-
-print('Doppler broadening is ~ 2pi times ' + str(doppler_broadening) + 'Hz')
+doppler_broadening = compute_doppler_broadening_fwhm(wavelength, temperature)
+print('Doppler broadening is ~ 2pi times ' + str(doppler_broadening/(2*pi)) + 'Hz')
 
