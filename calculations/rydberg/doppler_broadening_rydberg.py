@@ -37,7 +37,7 @@ def compute_doppler_broadening_fwhm(wavelength, temperature):
     sigma=wavenumber*velocity_spread
 
     # convert sigma to fwhm to match defenition linewidth
-    fwhm = 2*np.log(2)*sigma
+    fwhm = 2*np.sqrt(2*np.log(2))*sigma
     return fwhm
 
 doppler_broadening = compute_doppler_broadening_fwhm(wavelength, temperature)
