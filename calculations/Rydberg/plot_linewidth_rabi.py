@@ -11,7 +11,6 @@ from functions.conversion_functions import (wavelength_to_freq,
                                             gaussian_beam_intensity,
                                             cylindrical_gaussian_beam,
                                             rdme_to_rabi)
-from classes.rates import LightAtomInteraction
 
 # %% variables
 
@@ -30,14 +29,6 @@ rabi_plot_waist = 200e-6  # m
 
 # cylindrical beam
 waist_y = 20e-6  # m
-
-# off-resonant scattering
-off_resonant_linewidth = 2 * np.pi * 32e6  # rad
-
-# detuning from rydberg to 461 nm, relevant for offresonant scattering
-rydberg_wavelength = 317e-9  # m
-blue_wavelength = 461e-9  # m
-off_resonant_detuning = wavelength_to_freq(rydberg_wavelength) - wavelength_to_freq(blue_wavelength)
 
 
 # %% Compute linewidths and rabi frequencies 
@@ -69,7 +60,6 @@ rdme_61 = rdme_values_fit[n_61]
 # compute gaussian beam rabi frequencies
 rabi_array = []
 cylindrical_rabi_array = []
-off_res_rate_array = []
 
 for power in power_array:
     # circular gaussian beam
@@ -82,18 +72,9 @@ for power in power_array:
     rabi_cylindrical = rdme_to_rabi(rdme_61, intensity_cylindrical)
     cylindrical_rabi_array.append(rabi_cylindrical)
     
-    # off resonant scattering rate
-    off_res_rate = LightAtomInteraction.scattering_rate_power(off_resonant_linewidth,
-                                                              off_resonant_detuning, 
-                                                              blue_wavelength, 
-                                                              waist_y, 
-                                                              power)
-    off_res_rate_array.append(off_res_rate)
-    
 # convert to np array
 rabi_array = np.array(rabi_array)
 cylindrical_rabi_array = np.array(cylindrical_rabi_array)
-off_res_rate_array = np.array(off_res_rate_array)
 
 # %% Plotting
 
@@ -149,13 +130,3 @@ ax4.plot(power_array / 1e-3,
 ax4.set_xlabel('Laser power [mW]')
 ax4.set_ylabel(r'Rabi frequency $\Omega$ [$2\pi \cdot$ MHz]')
 ax4.legend()
-
-ax5 = ax4.twinx()
-ax5.plot(power_array / 1e-3,
-         off_res_rate_array, 
-         'r',
-         label=r'Off-resonant scattering, $n=61$, $w_0=200$ $\mu$m')
-ax5.set_ylabel('Off-resonant scattering rate [rad/s]',
-               color = 'red')
-ax5.legend(loc='lower right')
-

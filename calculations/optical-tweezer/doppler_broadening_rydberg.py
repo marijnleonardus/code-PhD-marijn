@@ -4,22 +4,13 @@
 from scipy.constants import Boltzmann, c, proton_mass
 import numpy as np
 
-
-# %% variables
-
 temperature = 1e-6  # K
 mass = 88 * proton_mass
 wavelength = 317e-9
+pi = np.pi
 
-# %% compute doppler broadening
+angular_frequency = 2 * pi * c / wavelength
+doppler_broadened = 2 * angular_frequency / c * np.sqrt(2 * np.log(2) * Boltzmann * temperature / mass)
 
-def compute_doppler_broadening(wavelength, temperature):
-    
-    angular_freq = 2 * np.pi * c / wavelength   
-    fwhm = np.sqrt(8 * Boltzmann * temperature * np.log(2) / (mass * c**2)) * angular_freq
-    return fwhm
-
-doppler_broadening = compute_doppler_broadening(wavelength, temperature)
-
-print('Doppler broadening is ~ 2pi times ' + str(doppler_broadening) + 'Hz')
+print('omega/2pi is ' + str(np.round(doppler_broadened / 1e3)) + ' kHz')
 
