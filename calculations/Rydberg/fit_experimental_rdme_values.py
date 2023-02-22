@@ -60,7 +60,7 @@ n_values = np.arange(19, 41)
 rdme_values = genfromtxt("calculations/rydberg/data/data_Tan2022.csv", delimiter=',')
 
 # fit data, guess is slope is 2.0
-popt_rdme, _ = curve_fit(fit_gr_dependence, n_values, rdme_values, p0=[2.0])
+popt_rdme, _ = curve_fit(fit_gr_dependence, n_values, rdme_values, p0=[1.7])
 
 # generate extrapolation by extenting fit data to higher n
 n_values_plot = np.arange(19, 70)

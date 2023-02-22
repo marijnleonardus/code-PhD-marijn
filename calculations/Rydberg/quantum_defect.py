@@ -15,12 +15,12 @@ start_n = 5
 end_n = 40
 number_n = end_n - start_n + 1
 
-n_array = np.linspace(start_n, end_n, number_n)
+n_array = np.linspace(5, 40, 40-5+1)
 
 defect_list = []
 
 for n in n_array:
-    # n, l, j. s=1 becaues triplet
+    # n, l, j. s=1 because triplet
     defect = atom.getQuantumDefect(n, 0, 1, s=1)
     defect_list.append(defect)
     
