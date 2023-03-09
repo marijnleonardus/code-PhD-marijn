@@ -1,0 +1,147 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      4001,        139]
+NotebookOptionsPosition[      3396,        113]
+NotebookOutlinePosition[      3777,        129]
+CellTagsIndexPosition[      3734,        126]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{"populationrr", "=", 
+  RowBox[{
+   FractionBox["1", "2"], 
+   RowBox[{"(", 
+    RowBox[{"1", "-", 
+     RowBox[{
+      RowBox[{"Exp", "[", 
+       RowBox[{
+        FractionBox[
+         RowBox[{"-", "1"}], "2"], 
+        SuperscriptBox["\[Sigma]", 
+         RowBox[{" ", "2"}]], " ", 
+        SuperscriptBox["\[CapitalOmega]", "2"], " ", 
+        SuperscriptBox["t", 
+         RowBox[{"2", " "}]]}], "]"}], 
+      RowBox[{"Cos", "[", 
+       RowBox[{"\[CapitalOmega]", " ", "t"}], "]"}]}]}], ")"}]}]}]], "Input",
+ CellChangeTimes->{{3.887356989765098*^9, 3.887357035070588*^9}, {
+  3.8873571447487125`*^9, 3.8873571476257353`*^9}, {3.887367205107972*^9, 
+  3.887367273852786*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  FractionBox["1", "2"], " ", 
+  RowBox[{"(", 
+   RowBox[{"1", "-", 
+    RowBox[{
+     SuperscriptBox["\[ExponentialE]", 
+      RowBox[{
+       RowBox[{"-", 
+        FractionBox["1", "2"]}], " ", 
+       SuperscriptBox["t", "2"], " ", 
+       SuperscriptBox["\[Sigma]", "2"], " ", 
+       SuperscriptBox["\[CapitalOmega]", "2"]}]], " ", 
+     RowBox[{"Cos", "[", 
+      RowBox[{"t", " ", "\[CapitalOmega]"}], "]"}]}]}], ")"}]}]], "Output",
+ CellChangeTimes->{
+  3.8873570360516186`*^9, 3.8873571482064066`*^9, {3.887367262211972*^9, 
+   3.887367304267146*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"pipulsefidelity", "=", 
+  RowBox[{"populationrr", "/.", 
+   RowBox[{"t", "\[Rule]", 
+    RowBox[{"{", 
+     RowBox[{"\[Pi]", "/", "\[CapitalOmega]"}], "}"}]}]}]}]], "Input",
+ CellChangeTimes->{{3.887357037351819*^9, 3.8873570457892685`*^9}, {
+  3.887357105961251*^9, 3.8873571067033415`*^9}, {3.887367279400467*^9, 
+  3.887367309517686*^9}}],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   FractionBox["1", "2"], " ", 
+   RowBox[{"(", 
+    RowBox[{"1", "+", 
+     SuperscriptBox["\[ExponentialE]", 
+      RowBox[{
+       RowBox[{"-", 
+        FractionBox["1", "2"]}], " ", 
+       SuperscriptBox["\[Pi]", "2"], " ", 
+       SuperscriptBox["\[Sigma]", "2"]}]]}], ")"}]}], "}"}]], "Output",
+ CellChangeTimes->{
+  3.88735704623659*^9, 3.887357106943347*^9, 3.8873571504023*^9, {
+   3.8873672980166597`*^9, 3.8873673119905224`*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"pipulsefidelity", "/.", 
+  RowBox[{"{", 
+   RowBox[{"\[Sigma]", "\[Rule]", "0.008"}], "}"}]}]], "Input",
+ CellChangeTimes->{
+  3.887357107828528*^9, {3.887357160488603*^9, 3.8873571639792852`*^9}, {
+   3.8873673197958965`*^9, 3.8873673262370515`*^9}}],
+
+Cell[BoxData[
+ RowBox[{"{", "0.9998421112636848`", "}"}]], "Output",
+ CellChangeTimes->{
+  3.887357164430771*^9, {3.887367320796625*^9, 3.8873673266822753`*^9}}]
+}, Open  ]],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.8873571095784717`*^9, 3.887357122688848*^9}, {
+  3.88735715981199*^9, 3.8873571674685264`*^9}}]
+},
+WindowSize->{1099, 876},
+WindowMargins->{{206, Automatic}, {1008, Automatic}},
+Magnification:>1.6 Inherited,
+FrontEndVersion->"11.0 for Microsoft Windows (64-bit) (September 21, 2016)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 704, 20, 75, "Input"],
+Cell[1287, 44, 584, 17, 67, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1908, 66, 365, 8, 48, "Input"],
+Cell[2276, 76, 481, 14, 67, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2794, 95, 275, 6, 48, "Input"],
+Cell[3072, 103, 161, 3, 81, "Output"]
+}, Open  ]],
+Cell[3248, 109, 144, 2, 48, "Input"]
+}
+]
+*)
+

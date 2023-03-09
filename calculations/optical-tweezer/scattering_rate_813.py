@@ -2,22 +2,22 @@
 # january 2023
 
 from scipy.constants import hbar
-from classes.optics_class import Optics
+from lib.optics_class import Optics
 from functions.atomic_data_functions import ac_stark_shift_polarizability
-from classes.rates import LightAtomInteraction
+from lib.rates_class import LightAtomInteraction
 import numpy as np
 
 
 # %% variables
 
 # Sr 88
-polarizability = 286  # [au], atomic units at 813 nm, source: Madjarov thesis
+polarizability = 500  # [au], atomic units at 813 nm, source: Madjarov thesis
 
 # tweezer parameters
 beam_waist = 0.82e-6  # [m]
 
 # power in 813 AOD beam
-power_atoms = 10e-3  # Wz
+power_atoms = 20e-3  # Wz
 
 # %% execution
 
