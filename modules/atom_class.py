@@ -82,7 +82,7 @@ class VanDerWaals:
         returns
         ----------------
         c6: float
-            van der waals interaction coefficient in GHz/mum^6
+            van der waals interaction coefficient in [h GHz mum^6]
             
         example
         -------------
@@ -101,7 +101,7 @@ class VanDerWaals:
         deltaE = 30e9  # in [Hz]
         
         # getC6perturbatively returns the C6 coefficients
-        # expressed in units of GHz mum^6.
+        # expressed in units of h GHz mum^6.
         c6, eigenvectors = calc.getC6perturbatively(theta, phi, 
                                                     deltaN, deltaE,
                                                     degeneratePerturbation=True)

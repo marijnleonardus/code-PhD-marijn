@@ -15,6 +15,8 @@ from modules.atom_class import VanDerWaals
 
 # %% variables
 
+pi=np.pi
+
 # array of n values
 n_start = 50
 n_end = 100
@@ -61,8 +63,9 @@ c6_array = np.array(c6_array)
 
 # Blockade radius
 
-# C6 coeff in terms of GHz/um^6 to Hz/um^6
-c6_Hz = c6_array*1e9
+# C6 coeff in terms of h GHz/um^6 to h Hz/um^6
+# multiply with 2pi to make it an angular freq. 
+c6_Hz = c6_array*1e9*2*pi
 
 # compute blockade raddi for low and high estimates 
 blockade_radii_low = (abs(c6_Hz)/rabi_freqs_low)**(1/6)

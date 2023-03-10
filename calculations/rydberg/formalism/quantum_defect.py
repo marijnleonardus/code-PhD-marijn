@@ -1,6 +1,11 @@
 # author: Marijn Venderbosch
 # january 2023
 
+# needed for vscode
+import sys
+import os
+sys.path.append(os.getcwd())
+
 from arc import Strontium88
 import numpy as np
 import matplotlib.pyplot as plt

@@ -1,6 +1,10 @@
 # author: Marijn Venderbosch
 # november 2022
 
+# needed for vscode
+import sys
+import os
+sys.path.append(os.getcwd())
 
 from scipy.constants import electron_mass, hbar, c, pi, e
 from arc import Strontium88, C_Rydberg
