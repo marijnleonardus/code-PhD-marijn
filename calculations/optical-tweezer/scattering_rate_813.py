@@ -2,9 +2,9 @@
 # january 2023
 
 from scipy.constants import hbar
-from lib.optics_class import Optics
+from modules.optics_class import Optics
 from functions.atomic_data_functions import ac_stark_shift_polarizability
-from lib.rates_class import LightAtomInteraction
+from modules.rates_class import LightAtomInteraction
 import numpy as np
 
 

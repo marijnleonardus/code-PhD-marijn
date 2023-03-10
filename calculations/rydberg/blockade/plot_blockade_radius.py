@@ -8,10 +8,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 
-from lib.conversion_class import Conversion
-from lib.optics_class import Optics
-from lib.rates_class import LightAtomInteraction 
-from lib.atom_class import VanDerWaals
+from modules.conversion_class import Conversion
+from modules.optics_class import Optics
+from modules.rates_class import LightAtomInteraction 
+from modules.atom_class import VanDerWaals
 
 # %% variables
 

@@ -171,3 +171,4 @@ dmypy.json
 *.sif
 Plots/Knife edge method/data.csv
 .vscode/launch.json
+.vscode/settings.json

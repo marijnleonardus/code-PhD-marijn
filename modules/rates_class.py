@@ -1,7 +1,7 @@
 # author: Marijn Venderbosch
 # january 2023
 
-from lib.conversion_class import Conversion
+from modules.conversion_class import Conversion
 from arc import Strontium88
 from scipy.constants import e
 import scipy

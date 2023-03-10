@@ -1,9 +1,10 @@
 # author: Marijn Venderbosch
 # november 2022
 
+
 from scipy.constants import electron_mass, hbar, c, pi, e
 from arc import Strontium88, C_Rydberg
-from lib.conversion_class import Conversion
+from modules.conversion_class import Conversion
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
