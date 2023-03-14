@@ -2,13 +2,13 @@
 # january 2023
 
 import numpy as np
-from classes.optics_class import Optics
+from modules.optics_class import Optics
 
 
 # %% variables
 wavelength_rydberg = 317e-9
 numerical_aperture = 0.5
-atom_spacing = 4e-6
+atom_spacing = 5e-6
 
 
 # %% 
