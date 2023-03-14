@@ -111,3 +111,7 @@ ax2.set_ylim(40, 70)
 ax2.legend()
 
 plt.show()
+
+print(wavelengths_3p0[11])
+print(c/316.6395e-9)
+print(c/wavelengths_3p0[11])

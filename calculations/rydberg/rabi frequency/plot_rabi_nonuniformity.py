@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-atom_separation = 5e-6  # [m]
+atom_separation = 4e-6  # [m]
 array_size = 5  # 5x5 atoms
 max_distance_center = atom_separation*array_size/2  
 uniformity_crit = 0.99  # how uniform should rabi freq be accross array
