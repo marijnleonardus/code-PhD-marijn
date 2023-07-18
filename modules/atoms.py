@@ -102,9 +102,8 @@ class VanDerWaals:
         
         # getC6perturbatively returns the C6 coefficients
         # expressed in units of h GHz mum^6.
-        c6, eigenvectors = calc.getC6perturbatively(theta, phi, 
-                                                    deltaN, deltaE,
-                                                    degeneratePerturbation=True)
+        c6, eigenvectors = calc.getC6perturbatively(
+            theta, phi, deltaN, deltaE, degeneratePerturbation=True)
         c6=c6[0]
         return c6
     
