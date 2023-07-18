@@ -6,7 +6,7 @@ atom = Strontium88()
 
 # variables
 
-n_from = 4
+n_from = 5
 n_to = 6
 
 l_from = 0

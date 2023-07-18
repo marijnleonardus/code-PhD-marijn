@@ -12,6 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.fft import fft,fftfreq
 from scipy import signal
+from scipy.integrate import quad
 
 #%% variables
 
@@ -39,7 +40,7 @@ def FM_modulation_sinuoidal(time_array):
     return FM
 
 
-def write_linear_ramp(fmod, freq_carrier, index_mod):
+def linear_ramp(fmod, freq_carrier, index_mod, time_array):
     """
     linear frequency modulation ramp, to write to the DDS
 
@@ -58,19 +59,19 @@ def write_linear_ramp(fmod, freq_carrier, index_mod):
         the ramp to write to the DDS.
 
     """
-    
     sawtooth = -0.5*signal.sawtooth(2*pi*fmod*time_array) - 0.5
     ramp = freq_carrier + index_mod*fmod*sawtooth
     return ramp
 
 
-ramp = write_linear_ramp(mod_freq, carrier_freq, mod_index)
+ramp = linear_ramp(mod_freq, carrier_freq, mod_index, time_array)
 
 
-def modulated_signal(frequency_array, t, freq_carrier, index_mod):
-    phase = 2*pi*freq_carrier*t + 2*pi*index_mod*freq_carrier*np.quad(ramp, 0, t)
-    FM = np.cos(phase)
-    return FM
+FM = np.zeros(len(time_array))
+
+for t in range(len(time_array)):
+    phase = quad(linear_ramp(mod_freq, carrier_freq, mod_index), 0, t)
+    d = np.cos(phase)
 
 Y = fft(FM_modulation_sinuoidal(time_array))
 xf = fftfreq(nr_samples, carrier_period)[:nr_samples//2]
