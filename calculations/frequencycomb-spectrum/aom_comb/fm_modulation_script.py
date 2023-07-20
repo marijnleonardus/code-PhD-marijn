@@ -7,94 +7,64 @@ Created on Wed Aug 31 10:16:43 2022
 script plots spectrum of frequency modulated laser, generating a broadband comb
 it does this by computing the modulated laser in the time domain and computing FFT
 """
-
+# %%
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.fft import fft,fftfreq
-from scipy import signal
-from scipy.integrate import quad
+from freq_mod_class import FrequencyModulation
 
-#%% variables
+# %% variables
 
-pi = np.pi
+# broadband red MOT parameters
+mod_depth = 2*1e6  # [Hz]
+mod_freq = 50*1e3  # [1/s]
+carrier_freq = 80*1e6  # [1/s] 
 
-sample_freq = int(10e7) # 1/s
-nyquist_freq = sample_freq/2 # 1/s
+# %% main
 
-time_window = 1e-3  # s
-time_array = np.arange(0, time_window, 1/sample_freq)  # s
+def main():
 
-mod_freq = 20e3 # 1/s
-carrier_freq = 10e6 # 1/s for computational reasons this is lower. will only shift peak x coordinate
-mod_index = 75
+    # FFT parameters
+    sample_freq = int(carrier_freq*100)  # [1/s], s
+    time_window = 10*1/(mod_freq)
+    time_array = np.arange(0, time_window, 1/sample_freq)  # [s]
 
-nr_samples = int(sample_freq*time_window)
-carrier_period = time_window/nr_samples
+    # Compute frequency modulated signal from linear ramp
+    RedMotDDS = FrequencyModulation(mod_freq, mod_depth, carrier_freq)
+    fm_signal = RedMotDDS.linear_frequency_ramp(time_array)
+        
+    # Compute Fourier transform
+    freq_domain_signal = np.fft.fft(fm_signal)
 
+    # Compute correct frequency axes for plotting
+    nr_samples = len(freq_domain_signal)
+    sampling_period = nr_samples / sample_freq
+    freqs = np.arange(nr_samples) / sampling_period
 
-#%% modulate FM spectruma and plot FFT
+    # Remove second half, only signal up to Nyquist freq. is relevant
+    freqs = freqs[:nr_samples // 2]
+    freq_domain_signal = freq_domain_signal[:nr_samples // 2]
 
-def FM_modulation_sinuoidal(time_array):
-    phi = 2 * np.pi * carrier_freq * time_array + mod_index * np.sin(2 * np.pi * mod_freq * time_array)
-    FM = np.cos(phi)
-    return FM
+    # Normalize signal
+    freq_domain_signal = freq_domain_signal / np.max(np.abs(freq_domain_signal))
 
+    # Plot frequency domain signal
+    fig, ax = plt.subplots()
+    ax.plot(freqs/1e6, np.abs(freq_domain_signal), label='FM signal')
+    
+    # Set axes limits
+    lower_xlim = (carrier_freq - 1.5 * mod_depth)/1e6
+    upper_xlim = (carrier_freq + 0.5 * mod_depth)/1e6
+    ax.set_xlim(lower_xlim, upper_xlim)
+    ax.set_ylim(0, 1.05*np.max(np.abs(freq_domain_signal)))
 
-def linear_ramp(fmod, freq_carrier, index_mod, time_array):
-    """
-    linear frequency modulation ramp, to write to the DDS
+    ax.set_xlabel("Frequency [MHz]")
+    ax.set_ylabel("Intensity [a.u.]")
+    ax.axvline(x=carrier_freq/1e6, color="red", ls='--', label='carrier freq.')
+    ax.legend()
+    
+    plt.show()
 
-    Parameters
-    ----------
-    fmod : float
-        modulation freq = 1/T [Hz].
-    freq_carrier : float
-        carrier freq: AOM freq in [Hz].
-    index_mod : int
-        max. deviation of carrier freq = index_mod*fmod [Hz].
+if __name__=="__main__":
+    main()
 
-    Returns
-    -------
-    ramp : array of float
-        the ramp to write to the DDS.
-
-    """
-    sawtooth = -0.5*signal.sawtooth(2*pi*fmod*time_array) - 0.5
-    ramp = freq_carrier + index_mod*fmod*sawtooth
-    return ramp
-
-
-ramp = linear_ramp(mod_freq, carrier_freq, mod_index, time_array)
-
-
-FM = np.zeros(len(time_array))
-
-for t in range(len(time_array)):
-    phase = quad(linear_ramp(mod_freq, carrier_freq, mod_index), 0, t)
-    d = np.cos(phase)
-
-Y = fft(FM_modulation_sinuoidal(time_array))
-xf = fftfreq(nr_samples, carrier_period)[:nr_samples//2]
-
-
-#%% plotting
-
-fig, ax = plt.subplots()
-ax.plot(time_array, ramp)
-ax.set_xlim(0, 5*1/mod_freq)
-ax.set_xlabel('time')
-ax.set_ylabel('frequency')
-
-fig, ax = plt.subplots()
-ax.stem(xf/1e6, 2.0/nr_samples*np.abs(Y[0:nr_samples//2]), markerfmt = " ", basefmt = "b")
-ax.set_xlim((carrier_freq-1.5*mod_index*mod_freq)/1e6, (carrier_freq+1.5*mod_index*mod_freq)/1e6)
-ax.set_xlabel('frequency [MHz]')
-ax.set_ylabel('amplitude [a.u.]')
-ax.set_title('amplitude')
-
-fig, ax = plt.subplots()
-ax.stem(xf/1e6, 2.0/nr_samples*np.abs(Y[0:nr_samples//2])**2, markerfmt=" ", basefmt="b")
-ax.set_xlim((carrier_freq-1.5*mod_index*mod_freq)/1e6, (carrier_freq+1.5*mod_index*mod_freq)/1e6)
-ax.set_xlabel('frequency [MHz]')
-ax.set_ylabel('intensity [a.u.]')
-ax.set_title('intensity')
+# %%
