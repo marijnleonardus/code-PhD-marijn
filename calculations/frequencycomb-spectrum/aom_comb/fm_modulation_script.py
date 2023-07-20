@@ -43,10 +43,21 @@ def main():
     freqs = freqs[:nr_samples // 2]
     freq_domain_signal = freq_domain_signal[:nr_samples // 2]
 
+    # normalize signal
+    freq_domain_signal = freq_domain_signal / np.max(np.abs(freq_domain_signal))
+
     # Plot frequency domain signal
-    plt.plot(freqs, np.abs(freq_domain_signal))
-    plt.xlim(carrier_freq - 1.5 * mod_depth, carrier_freq + 0.5 * mod_depth)
-    plt.loglog()
+    fig, ax = plt.subplots()
+    ax.plot(freqs/1e6, np.abs(freq_domain_signal), label='FM signal')
+    
+    lower_xlim = (carrier_freq - 1.5 * mod_depth)/1e6
+    upper_xlim = (carrier_freq + 0.5 * mod_depth)/1e6
+    ax.set_xlim(lower_xlim, upper_xlim)
+    ax.set_xlabel("Frequency [MHz]")
+    ax.set_ylabel("Intensity [a.u.]")
+    ax.set_ylim(0, 1.05*np.max(np.abs(freq_domain_signal)))
+    ax.axvline(x=carrier_freq/1e6, color="red", ls='--', label='carrier freq.')
+    ax.legend()
     plt.show()
 
 if __name__=="__main__":
