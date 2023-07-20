@@ -28,26 +28,25 @@ nyquist_freq = sample_freq//2  # [1/s]
 # %% main
 
 def main():
-    # compute frequency modulated signal from linear ramp
-    RedMOTModulation = FrequencyModulation(mod_freq, mod_depth, carrier_freq)
-    fm_signal = RedMOTModulation.linear_frequency_ramp(time_array)
+    # Compute frequency modulated signal from linear ramp
+    fm_signal = FrequencyModulation(mod_freq, mod_depth, carrier_freq).linear_frequency_ramp(time_array)
 
-    # compute fourier transform
+    # Compute Fourier transform
     freq_domain_signal = np.fft.fft(fm_signal)
 
-    # compute correct frequency axes for plotting
+    # Compute correct frequency axes for plotting
     nr_samples = len(freq_domain_signal)
-    sampling_period = nr_samples/sample_freq
-    n = np.arange(nr_samples)
-    freqs = n/sampling_period
+    sampling_period = nr_samples / sample_freq
+    freqs = np.arange(nr_samples) / sampling_period
 
-    # remove second half, only signal up to nyquist freq. is relevant
-    freqs = freqs[:nr_samples//2]
-    freq_domain_signal = freq_domain_signal[:nr_samples//2]
+    # Remove second half, only signal up to Nyquist freq. is relevant
+    freqs = freqs[:nr_samples // 2]
+    freq_domain_signal = freq_domain_signal[:nr_samples // 2]
 
+    # Plot frequency domain signal
     plt.plot(freqs, np.abs(freq_domain_signal))
-    plt.xlim(carrier_freq-1.5*mod_depth, carrier_freq+0.5*mod_depth)
-    plt.log*()
+    plt.xlim(carrier_freq - 1.5 * mod_depth, carrier_freq + 0.5 * mod_depth)
+    plt.loglog()
     plt.show()
 
 if __name__=="__main__":
