@@ -10,7 +10,6 @@ it does this by computing the modulated laser in the time domain and computing F
 # %%
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.fft import fft
 from freq_mod_class import FrequencyModulation
 
 # %% variables
@@ -27,9 +26,6 @@ time_array = np.arange(0, time_window, 1/sample_freq)  # [s]
 nyquist_freq = sample_freq//2  # [1/s]
 
 # %% main
-
-def remove_second_half(matrix):
-    return matrix[1:len(matrix)//2]
 
 def main():
     # compute frequency modulated signal from linear ramp
@@ -49,9 +45,12 @@ def main():
     freqs = freqs[:nr_samples//2]
     freq_domain_signal = freq_domain_signal[:nr_samples//2]
 
-    plt.logplot(freqs, np.abs(freq_domain_signal))
+    plt.plot(freqs, np.abs(freq_domain_signal))
     plt.xlim(carrier_freq-1.5*mod_depth, carrier_freq+0.5*mod_depth)
+    plt.log*()
     plt.show()
 
 if __name__=="__main__":
     main()
+
+# %%
