@@ -39,7 +39,7 @@ class FrequencyModulation:
         """
         # generated modulation signal from sawtooth function
         mod_signal = -(0.5*signal.sawtooth(2*pi*self.mod_freq*t)+0.5)
-
+        
         # frequency modulation, formula from wiki page
         # because 'cumtrapz' function does not work on first entry, 
         # remove first entry of 't' matrix
