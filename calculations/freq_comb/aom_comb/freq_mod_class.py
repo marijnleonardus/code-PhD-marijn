@@ -39,7 +39,28 @@ class FrequencyModulation:
         """
         # generated modulation signal from sawtooth function
         mod_signal = -(0.5*signal.sawtooth(2*pi*self.mod_freq*t)+0.5)
-        
+
+        # frequency modulation, formula from wiki page
+        # because 'cumtrapz' function does not work on first entry, 
+        # remove first entry of 't' matrix
+        integral = cumtrapz(mod_signal, t)
+        phase = 2*pi*self.carrier_freq*t[1::] + 2*pi*self.mod_depth*integral
+        fm_signal = np.cos(phase)
+        return fm_signal
+    
+    def triangular_frequency_modulation(self, t: np.ndarray) -> np.ndarray:
+        """computes frequency modulated signal for triangular frequency modulation
+
+        Args:
+            t (np.ndarray): time, matrix
+
+        Returns:
+            np.ndarray: frequency as a function of time
+        """
+
+        # 0.5 means start going back halfway, producing triangular waveform
+        mod_signal = -0.25*(1+signal.sawtooth(2*pi*self.mod_freq*t, 0.5))
+
         # frequency modulation, formula from wiki page
         # because 'cumtrapz' function does not work on first entry, 
         # remove first entry of 't' matrix
