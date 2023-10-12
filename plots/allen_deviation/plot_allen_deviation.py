@@ -8,24 +8,43 @@ import matplotlib.pyplot as plt
 
 # parameters
 f0 = 194.4e12  # approximate ORS (optical reference system) refrequency [Hz]
-drift_rate = 0.09369  # cavity drift as measured by beating the ORS with RF locked comb [Hz/s]
 sample_rate = 1.0  # cavity freq. sampling rate [Hz]
 
-# import data
-file_location = 'T:\\KAT1\\Marijn\\'
+# cavity drift rates as obtained from origin linear fit
+drift_rate_holdover = 0.09369  # cavity drift as measured by beating the ORS with RF locked comb [Hz/s]
+drift_rate_gps = 0.08919  # cavity drift as measured by GPS disciplined ocillator comb lock [Hz/s]
+
+# holdover mode (no gps)
+file_location = 'T:\\KAT1\\Marijn\\FC1500measurements\\cavity drift\\'
 file_name = 'cavity_drift_originexport.csv'
 file_import_string = file_location + file_name
-df = pd.read_csv(file_import_string, delimiter=',')
+df_holdover = pd.read_csv(file_import_string, delimiter=',')
 
 # obtain time and frequencies columns and convert to np array
 # we import the beat frequencies but we need the actual frequencies
 # so add f0
-beat_frequencies = df['Comb-ORS beat'].to_numpy()
-times = df['time'].to_numpy()
-ors_freq = beat_frequencies + f0
+beat_freqs_holdover = df_holdover['Comb-ORS beat'].to_numpy()
+times_holdover = df_holdover['time'].to_numpy()
+ors_freq_holdover = beat_freqs_holdover + f0
 
 # correct for cavity drift
-ors_freq_dedrift = ors_freq + times*drift_rate
+ors_freq_holdover_dedrift = ors_freq_holdover + times_holdover*drift_rate_holdover
+
+# gps disciplined
+file_name = 'cavity_drift_originexport.csv'
+file_import_string = file_location + file_name
+df_gps = pd.read_csv(file_import_string, delimiter=',')
+
+# obtain data from import and skip first 18000 data points because something wrong with data there
+beat_freqs_gps = df_gps['Comb-ORS beat'].to_numpy()
+beat_freqs_gps = beat_freqs_gps[18000:]
+times_gps = df_gps['time'].to_numpy()
+times_gps = times_gps[18000:]
+ors_freq_gps = beat_freqs_gps + f0
+
+# correct for cavity drift
+ors_freq_gps_dedrift = ors_freq_gps + times_gps*drift_rate_gps
+
 
 def compute_frac_freqs(freq_list):
     """convert frequency value list to fractional frequency values
@@ -75,9 +94,9 @@ def calculate_allan_deviation_yuri(frequencies):
     new_m = 1
 
     # generate list of m, which are the number of samples to average over for each step
-    while new_m < len(frequencies)/3:
+    while new_m < len(frequencies)/2:
         m_list.append(new_m)
-        new_m = 3*new_m
+        new_m = 2*new_m
 
     # for each m, compute allen variance
     for m in m_list:
@@ -90,22 +109,40 @@ def calculate_allan_deviation_yuri(frequencies):
     return (m_list, allan_variance)
 
 
-
 # convert to fractional frequencies, which is needed for the allentools library functions
-ors_freqs_frac = compute_frac_freqs(ors_freq)
-ors_freqs_frac_dedrift = compute_frac_freqs(ors_freq_dedrift)
+ors_freqs_holdover_frac = compute_frac_freqs(ors_freq_holdover)
+ors_freqs_holdover_frac_dedrift = compute_frac_freqs(ors_freq_holdover_dedrift)
+
+ors_freqs_gps_frac = compute_frac_freqs(ors_freq_gps)
+ors_freqs_gps_frac_dedrift = compute_frac_freqs(ors_freq_gps_dedrift)
+
+# plot fractinal frequencies, useful for debugging
+plt.plot(ors_freqs_holdover_frac, label='holdover')
+plt.plot(ors_freqs_holdover_frac_dedrift, label='holdover, dedrift corrected')
+plt.plot(ors_freqs_gps_frac, label='gps disciplined')
+plt.plot(ors_freqs_gps_frac_dedrift, label='gps disciplined, dedrift corrected')
+plt.legend()
+#plt.show()
 
 # compute allen deviations for both data sets
-m_list, allen_var_uncorrected = calculate_allan_deviation_yuri(ors_freqs_frac)
-m_list, allen_var_dedrift = calculate_allan_deviation_yuri(ors_freqs_frac_dedrift)
+m_list_holdover, allen_var_holdover_uncorrected = calculate_allan_deviation_yuri(ors_freqs_holdover_frac)
+m_list_holdover, allen_var_holdover_dedrift = calculate_allan_deviation_yuri(ors_freqs_holdover_frac_dedrift)
+
+m_list_gps, allen_var_gps_uncorrected = calculate_allan_deviation_yuri(ors_freqs_gps_frac)
+m_list_gps, allen_var_gps_dedrift = calculate_allan_deviation_yuri(ors_freqs_gps_frac_dedrift)
+
 
 fig, ax = plt.subplots()
-ax.loglog(m_list, np.sqrt(allen_var_uncorrected))
-ax.loglog(m_list, np.sqrt(allen_var_dedrift))
+
+ax.loglog(m_list_holdover, np.sqrt(allen_var_holdover_uncorrected), 'b--', label='mode: holdover')
+ax.loglog(m_list_holdover, np.sqrt(allen_var_holdover_dedrift), 'b', label='mode: holdover, dedrift corrected')
+
+ax.loglog(m_list_gps, np.sqrt(allen_var_gps_uncorrected), 'r--', label='mode: gps-disciplined')
+ax.loglog(m_list_gps, np.sqrt(allen_var_gps_dedrift), 'r', label='mode: gps-disciplined, dedrift corrected')
 
 # write results to file
-#dataset_uncorrected.write_results("output.dat")
-#dataset_dedrift.write_results("output_dedrift.dat")
+#dataset_holdover_uncorrected.write_results("output.dat")
+#dataset_holdover_dedrift.write_results("output_dedrift.dat")
 
 
 # Plot it using the Plot clas
@@ -120,4 +157,5 @@ ax.loglog(m_list, np.sqrt(allen_var_dedrift))
 #plot.ax.set_xlabel("Tau (s)")
 #plot.ax.set_ylabel("Allan Deviation [Hz]")
 
+plt.legend()
 plt.show()
