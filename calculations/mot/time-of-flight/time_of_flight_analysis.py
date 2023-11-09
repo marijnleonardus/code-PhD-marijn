@@ -11,16 +11,17 @@ tries to extract magnification factor (unsuccesful) and temperature"""
 
 sr_mass = 88*proton_mass
 image_distance = 6.389
-object_distance = 23
 pixel_size = 3.45e-6
 bin_size = 2
 
-magnification = image_distance / object_distance
+magnification = 0.218
 cam_pixelsize = bin_size * pixel_size
 
 # %% load data
 
-df = pd.read_csv("time_of_flight.csv")
+file_location = "T:\\KAT1\\Marijn\\redmot\\time of flight\\"
+file_name = "bb_tof"
+df = pd.read_csv(file_location + file_name)
 arr = df.to_numpy()
 
 locations_pixels = arr[:, 3]
