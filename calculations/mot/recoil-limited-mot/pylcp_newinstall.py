@@ -1,17 +1,24 @@
-# %% imports
+# Marijn Venderbosch
+# dec 2022 - oct 2023
 
+"""simulates trajectories of Sr88 atoms in red MOT
+
+adapted from PyLCP example: 
+https://python-laser-cooling-physics.readthedocs.io/en/latest/examples/MOTs/10_recoil_limited_MOT.html
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 import pylcp
 import scipy.constants as cts
 from pylcp.common import progressBar
+from scipy.constants import hbar, pi
 import pathos 
 
 # %% constants
 
-k = 2*np.pi/689E-7    # cm^{-1}
+k = 2*pi/689e-7    # cm^{-1}
 x0 = 1/k              # our length scale in cm
-gamma = 2*np.pi*7.5e3 # 7.5 kHz linewidth
+gamma = 2*pi*7.5e3 # 7.5 kHz linewidth
 t0 = 1/gamma          # our time scale in s
 
 # Magnetic field gradient parameter (the factor of 3/2 comes from the
@@ -19,22 +26,22 @@ t0 = 1/gamma          # our time scale in s
 alpha = (3/2)*cts.value('Bohr magneton in Hz/T')*1e-4*8*x0/7.5E3
 
 # The unitless mass parameter:
-mass = 87.8*cts.value('atomic mass constant')*(x0*1e-2)**2/cts.hbar/t0
+mass = 87.8*cts.value('atomic mass constant')*(x0*1e-2)**2/hbar/t0
 
 # Gravity
-g = -np.array([0., 0., 9.8*t0**2/(x0*1e-2)])
+g=9.81
+g = -np.array([0., 0., g*t0**2/(x0*1e-2)])
 
 print(x0, t0, mass, alpha, g)
 
 # %%
 
-s = 25
+sat = 25
 det = -200/7.5
 
 magField = pylcp.quadrupoleMagneticField(alpha)
 
-laserBeams = pylcp.conventional3DMOTBeams(delta=det, s=s,
-                                          beam_type=pylcp.infinitePlaneWaveBeam)
+laserBeams = pylcp.conventional3DMOTBeams(delta=det, s=sat, beam_type=pylcp.infinitePlaneWaveBeam)
 
 Hg, mugq = pylcp.hamiltonians.singleF(F=0, muB=1)
 He, mueq = pylcp.hamiltonians.singleF(F=1, muB=1)
@@ -64,14 +71,13 @@ ax.set_ylabel('$f/(\hbar k \Gamma)$')
 
 # %% dynamics
 
-tmax = 0.05/t0
+tmax = 0.4/t0
 if isinstance(eqn, pylcp.rateeq):
     eqn.set_initial_pop(np.array([1., 0., 0., 0.]))
 eqn.set_initial_position(np.array([0., 0., 0.]))
-eqn.evolve_motion([0, 0.05/t0], random_recoil=True, progress_bar=True, max_step=1.)
+eqn.evolve_motion([0, tmax], random_recoil=True, progress_bar=True, max_step=1.)
 
 # plot test solution
-
 fig, ax = plt.subplots(1, 2, figsize=(6.5, 2.75))
 ax[0].plot(eqn.sol.t*t0, eqn.sol.r.T*(1e4*x0))
 ax[1].plot(eqn.sol.t*t0, eqn.sol.v.T)
@@ -89,7 +95,7 @@ if hasattr(eqn, 'sol'):
 def generate_random_solution(x, eqn=eqn, tmax=tmax):
     # We need to generate random numbers to prevent solutions from being seeded
     # with the same random number.
-    import numpy as np
+    np.random.seed(atom_index)  # Set a unique seed for each atom
 
     np.random.rand(256*x)
     eqn.evolve_motion(
@@ -103,11 +109,10 @@ def generate_random_solution(x, eqn=eqn, tmax=tmax):
     return eqn.sol
 
 
-
 def run_parallel():
 
-    Natoms = 20
-    chunksize = 4
+    Natoms = 30
+    chunksize = 2
     sols = []
     progress = progressBar()
 
@@ -122,7 +127,6 @@ def run_parallel():
         np.abs(sol.r[1, -1]*(1e4*x0))>500
     ) for sol in sols]
 
-    print('Number of ejected atoms: %d' % np.sum(ejected))
     fig, ax = plt.subplots(3, 2, figsize=(6.25, 2*2.75))
     for sol, ejected_i in zip(sols, ejected):
         for ii in range(3):
