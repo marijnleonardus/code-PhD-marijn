@@ -10,12 +10,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.optimize import curve_fit
 import imageio.v2 as imageio 
-from scipy.constants import proton_mass, Boltzmann
 
 # %% variables
 
-sr_mass = 88*proton_mass
-magnn = 100/125
+magn = 100/125
 
 # %%
 
@@ -52,12 +50,21 @@ def fit_and_return_parameters(xy, data):
     initial_guess = (30, 300, 150, 10, 10, 0, np.min(data))
     
     # Define bounds for the parameters, including the constraint for theta
-    bounds = ([0, 0, 0, 0, 0, 0, 0], [np.inf, np.inf, np.inf, np.inf, np.inf, np.pi, np.inf])
+    bounds = (0, [np.inf, np.inf, np.inf, np.inf, np.inf, np.pi, np.inf])
 
     # Fit 2D Gaussian to the entire image with constrained theta
-    params, _ = curve_fit(gaussian_2d, xy, data, p0=initial_guess, bounds=bounds)
-    return pd.Series(params, index=['Amplitude', 'xo', 'yo', 'sigma_x', 'sigma_y', 'theta', 'Offset'])
+    params, covariance = curve_fit(gaussian_2d, xy, data, p0=initial_guess, bounds=bounds)
+    
+    # Calculate standard errors from the covariance matrix
+    standard_errors = np.sqrt(np.diag(covariance))
 
+    # Create a DataFrame to store parameters and standard errors
+    result = pd.DataFrame({
+        'Parameter': ['Amplitude', 'xo', 'yo', 'sigma_x', 'sigma_y', 'theta', 'Offset'],
+        'Value': params,
+        'Standard Error': standard_errors
+    })
+    return result
 
 def compute_average_sigma(sigma_x, sigma_y, magnification, binning=4, pixel_size=3.45e-6):
     """Calculate the average sigma in pixels"""
@@ -97,6 +104,7 @@ def analyze_folder(folder_path):
     # empty lists to fill later
     x, y = np.meshgrid(x, y)
     sigmas = []
+    err_sigmas = []
     tofs = []
 
     for idx, image_file in enumerate(image_files):
@@ -114,71 +122,113 @@ def analyze_folder(folder_path):
         data = original_image.flatten()
 
         # Fit and get parameters for the entire image
-        fitted_params = fit_and_return_parameters(np.vstack((x.flatten(), y.flatten())), data)
+        fitted_params_df = fit_and_return_parameters(np.vstack((x.flatten(), y.flatten())), data)
 
         # Add 'time_of_flight' parameter to the DataFrame, from ms to s
-        tof_ms = (idx + 1) * 1e-3
+        tof_ms = (idx + 1)*1e-3
         tofs.append(tof_ms)
 
         # Compute average sigma in meters
-        avg_sigma_meters = compute_average_sigma(fitted_params['sigma_x'], fitted_params['sigma_y'], magnification=magn)
-        print("Average Sigma (meters):", avg_sigma_meters)
+        sigmas_x = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_x', 'Value'].values[0]
+        sigmas_y = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_y', 'Value'].values[0]
+        avg_sigma_meters = compute_average_sigma(sigmas_x, sigmas_y, magnification=magn)
+
+        # obtain error in average sigma
+        error_sigma_x = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_x', 'Standard Error'].values[0]
+        error_sigma_y = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_y', 'Standard Error'].values[0]
+        avg_err_sigma_meters = compute_average_sigma(error_sigma_x, error_sigma_y, magnification=magn)
+        print('sigma (m): ' + str(np.round(avg_sigma_meters*1e6, 2)) + ' +/- '
+              + str(np.round(avg_err_sigma_meters*1e6, 2)) + ' um')
 
         # Convert the individual DataFrame to a list
-        parameters_list.append(fitted_params)
-
+        parameters_list.append(fitted_params_df)
         sigmas.append(avg_sigma_meters)
+        err_sigmas.append(avg_err_sigma_meters)
 
     # Convert 'sigma' column to a NumPy array
-    sigmas_array = np.array(sigmas)
-    tofs_array = np.array(tofs)
-    return tofs_array, sigmas_array
+    sigmas = np.array(sigmas)
+    err_sigmas = np.array(err_sigmas)
+    tofs = np.array(tofs)
+    return sigmas, err_sigmas, tofs
 
-
-folder_path = r"T:\KAT1\Marijn\redmot\time of flight\nov15measurements\37723"
-tof_array, sigmas_fitted = analyze_folder(folder_path)
 
 # %% plotting and fitting
 
-def linear_func(x, a, b):
-    return a + b*x
 
-def fit_tof(tof_array, sigmas_array):
+def linear_func(x, offset, slope):
+    """linear function for fitting ToF data"""
+    return offset + slope*x
+
+
+def compute_temp_tof(tof_array, sigmas_array):
     """fit data and return parameters"""
 
+    # square x,y so we can do a linear fit
     t_squared = tof_array**2
     sigmas_squared = sigmas_array**2
-    popt, _ = curve_fit(linear_func, t_squared, sigmas_squared)
-    return popt
+    params, covariance = curve_fit(linear_func, t_squared, sigmas_squared)
 
-t_squared_plotarray = np.linspace(np.min(tof_array**2), np.max(tof_array)**2, 100)
+    # get sigma^2(t=0) from y-intersection point
+    sigma0 = np.sqrt(params[0])
 
-popt = fit_tof(tof_array, sigmas_fitted)
-slope = popt[0]
-temperature_kelvin = slope*sr_mass/Boltzmann
-temperature_uk = temperature_kelvin*1e6
-print(temperature_uk)
+    # extract temperature from slope
+    import scipy.constants
+    sr_mass = 88*scipy.constants.proton_mass
+    Boltzmann = scipy.constants.Boltzmann
 
-fig, ax = plt.subplots()
-ax.scatter(tof_array**2, sigmas_fitted**2, label='Time of Flight (squared)')
-ax.plot(t_squared_plotarray, linear_func(t_squared_plotarray, *popt), label='Linear Fit', color='red')
-ax.set_xlabel(r'$t^2$ [s${}^2$]')
-ax.set_ylabel(r'$\sigma(t)^2$ [m${}^2$]')
-ax.legend()
-plt.show()
+    # get temperature from slope
+    slope = params[1]
+    temperature = slope*sr_mass/Boltzmann
 
-
-
+    # get standard errors from covariance matrix
+    standard_errors = np.sqrt(np.diag(covariance))
+    error_sigma0 = standard_errors[0]
+    error_temp = standard_errors[1]*sr_mass/Boltzmann
+    return params, sigma0, temperature, error_sigma0, error_temp
 
 
+def main(folder):
+    sigmas_fitted, err_sigmas_fitted, tof_array = analyze_folder(folder_path)
+
+    t_squared_plotarray = np.linspace(np.min(tof_array**2), np.max(tof_array)**2, 100)
+
+    params, sigma0, temperature, error_sigm, error_temp = compute_temp_tof(tof_array, sigmas_fitted)
+    
+    temp_uk = np.round(temperature*1e6, 2)
+    error_temp_uk = np.round(error_temp*1e6, 2)
+    sigma0 = np.round(sigma0*1e6, 2)
+    error_sigm0 = np.round(error_sigm*1e6, 2)
+
+    print('T = ' + str(temp_uk) + ' +/- ' + str(error_temp_uk) + ' uK')
+    print('sigma = ' + str(sigma0) + ' +/- ' + str(error_sigm0) + ' um')
+
+    error_bars = 2*sigmas_fitted*err_sigmas_fitted
+
+    fig, ax = plt.subplots()
+    
+    # Plotting the data points without error bars
+    scatter = ax.scatter(tof_array**2, sigmas_fitted**2, label='datapoints', marker='o')
+    ax.plot(t_squared_plotarray, linear_func(t_squared_plotarray, *params), label='linear Fit', color='red')
+    
+    # Plotting error bars separately
+    ax.errorbar(
+        tof_array**2,  # x-values
+        sigmas_fitted**2,  # y-values
+        yerr=error_bars,  # array of y errors
+        linestyle='',  # no connecting line
+        color='black',  # color of error bars
+        capsize=3,  # length of error bar caps
+        markersize=5,  # size of data point markers
+    )
+    
+    ax.set_xlabel(r'$t^2$ [s${}^2$]')
+    ax.set_ylabel(r'$\sigma(t)^2$ [m${}^2$]')
+    ax.legend()
+    plt.show()
 
 
-
-
-
-#if __name__ == "__main__":
-#    folder_path = r"T:\KAT1\Marijn\redmot\time of flight\nov14measurements\33095"
-#    main(folder_path)
-
+if __name__ == "__main__":
+   folder_path = r"T:\KAT1\Marijn\redmot\time of flight\nov15measurements\37723"
+   main(folder_path)
 
 # %%
