@@ -36,11 +36,11 @@ def gaussian_2d(xy, amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
     return g
 
 
-def fit_and_return_parameters(xy, data):
+def fit_and_return_parameters(xy, data, yguess):
     """fit data and return parameters"""
 
     # Initial guess for the parameters
-    initial_guess = (30, 300, 150, 10, 10, 0, np.min(data))
+    initial_guess = (30, 300, yguess, 10, 10, 0, np.min(data))
     
     # Define bounds for the parameters, including the constraint for theta
     bounds = (0, [np.inf, np.inf, np.inf, np.inf, np.inf, np.pi, np.inf])
@@ -73,7 +73,7 @@ def compute_average_sigma(sigma_x, sigma_y, magnification=0.8, binning=4, pixel_
     return sigma_meters_object
 
 
-def analyze_folder(folder_path):
+def analyze_folder(folder_path, first_datapoint_ms, yguess=160):
     """for a given folder, export the image data and fit to extract parameters"""
 
     # Get a list of image files in the folder
@@ -115,10 +115,10 @@ def analyze_folder(folder_path):
         data = original_image.flatten()
 
         # Fit and get parameters for the entire image
-        fitted_params_df = fit_and_return_parameters(np.vstack((x.flatten(), y.flatten())), data)
+        fitted_params_df = fit_and_return_parameters(np.vstack((x.flatten(), y.flatten())), data, yguess)
 
         # Add 'time_of_flight' parameter to the DataFrame, from ms to s
-        tof_ms = (idx + 1)*1e-3
+        tof_ms = (idx + first_datapoint_ms)*1e-3
         tofs.append(tof_ms)
 
         # Compute average sigma in meters
@@ -180,8 +180,8 @@ def compute_temp_tof(tof_array, sigmas_array, error_bars):
     return params, sigma0, temperature, err_sigm0, error_temp
 
 
-def main(folder):
-    sigmas, sigmas_error, tof_array = analyze_folder(folder_path)
+def main(folder, first_datapoint_ms, yguess):
+    sigmas, sigmas_error, tof_array = analyze_folder(folder_path, first_datapoint_ms, yguess)
     
     # compute errorbars
     error_bars = 2*sigmas*sigmas_error
@@ -200,7 +200,9 @@ def main(folder):
 
     # plot a linear fit of the data
     t_squared_plotarray = np.linspace(np.min(tof_array**2), np.max(tof_array)**2, 100)
-    ax.plot(t_squared_plotarray, linear_func(t_squared_plotarray, *params), label='linear Fit', color='red')
+    ax.plot(t_squared_plotarray, linear_func(t_squared_plotarray, *params),
+        label='linear Fit: T = ' + str(np.round(temp*1e6, 2)) + r' $\pm$ ' + 
+        str(np.round(temp_error*1e6, 2)) + ' uK', color='red')
     
     ax.set_xlabel(r'$t^2$ [s${}^2$]')
     ax.set_ylabel(r'$\sigma(t)^2$ [m${}^2$]')
@@ -209,5 +211,11 @@ def main(folder):
 
 
 if __name__ == "__main__":
-   folder_path = r"T:\KAT1\Marijn\redmot\time of flight\nov15measurements\37723"
-   main(folder_path)
+   folder_path = r"T:\KAT1\Marijn\redmot\time of flight\nov15measurements\varying time\37898"
+   
+   # first time of flight image time in ms
+   first_datapoint = 1  # ms
+
+   # starting guess for y value of 2D gaussian. Vary if your fit fails
+   y_guess = 160
+   main(folder_path, first_datapoint_ms = first_datapoint, yguess = y_guess)
