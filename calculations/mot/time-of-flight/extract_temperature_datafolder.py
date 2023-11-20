@@ -2,8 +2,6 @@
 # november 2023
 """script for analyzing time of flight data"""
 
- # %% imports
-
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,11 +9,8 @@ import pandas as pd
 from scipy.optimize import curve_fit
 import imageio.v2 as imageio 
 
-# %% variables
-
 magn = 100/125
 
-# %%
 
 def gaussian_2d(xy, amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
     """2D Gaussian function.
@@ -78,8 +73,6 @@ def compute_average_sigma(sigma_x, sigma_y, magnification, binning=4, pixel_size
     sigma_meters_object = sigma_meters_image/magnification
     return sigma_meters_object
 
-
-# %%
 
 def analyze_folder(folder_path):
     """for a given folder, export the image data and fit to extract parameters"""
@@ -152,9 +145,6 @@ def analyze_folder(folder_path):
     return sigmas, err_sigmas, tofs
 
 
-# %% plotting and fitting
-
-
 def linear_func(x, offset, slope):
     """linear function for fitting ToF data"""
     return offset + slope*x
@@ -188,38 +178,31 @@ def compute_temp_tof(tof_array, sigmas_array):
 
 
 def main(folder):
+    # analyze all images in the folder and return the 1/e radii for each time of flight
     sigmas_fitted, err_sigmas_fitted, tof_array = analyze_folder(folder_path)
 
-    t_squared_plotarray = np.linspace(np.min(tof_array**2), np.max(tof_array)**2, 100)
+    # compute temperature and sigma(t=0) from the images
+    # as well as the errors in temperature and sigma(t=0)
+    params, sigma0, temperature, error_sigma0, error_temp = compute_temp_tof(tof_array, sigmas_fitted)
 
-    params, sigma0, temperature, error_sigm, error_temp = compute_temp_tof(tof_array, sigmas_fitted)
-    
-    temp_uk = np.round(temperature*1e6, 2)
-    error_temp_uk = np.round(error_temp*1e6, 2)
-    sigma0 = np.round(sigma0*1e6, 2)
-    error_sigm0 = np.round(error_sigm*1e6, 2)
+    # print the results
+    print('T = ' + str(np.round(temperature*1e6, 2)) + ' +/- '
+        + str(np.round(error_temp*1e6, 2)) + ' uK')
+    print('sigma = ' + str(np.round(sigma0*1e6, 2)) + ' +/- ' +
+        str(np.round(error_sigma0*1e6, 2)) + ' um')
 
-    print('T = ' + str(temp_uk) + ' +/- ' + str(error_temp_uk) + ' uK')
-    print('sigma = ' + str(sigma0) + ' +/- ' + str(error_sigm0) + ' um')
-
-    error_bars = 2*sigmas_fitted*err_sigmas_fitted
-
+    # Plotting, first just the datapoints w/o error bars
     fig, ax = plt.subplots()
-    
-    # Plotting the data points without error bars
-    scatter = ax.scatter(tof_array**2, sigmas_fitted**2, label='datapoints', marker='o')
+    ax.scatter(tof_array**2, sigmas_fitted**2, label='datapoints', marker='o')
+
+    # Plotting the linear fit
+    t_squared_plotarray = np.linspace(np.min(tof_array**2), np.max(tof_array)**2, 100)
     ax.plot(t_squared_plotarray, linear_func(t_squared_plotarray, *params), label='linear Fit', color='red')
     
     # Plotting error bars separately
-    ax.errorbar(
-        tof_array**2,  # x-values
-        sigmas_fitted**2,  # y-values
-        yerr=error_bars,  # array of y errors
-        linestyle='',  # no connecting line
-        color='black',  # color of error bars
-        capsize=3,  # length of error bar caps
-        markersize=5,  # size of data point markers
-    )
+    error_bars = 2*sigmas_fitted*err_sigmas_fitted
+    ax.errorbar(tof_array**2, sigmas_fitted**2, yerr=error_bars, 
+        linestyle='',  color='black', capsize=3, markersize=5)
     
     ax.set_xlabel(r'$t^2$ [s${}^2$]')
     ax.set_ylabel(r'$\sigma(t)^2$ [m${}^2$]')
@@ -230,5 +213,3 @@ def main(folder):
 if __name__ == "__main__":
    folder_path = r"T:\KAT1\Marijn\redmot\time of flight\nov15measurements\37723"
    main(folder_path)
-
-# %%
