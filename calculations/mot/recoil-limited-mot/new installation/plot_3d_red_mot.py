@@ -19,6 +19,7 @@ import pathos
 
 from matplotlib.patches import Ellipse
 
+
 # %% constants
 
 wavelength = 689e-7  # cm^-1
