@@ -26,6 +26,7 @@ from matplotlib.patches import Ellipse
 b_gauss = 4.24  # Gauss
 saturation = 25 
 detuning = -200e3  # Hz
+simulation_time = 0.5  # s
 
 # constants
 wavelength = 689e-9  # m
@@ -39,23 +40,20 @@ x0 = 1/k  # our length scale in m
 gamma = 2*pi*linewidth  # Hz
 t0 = 1/gamma  # our time scale in s
 mass = 88*atomic_mass_unit*x0**2/hbar/t0  # unitless mass
-g = np.array([0., 0., -9.8*t0**2/x0])  # unitless gravity
+g = np.array([-9.8*t0**2/x0, 0., 0.])  # unitless gravity
+tmax = simulation_time/t0  # dimensionless time
+det = detuning/linewidth  # dimensionless detuning
 
 # derived parameter
 # Magnetic field gradient parameter (factor of 3/2 from excited state g-factor.)
 b_tesla = b_gauss*1e-4
 alpha = (3/2)*bohr_magneton*b_tesla*(x0*1e2)/linewidth
 
-# %% changed pylcp magnetic field class init method, because our field coils are different
-
 
 # %% setting up the parameters, magnetic field, lasers
 
-sat = 25
-det = -200/7.4
-
 magField = pylcp.quadrupoleMagneticField(alpha)
-laserBeams = pylcp.conventional3DMOTBeams(delta=det, s=sat, beam_type=pylcp.infinitePlaneWaveBeam)
+laserBeams = pylcp.conventional3DMOTBeams(delta=det, s=saturation, beam_type=pylcp.infinitePlaneWaveBeam)
 
 Hg, mugq = pylcp.hamiltonians.singleF(F=0, muB=1)
 He, mueq = pylcp.hamiltonians.singleF(F=1, muB=1)
@@ -72,11 +70,11 @@ eqn = pylcp.rateeq(laserBeams, magField, hamiltonian, g)
 
 # for plotting rescaling
 length_mm = 1e3*x0  # mm
-z = np.linspace(-0.2, 0.2, 101)/length_mm
-R = np.array([np.zeros(z.shape), np.zeros(z.shape), z])
-V = np.zeros((3,) + z.shape)
+z = np.linspace(-0.4, 0.4, 101)/length_mm
+r = np.array([np.zeros(z.shape), np.zeros(z.shape), z])
+v = np.zeros((3,) + z.shape)
 
-eqn.generate_force_profile(R, V, name='Fz')
+eqn.generate_force_profile(r, v, name='Fz')
 
 # plot force profile
 fig, ax = plt.subplots(1, 1)
@@ -87,15 +85,16 @@ plt.show()
 
 # %% dynamics
 
-tmax = 0.05/t0
 if isinstance(eqn, pylcp.rateeq):
     eqn.set_initial_pop(np.array([1., 0., 0., 0.]))
 eqn.set_initial_position(np.array([0., 0., 0.]))
-eqn.evolve_motion([0, tmax], random_recoil=True, progress_bar=True, max_step=1.)
+
+# simulate for 10% of the time
+eqn.evolve_motion([0, tmax*0.1], random_recoil=True, progress_bar=True, max_step=1.)
 
 # plot test solution
 fig, ax = plt.subplots(1, 2, figsize=(6.5, 2.75))
-ax[0].plot(eqn.sol.t*t0, eqn.sol.r.T*(1e4*x0))
+ax[0].plot(eqn.sol.t*t0, eqn.sol.r.T*(1e6*x0))
 ax[1].plot(eqn.sol.t*t0, eqn.sol.v.T)
 ax[0].set_ylabel('$r$ ($\mu$m)')
 ax[0].set_xlabel('$t$ (s)')
@@ -118,15 +117,22 @@ def generate_random_solution(args):
 
     # We need to generate random numbers to prevent solutions from being seeded
     # with the same random number.
-    np.random.seed(atom_index)  # Set a unique seed for each atom
+    #np.random.seed(atom_index) 
 
-    np.random.rand(256*x)
-    eqn.evolve_motion([0, tmax], t_eval=np.linspace(0, tmax, 1001),
+    # generate random nr between -100 and 100 um to set as intial position (x,y,z)
+    initial_position = np.random.uniform(-100/(x0*1e6), 100/(x0*1e6), size=3)  
+    eqn.set_initial_position(initial_position)
+
+    # generate random start velocity (v0x, v0y, v0z) in units of Gamma/k
+    initial_velocity = np.random.uniform(-5, 5, 3)
+    eqn.set_initial_velocity(initial_velocity)
+
+    eqn.evolve_motion([0, tmax], t_eval=np.linspace(0, tmax, 10001),
         random_recoil=True, progress_bar=False, max_step=1.)
     return eqn.sol
 
 
-def run_parallel():
+def run_parallel(nr_atoms, nr_nodes):
     """Uses parallel processing to generate random solutions
 
     it creates a ProcessPool with 4 nodes and splits the task of 
@@ -138,24 +144,23 @@ def run_parallel():
     - a list of solutions
     """
     
-    number_atoms = 100
     chunksize = 4
     sols = []
     progress = progressBar()
 
-    with pathos.pools.ProcessPool(nodes=4) as pool:
-        args_list = [(atom_index, chunksize) for atom_index in range(0, number_atoms, chunksize)]
+    with pathos.pools.ProcessPool(nodes=nr_nodes) as pool:
+        args_list = [(atom_index, chunksize) for atom_index in range(0, nr_atoms, chunksize)]
         sols = pool.map(generate_random_solution, args_list)
         progress.update(1.0)
     return sols
 
 
-sols = run_parallel()
+sols = run_parallel(nr_atoms=50, nr_nodes=8)
 
 # ejection criterion, if the position is larger than 500, the atom is said to be ejected
 ejected = [np.bitwise_or(
-    np.abs(sol.r[0, -1]*(1e4*x0))>500,
-    np.abs(sol.r[1, -1]*(1e4*x0))>500
+    np.abs(sol.r[0, -1]*(1e6*x0))>500,
+    np.abs(sol.r[1, -1]*(1e6*x0))>500
 ) for sol in sols]
 
 # %% plot trajectories
@@ -198,12 +203,12 @@ allx = np.array([], dtype='float64')
 allz = np.array([], dtype='float64')
 
 for sol in sols:
-    allx = np.append(allx, sol.r[0][::5]*(1e6*x0))
-    allz = np.append(allz, sol.r[2][::5]*(1e6*x0))
+    allx = np.append(allx, sol.r[0][::1]*(1e6*x0))
+    allz = np.append(allz, sol.r[2][::1]*(1e6*x0))
 
 # compute the 2d histogram and normalize
 img, x_edges, z_edges = np.histogram2d(allx, allz, 
-    bins=[np.arange(-375, 376, 5.), np.arange(-600., 11., 5.)])
+    bins=[np.arange(-500, 200, 5.), np.arange(-400., 400., 5.)])
 img = img/img.max()
 
 fig2, ax2 = plt.subplots(figsize = (4, 3))
