@@ -19,7 +19,6 @@ import pathos
 
 from matplotlib.patches import Ellipse
 
-
 # %% constants
 
 # parameters
@@ -48,7 +47,6 @@ det = detuning/linewidth  # dimensionless detuning
 # Magnetic field gradient parameter (factor of 3/2 from excited state g-factor.)
 b_tesla = b_gauss*1e-4
 alpha = (3/2)*bohr_magneton*b_tesla*(x0*1e2)/linewidth
-
 
 # %% setting up the parameters, magnetic field, lasers
 
@@ -199,16 +197,16 @@ fig1.subplots_adjust(left=0.1, bottom=0.08, wspace=0.4)
 # %% plot histogram 2d
 
 # log coordinates at fixed points during trajectories
-allx = np.array([], dtype='float64')
-allz = np.array([], dtype='float64')
-
+allx = allz = np.array([], dtype='float64')
 for sol in sols:
     allx = np.append(allx, sol.r[0][::1]*(1e6*x0))
     allz = np.append(allz, sol.r[2][::1]*(1e6*x0))
 
 # compute the 2d histogram and normalize
-img, x_edges, z_edges = np.histogram2d(allx, allz, 
-    bins=[np.arange(-500, 200, 5.), np.arange(-400., 400., 5.)])
+# switched x and z directions, because gravity is in the x direction, but
+# should appear in z direction in plot
+img, x_edges, z_edges = np.histogram2d(allz, allx, 
+    bins=[np.arange(-300, 300, 5.), np.arange(-400., 0., 5.)])
 img = img/img.max()
 
 fig2, ax2 = plt.subplots(figsize = (4, 3))
@@ -222,9 +220,10 @@ im = ax2.imshow(img.T, origin='lower', cmap='Reds', aspect='equal',
             np.amin(z_edges), np.amax(z_edges)))
 
 # add ellipse
+# height/width interchanged
 width_semi_ax = 4*det/alpha*(1e6*x0)
 height_semi_ax = 2*det/alpha*(1e6*x0)
-ellip = Ellipse(xy = (0, 0), width = width_semi_ax, height = height_semi_ax, linestyle='--',
+ellip = Ellipse(xy = (0, 0), width = height_semi_ax, height = width_semi_ax, linestyle='--',
     linewidth=1, facecolor='none', edgecolor='blue', label='Zeeman shift equals detuning')
 ax2.add_patch(ellip)
 ax2.legend()
