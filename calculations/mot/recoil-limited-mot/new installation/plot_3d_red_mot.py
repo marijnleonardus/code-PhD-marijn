@@ -22,23 +22,29 @@ from matplotlib.patches import Ellipse
 
 # %% constants
 
-wavelength = 689e-7  # cm^-1
+# parameters
+b_gauss = 4.24  # Gauss
+saturation = 25 
+detuning = -200e3  # Hz
+
+# constants
+wavelength = 689e-9  # m
+linewidth = 7.4e3  # rad/s
 bohr_magneton = scipy.constants.value('Bohr magneton in Hz/T')
 atomic_mass_unit = scipy.constants.value('atomic mass constant')
 
-k = 2*pi/wavelength  # cm^{-1}
-x0 = 1/k  # our length scale in cm
-gamma = 2*pi*7.5e3  # 7.5 kHz linewidth
+# derived constants
+k = 2*pi/wavelength  # m^-1
+x0 = 1/k  # our length scale in m
+gamma = 2*pi*linewidth  # Hz
 t0 = 1/gamma  # our time scale in s
+mass = 88*atomic_mass_unit*x0**2/hbar/t0  # unitless mass
+g = np.array([0., 0., -9.8*t0**2/x0])  # unitless gravity
 
+# derived parameter
 # Magnetic field gradient parameter (factor of 3/2 from excited state g-factor.)
-alpha = (3/2)*bohr_magneton*1e-4*8*x0/(gamma/2/pi)
-
-# The unitless mass parameter:
-mass = 88**(x0*1e-2)*atomic_mass_unit*2/hbar/t0
-
-# Gravity
-g = np.array([0., 0., -9.81*t0**2/(x0*1e-2)])
+b_tesla = b_gauss*1e-4
+alpha = (3/2)*bohr_magneton*b_tesla*(x0*1e2)/linewidth
 
 # %% changed pylcp magnetic field class init method, because our field coils are different
 
@@ -46,7 +52,7 @@ g = np.array([0., 0., -9.81*t0**2/(x0*1e-2)])
 # %% setting up the parameters, magnetic field, lasers
 
 sat = 25
-det = -200/(gamma/2/pi)
+det = -200/7.4
 
 magField = pylcp.quadrupoleMagneticField(alpha)
 laserBeams = pylcp.conventional3DMOTBeams(delta=det, s=sat, beam_type=pylcp.infinitePlaneWaveBeam)
@@ -64,7 +70,9 @@ eqn = pylcp.rateeq(laserBeams, magField, hamiltonian, g)
 
 # %% force profile
 
-z = np.linspace(-0.2, 0.2, 101)/(10*x0)
+# for plotting rescaling
+length_mm = 1e3*x0  # mm
+z = np.linspace(-0.2, 0.2, 101)/length_mm
 R = np.array([np.zeros(z.shape), np.zeros(z.shape), z])
 V = np.zeros((3,) + z.shape)
 
@@ -72,14 +80,14 @@ eqn.generate_force_profile(R, V, name='Fz')
 
 # plot force profile
 fig, ax = plt.subplots(1, 1)
-ax.plot(z*(10*x0), eqn.profile['Fz'].F[2])
+ax.plot(z*length_mm, eqn.profile['Fz'].F[2])
 ax.set_xlabel('$z$ (mm)')
 ax.set_ylabel('$f/(\hbar k \Gamma)$')
-
+plt.show()
 
 # %% dynamics
 
-tmax = 0.4/t0
+tmax = 0.05/t0
 if isinstance(eqn, pylcp.rateeq):
     eqn.set_initial_pop(np.array([1., 0., 0., 0.]))
 eqn.set_initial_position(np.array([0., 0., 0.]))
@@ -190,8 +198,8 @@ allx = np.array([], dtype='float64')
 allz = np.array([], dtype='float64')
 
 for sol in sols:
-    allx = np.append(allx, sol.r[0][::5]*(1e4*x0))
-    allz = np.append(allz, sol.r[2][::5]*(1e4*x0))
+    allx = np.append(allx, sol.r[0][::5]*(1e6*x0))
+    allz = np.append(allz, sol.r[2][::5]*(1e6*x0))
 
 # compute the 2d histogram and normalize
 img, x_edges, z_edges = np.histogram2d(allx, allz, 
@@ -204,13 +212,13 @@ ax2.set_ylabel('$z$ ($\mu$m)')
 ax2.set_xlabel('$x$ ($\mu$m)')
 
 # plot 
-im = ax2.imshow(img.T, origin='bottom', cmap='Reds', aspect='equal',
+im = ax2.imshow(img.T, origin='lower', cmap='Reds', aspect='equal',
     extent=(np.amin(x_edges), np.amax(x_edges),
             np.amin(z_edges), np.amax(z_edges)))
 
 # add ellipse
-width_semi_ax = 4*det/alpha*(1e4*x0)
-height_semi_ax = 2*det/alpha*(1e4*x0)
+width_semi_ax = 4*det/alpha*(1e6*x0)
+height_semi_ax = 2*det/alpha*(1e6*x0)
 ellip = Ellipse(xy = (0, 0), width = width_semi_ax, height = height_semi_ax, linestyle='--',
     linewidth=1, facecolor='none', edgecolor='blue', label='Zeeman shift equals detuning')
 ax2.add_patch(ellip)
