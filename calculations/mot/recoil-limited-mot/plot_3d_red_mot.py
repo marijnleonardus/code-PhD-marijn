@@ -5,11 +5,19 @@
 
 adapted from PyLCP example: 
 https://python-laser-cooling-physics.readthedocs.io/en/latest/examples/MOTs/10_recoil_limited_MOT.html
+
+Has been tested in a pyton 3.7 anaconda environment on a Linux machine
+The following packages were installed
+- pylcp
+- matplotlib
+- pathos
+- scipy
 """
 
 # %% imports 
 
 import numpy as np
+import scipy
 import matplotlib.pyplot as plt
 import pylcp 
 import scipy.constants 
@@ -23,7 +31,7 @@ from matplotlib.patches import Ellipse
 
 # parameters
 b_gauss = 4.24  # Gauss
-saturation = 25 
+saturation = 100 
 detuning = -200e3  # Hz
 simulation_time = 0.5  # s
 
@@ -39,7 +47,7 @@ x0 = 1/k  # our length scale in m
 gamma = 2*pi*linewidth  # Hz
 t0 = 1/gamma  # our time scale in s
 mass = 88*atomic_mass_unit*x0**2/hbar/t0  # unitless mass
-g = np.array([-9.8*t0**2/x0, 0., 0.])  # unitless gravity
+g = np.array([0., 0., -9.8*t0**2/x0])  # unitless gravity
 tmax = simulation_time/t0  # dimensionless time
 det = detuning/linewidth  # dimensionless detuning
 
@@ -48,27 +56,31 @@ det = detuning/linewidth  # dimensionless detuning
 b_tesla = b_gauss*1e-4
 alpha = (3/2)*bohr_magneton*b_tesla*(x0*1e2)/linewidth
 
-# %% setting up the parameters, magnetic field, lasers
 
-magField = pylcp.quadrupoleMagneticField(alpha)
-laserBeams = pylcp.conventional3DMOTBeams(delta=det, s=saturation, beam_type=pylcp.infinitePlaneWaveBeam)
+# %% define magnetic field, laser beams, governing equation
 
+# quadrupole field
+from modules.magnetic_field_class import QuadrupoleYMagneticField
+magField = QuadrupoleYMagneticField(alpha)
+
+# laser beams
+from modules.laser_beam_class import AngledMOTBeams
+laserBeams = AngledMOTBeams(delta=det, s=saturation, beam_type=pylcp.infinitePlaneWaveBeam)
+
+# define hamiltonian
 Hg, mugq = pylcp.hamiltonians.singleF(F=0, muB=1)
 He, mueq = pylcp.hamiltonians.singleF(F=1, muB=1)
-
 dq = pylcp.hamiltonians.dqij_two_bare_hyperfine(0, 1)
-
 hamiltonian = pylcp.hamiltonian(Hg, He, mugq, mueq, dq, mass=mass)
 
+# define equation
+eqn = pylcp.rateeq(laserBeams, magField, hamiltonian, g)
 # uncomment for the heuristic equation
 #eqn = pylcp.heuristiceq(laserBeams, magField, g, mass=mass)
-eqn = pylcp.rateeq(laserBeams, magField, hamiltonian, g)
-
-# %% force profile
 
 # for plotting rescaling
 length_mm = 1e3*x0  # mm
-z = np.linspace(-0.4, 0.4, 101)/length_mm
+z = np.linspace(-0.6, 0.6, 101)/length_mm
 r = np.array([np.zeros(z.shape), np.zeros(z.shape), z])
 v = np.zeros((3,) + z.shape)
 
@@ -153,7 +165,7 @@ def run_parallel(nr_atoms, nr_nodes):
     return sols
 
 
-sols = run_parallel(nr_atoms=50, nr_nodes=8)
+sols = run_parallel(nr_atoms=20, nr_nodes=4)
 
 # ejection criterion, if the position is larger than 500, the atom is said to be ejected
 ejected = [np.bitwise_or(
@@ -205,8 +217,8 @@ for sol in sols:
 # compute the 2d histogram and normalize
 # switched x and z directions, because gravity is in the x direction, but
 # should appear in z direction in plot
-img, x_edges, z_edges = np.histogram2d(allz, allx, 
-    bins=[np.arange(-300, 300, 5.), np.arange(-400., 0., 5.)])
+img, x_edges, z_edges = np.histogram2d(allx, allz, 
+    bins=[np.arange(-600, 600, 5.), np.arange(-800., 600., 5.)])
 img = img/img.max()
 
 fig2, ax2 = plt.subplots(figsize = (4, 3))
@@ -222,7 +234,7 @@ im = ax2.imshow(img.T, origin='lower', cmap='Reds', aspect='equal',
 # add ellipse
 # height/width interchanged
 width_semi_ax = 4*det/alpha*(1e6*x0)
-height_semi_ax = 2*det/alpha*(1e6*x0)
+height_semi_ax = 4*det/alpha*(1e6*x0)
 ellip = Ellipse(xy = (0, 0), width = height_semi_ax, height = width_semi_ax, linestyle='--',
     linewidth=1, facecolor='none', edgecolor='blue', label='Zeeman shift equals detuning')
 ax2.add_patch(ellip)
