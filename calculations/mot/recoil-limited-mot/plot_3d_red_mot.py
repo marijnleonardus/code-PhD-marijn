@@ -22,9 +22,8 @@ import matplotlib.pyplot as plt
 import pylcp 
 import scipy.constants 
 from pylcp.common import progressBar
-from scipy.constants import hbar, pi
+from scipy.constants import hbar, pi, Boltzmann, proton_mass
 import pathos 
-
 from matplotlib.patches import Ellipse
 
 # %% constants
@@ -165,7 +164,7 @@ def run_parallel(nr_atoms, nr_nodes):
     return sols
 
 
-sols = run_parallel(nr_atoms=20, nr_nodes=4)
+sols = run_parallel(nr_atoms=50, nr_nodes=4)
 
 # ejection criterion, if the position is larger than 500, the atom is said to be ejected
 ejected = [np.bitwise_or(
@@ -206,17 +205,44 @@ for ax_i, lbl in zip(ax1[:, 1], ['x','y','z']):
 
 fig1.subplots_adjust(left=0.1, bottom=0.08, wspace=0.4)
 
-# %% plot histogram 2d
+# %% plot histogram 2d and calculate temperatures
 
-# log coordinates at fixed points during trajectories
+# log coordinates at fixed points during trajectories, 
+# log velocties to compute temperatures
 allx = allz = np.array([], dtype='float64')
+allvx = allvz = np.array([], dtype='float64')
+
 for sol in sols:
-    allx = np.append(allx, sol.r[0][::1]*(1e6*x0))
-    allz = np.append(allz, sol.r[2][::1]*(1e6*x0))
+    allx = np.append(allx, sol.r[0][::1]*(1e6*x0)) # um
+    allz = np.append(allz, sol.r[2][::1]*(1e6*x0)) # um
+    allvx = np.append(allvx, sol.v[0][::1]) # k/gamma
+    allvz = np.append(allvz, sol.v[2][::1]) # k/gamma
+
+
+def calculate_temperature(array_gammaoverk):
+    """calculate temperature from velocity distribution
+    
+    inputs:
+    - array_gammaoverk (np.array of floats): velocity in units of gamma/k"""
+
+    mass_sr = 88*proton_mass
+
+    # convert to m/s
+    velocity_ms = array_gammaoverk/(k/gamma)
+
+    # calculate RMS value
+    rms_velocity_ms = np.sqrt(np.mean(velocity_ms**2))
+
+    # calculate temperature 
+    temperature = mass_sr*rms_velocity_ms**2/Boltzmann
+    temperature_uK = temperature*1e6
+    print(temperature_uK)
+
+
+calculate_temperature(allvx)
+calculate_temperature(allvz)
 
 # compute the 2d histogram and normalize
-# switched x and z directions, because gravity is in the x direction, but
-# should appear in z direction in plot
 img, x_edges, z_edges = np.histogram2d(allx, allz, 
     bins=[np.arange(-600, 600, 5.), np.arange(-800., 600., 5.)])
 img = img/img.max()
@@ -248,4 +274,3 @@ cbar_ax.set_ylabel('Density (arb. units)')
 
 plt.show()
 
-# %%
