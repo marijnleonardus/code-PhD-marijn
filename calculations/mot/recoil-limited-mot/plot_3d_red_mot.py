@@ -164,7 +164,7 @@ def run_parallel(nr_atoms, nr_nodes):
     return sols
 
 
-sols = run_parallel(nr_atoms=50, nr_nodes=4)
+sols = run_parallel(nr_atoms=1200, nr_nodes=4)
 
 # ejection criterion, if the position is larger than 500, the atom is said to be ejected
 ejected = [np.bitwise_or(
@@ -215,8 +215,8 @@ allvx = allvz = np.array([], dtype='float64')
 for sol in sols:
     allx = np.append(allx, sol.r[0][::1]*(1e6*x0)) # um
     allz = np.append(allz, sol.r[2][::1]*(1e6*x0)) # um
-    allvx = np.append(allvx, sol.v[0][::1]) # k/gamma
-    allvz = np.append(allvz, sol.v[2][::1]) # k/gamma
+    allvx = np.append(allvx, sol.v[0][::10]) # k/gamma
+    allvz = np.append(allvz, sol.v[2][::10]) # k/gamma
 
 
 def calculate_temperature(array_gammaoverk):
@@ -274,3 +274,5 @@ cbar_ax.set_ylabel('Density (arb. units)')
 
 plt.show()
 
+
+# %%
