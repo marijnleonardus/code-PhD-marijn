@@ -30,9 +30,11 @@ from matplotlib.patches import Ellipse
 
 # parameters
 b_gauss = 4.24  # Gauss
-saturation = 100 
-detuning = -200e3  # Hz
+saturation = 80 
+detuning = -120e3  # Hz
 simulation_time = 0.5  # s
+nr_atoms = 1200
+nr_nodes = 4  # nr cores for multithreading
 
 # constants
 wavelength = 689e-9  # m
@@ -63,8 +65,15 @@ from modules.magnetic_field_class import QuadrupoleYMagneticField
 magField = QuadrupoleYMagneticField(alpha)
 
 # laser beams
+# start with 4 diagonal beams
 from modules.laser_beam_class import AngledMOTBeams
-laserBeams = AngledMOTBeams(delta=det, s=saturation, beam_type=pylcp.infinitePlaneWaveBeam)
+laserBeams = AngledMOTBeams(delta = det, s = saturation,  beam_type = pylcp.infinitePlaneWaveBeam)
+
+# add 2 horizontal beams
+HorizontalBeam1 = pylcp.laserBeam(kvec=np.array([0, +1., 0.]), delta = det, pol=+1, s=0.5*saturation)
+HorizontalBeam2 = pylcp.laserBeam(kvec=np.array([0.,-1., 0.]), delta = det, pol=+1, s=0.5*saturation)
+laserBeams.add_laser(HorizontalBeam1)
+laserBeams.add_laser(HorizontalBeam2)
 
 # define hamiltonian
 Hg, mugq = pylcp.hamiltonians.singleF(F=0, muB=1)
@@ -77,19 +86,30 @@ eqn = pylcp.rateeq(laserBeams, magField, hamiltonian, g)
 # uncomment for the heuristic equation
 #eqn = pylcp.heuristiceq(laserBeams, magField, g, mass=mass)
 
+# %% plot force profiles
+
 # for plotting rescaling
 length_mm = 1e3*x0  # mm
-z = np.linspace(-0.6, 0.6, 101)/length_mm
-r = np.array([np.zeros(z.shape), np.zeros(z.shape), z])
+
+# generate x,y,z coordinates
+x = y = z = np.linspace(-0.25, 0.25, 1001)/length_mm
+r = np.array([x, y, z])
+
+# set velocities to zero
 v = np.zeros((3,) + z.shape)
 
-eqn.generate_force_profile(r, v, name='Fz')
+# generate force profile for all positions
+eqn.generate_force_profile(r, v, name='force3_d')
+force_3d = eqn.profile['force3_d']
 
 # plot force profile
-fig, ax = plt.subplots(1, 1)
-ax.plot(z*length_mm, eqn.profile['Fz'].F[2])
-ax.set_xlabel('$z$ (mm)')
-ax.set_ylabel('$f/(\hbar k \Gamma)$')
+fig, ax = plt.subplots(1, 1, figsize=(4, 3))
+ax.plot(x*length_mm, eqn.profile['force3_d'].F[0], label=r'$F_x$')
+ax.plot(y*length_mm, eqn.profile['force3_d'].F[1], label=r'$F_y$')
+ax.plot(z*length_mm, eqn.profile['force3_d'].F[2], label=r'$F_z$')
+ax.set_xlabel('$r_i$ (mm)')
+ax.set_ylabel('$F_i/(\hbar k \Gamma)$')
+ax.legend()
 plt.show()
 
 # %% dynamics
@@ -164,7 +184,7 @@ def run_parallel(nr_atoms, nr_nodes):
     return sols
 
 
-sols = run_parallel(nr_atoms=1200, nr_nodes=4)
+sols = run_parallel(nr_atoms=nr_atoms, nr_nodes=nr_nodes)
 
 # ejection criterion, if the position is larger than 500, the atom is said to be ejected
 ejected = [np.bitwise_or(
