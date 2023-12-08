@@ -16,6 +16,7 @@ The following packages were installed
 
 # %% imports 
 
+# standard libraries
 import numpy as np
 import scipy
 import matplotlib.pyplot as plt
@@ -26,14 +27,19 @@ from scipy.constants import hbar, pi, Boltzmann, proton_mass
 import pathos 
 from matplotlib.patches import Ellipse
 
+# user defined libraries
+from modules.plotting import Plotting
+from modules.magnetic_field_class import QuadrupoleYMagneticField
+from modules.laser_beam_class import AngledMOTBeams
+
 # %% constants
 
 # parameters
 b_gauss = 4.24  # Gauss
 saturation = 80 
 detuning = -120e3  # Hz
-simulation_time = 0.5  # s
-nr_atoms = 1200
+simulation_time = 0.01  # s
+nr_atoms = 30
 nr_nodes = 4  # nr cores for multithreading
 
 # constants
@@ -61,12 +67,10 @@ alpha = (3/2)*bohr_magneton*b_tesla*(x0*1e2)/linewidth
 # %% define magnetic field, laser beams, governing equation
 
 # quadrupole field
-from modules.magnetic_field_class import QuadrupoleYMagneticField
 magField = QuadrupoleYMagneticField(alpha)
 
 # laser beams
 # start with 4 diagonal beams
-from modules.laser_beam_class import AngledMOTBeams
 laserBeams = AngledMOTBeams(delta = det, s = saturation,  beam_type = pylcp.infinitePlaneWaveBeam)
 
 # add 2 horizontal beams
@@ -88,48 +92,12 @@ eqn = pylcp.rateeq(laserBeams, magField, hamiltonian, g)
 
 # %% plot force profiles
 
-# for plotting rescaling
-length_mm = 1e3*x0  # mm
-
-# generate x,y,z coordinates
-x = y = z = np.linspace(-0.25, 0.25, 1001)/length_mm
-r = np.array([x, y, z])
-
-# set velocities to zero
-v = np.zeros((3,) + z.shape)
-
-# generate force profile for all positions
-eqn.generate_force_profile(r, v, name='force3_d')
-force_3d = eqn.profile['force3_d']
-
-# plot force profile
-fig, ax = plt.subplots(1, 1, figsize=(4, 3))
-ax.plot(x*length_mm, eqn.profile['force3_d'].F[0], label=r'$F_x$')
-ax.plot(y*length_mm, eqn.profile['force3_d'].F[1], label=r'$F_y$')
-ax.plot(z*length_mm, eqn.profile['force3_d'].F[2], label=r'$F_z$')
-ax.set_xlabel('$r_i$ (mm)')
-ax.set_ylabel('$F_i/(\hbar k \Gamma)$')
-ax.legend()
-plt.show()
+Plot = Plotting(length_scale=x0, time_scale=t0)
+Plot.force_profile_3d(eqn)
 
 # %% dynamics
 
-if isinstance(eqn, pylcp.rateeq):
-    eqn.set_initial_pop(np.array([1., 0., 0., 0.]))
-eqn.set_initial_position(np.array([0., 0., 0.]))
-
-# simulate for 10% of the time
-eqn.evolve_motion([0, tmax*0.1], random_recoil=True, progress_bar=True, max_step=1.)
-
-# plot test solution
-fig, ax = plt.subplots(1, 2, figsize=(6.5, 2.75))
-ax[0].plot(eqn.sol.t*t0, eqn.sol.r.T*(1e6*x0))
-ax[1].plot(eqn.sol.t*t0, eqn.sol.v.T)
-ax[0].set_ylabel('$r$ ($\mu$m)')
-ax[0].set_xlabel('$t$ (s)')
-ax[1].set_ylabel('$v/(\Gamma/k)$')
-ax[1].set_xlabel('$t$ (s)')
-fig.subplots_adjust(left=0.08, wspace=0.22)
+Plot.trajectory_single_atom(eqn, tmax)
 
 # %% simulate many atoms
 
@@ -184,15 +152,25 @@ def run_parallel(nr_atoms, nr_nodes):
     return sols
 
 
+def ejection_criterion(solution_list):
+    """ ejection criterion, if the position is larger than 500,
+    the atom is said to be ejected"""
+
+    ejected = [np.bitwise_or(
+        np.abs(solution.r[0, -1]*(1e6*x0)) > 500,
+        np.abs(solution.r[1, -1]*(1e6*x0)) > 500
+    ) for solution in solution_list]
+    return ejected
+
 sols = run_parallel(nr_atoms=nr_atoms, nr_nodes=nr_nodes)
+ejected = ejection_criterion(sols)
 
-# ejection criterion, if the position is larger than 500, the atom is said to be ejected
-ejected = [np.bitwise_or(
-    np.abs(sol.r[0, -1]*(1e6*x0))>500,
-    np.abs(sol.r[1, -1]*(1e6*x0))>500
-) for sol in sols]
+# %% plot trajectories and calculate temperatures
 
-# %% plot trajectories
+# empty matrices to later fill with trajectories of non-ejected atoms
+# for the temperature calculations
+allx = allz = np.array([], dtype='float64')
+allvx = allvz = np.array([], dtype='float64')
 
 fig1, ax1 = plt.subplots(3, 2, figsize=(7, 2*2.75))
 for sol, ejected_i in zip(sols, ejected):
@@ -262,7 +240,9 @@ def calculate_temperature(array_gammaoverk):
 calculate_temperature(allvx)
 calculate_temperature(allvz)
 
-# compute the 2d histogram and normalize
+# %% compute the 2d histogram 
+
+# and normalize
 img, x_edges, z_edges = np.histogram2d(allx, allz, 
     bins=[np.arange(-600, 600, 5.), np.arange(-800., 600., 5.)])
 img = img/img.max()
@@ -289,7 +269,7 @@ ax2.legend()
 # colorbar
 pos = ax2.get_position()
 cbar_ax = fig2.add_axes([0.91, pos.y0, 0.015, pos.y1-pos.y0])
-cbar = fig.colorbar(im, cax=cbar_ax, ticks = [0., 0.5, 1.])
+cbar = fig2.colorbar(im, cax=cbar_ax, ticks = [0., 0.5, 1.])
 cbar_ax.set_ylabel('Density (arb. units)')
 
 plt.show()
