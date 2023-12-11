@@ -234,11 +234,11 @@ calculate_temperature(allvz)
 
 # and normalize
 img, x_edges, z_edges = np.histogram2d(allx, allz, 
-    bins=[np.arange(-600, 600, 5.), np.arange(-800., 600., 5.)])
+    bins=[np.arange(-400, 400, 5.), np.arange(-400., 50., 5.)])
 img = img/img.max()
 
 fig2, ax2 = plt.subplots(figsize = (4, 3))
-fig2.subplots_adjust(left=0.08, bottom=0.12, top=0.97, right=0.9)
+fig2.subplots_adjust(left=0.08, bottom=0.2, top=0.97, right=0.95)
 ax2.set_ylabel('$z$ ($\mu$m)')
 ax2.set_xlabel('$x$ ($\mu$m)')
 
@@ -258,8 +258,9 @@ ax2.legend()
 
 # colorbar
 pos = ax2.get_position()
-cbar_ax = fig2.add_axes([0.91, pos.y0, 0.015, pos.y1-pos.y0])
-cbar = fig2.colorbar(im, cax=cbar_ax, ticks = [0., 0.5, 1.])
+cbar_ax = fig2.add_axes([1, pos.y0, 0.015, pos.y1-pos.y0])
+colorbar_ticks = [0, 0.5, 1.]
+cbar = fig2.colorbar(im, cax=cbar_ax, ticks = colorbar_ticks)
 cbar_ax.set_ylabel('Density (arb. units)')
 
 plt.show()
