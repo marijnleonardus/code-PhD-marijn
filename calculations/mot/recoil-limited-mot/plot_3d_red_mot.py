@@ -38,8 +38,8 @@ from modules.laser_beam_class import AngledMOTBeams
 b_gauss = 4.24  # Gauss
 saturation = 80 
 detuning = -120e3  # Hz
-simulation_time = 0.01  # s
-nr_atoms = 30
+simulation_time = 0.1  # s
+nr_atoms = 2500
 nr_nodes = 4  # nr cores for multithreading
 
 # constants
@@ -102,10 +102,6 @@ Plot.trajectory_single_atom(eqn, tmax)
 # %% simulate many atoms
 
 
-if hasattr(eqn, 'sol'):
-    del eqn.sol
-
-
 def generate_random_solution(args):
     """for each atom index generate a unique seed, then generate
     an array of random numbers and evolve the solution"""
@@ -133,9 +129,7 @@ def run_parallel(nr_atoms, nr_nodes):
     """Uses parallel processing to generate random solutions
 
     it creates a ProcessPool with 4 nodes and splits the task of 
-    generating random solutions into chunks
-    
-    Each chunk is processed in parallel using the map function
+    generating random solutions into chunks that are processed in parallel
     
     returns:
     - a list of solutions
@@ -162,6 +156,7 @@ def ejection_criterion(solution_list):
     ) for solution in solution_list]
     return ejected
 
+
 sols = run_parallel(nr_atoms=nr_atoms, nr_nodes=nr_nodes)
 ejected = ejection_criterion(sols)
 
@@ -177,11 +172,19 @@ for sol, ejected_i in zip(sols, ejected):
     for ii in range(3):
         # if ejected, plot red, if not ejected plot blue
         if ejected_i:
+            # plot ejected atoms in red
             ax1[ii, 0].plot(sol.t/1e3, sol.v[ii], color='r', linewidth=0.25)
             ax1[ii, 1].plot(sol.t/1e3, sol.r[ii]*alpha, color='r', linewidth=0.25)
         else:
+            # plot non-ejected atoms in blue 
             ax1[ii, 0].plot(sol.t/1e3, sol.v[ii], color='b', linewidth=0.25)
-            ax1[ii, 1].plot(sol.t/1e3, sol.r[ii]*alpha, color='b', linewidth=0.25)
+            ax1[ii, 1].plot(sol.t/1e3, sol.r[ii]*alpha, color='b', linewidth=0.25) 
+            
+            # and log the velocities (temperature)
+            allx = np.append(allx, sol.r[0][::1]*(1e6*x0)) # um
+            allz = np.append(allz, sol.r[2][::1]*(1e6*x0)) # um
+            allvx = np.append(allvx, sol.v[0][::10]) # k/gamma
+            allvz = np.append(allvz, sol.v[2][::10]) # k/gamma
 
 # velocity (left) plots settings
 for ax_i in ax1[:, 0]:
@@ -202,19 +205,6 @@ for ax_i, lbl in zip(ax1[:, 1], ['x','y','z']):
     ax_i.set_ylabel('$\\alpha ' + lbl + '$')
 
 fig1.subplots_adjust(left=0.1, bottom=0.08, wspace=0.4)
-
-# %% plot histogram 2d and calculate temperatures
-
-# log coordinates at fixed points during trajectories, 
-# log velocties to compute temperatures
-allx = allz = np.array([], dtype='float64')
-allvx = allvz = np.array([], dtype='float64')
-
-for sol in sols:
-    allx = np.append(allx, sol.r[0][::1]*(1e6*x0)) # um
-    allz = np.append(allz, sol.r[2][::1]*(1e6*x0)) # um
-    allvx = np.append(allvx, sol.v[0][::10]) # k/gamma
-    allvz = np.append(allvz, sol.v[2][::10]) # k/gamma
 
 
 def calculate_temperature(array_gammaoverk):
