@@ -30,14 +30,15 @@ from matplotlib.patches import Ellipse
 
 # parameters
 b_gauss = 4.24  # Gauss
-saturation = 100 
-detuning = -200e3  # Hz
+saturation = 80 
+detuning = -120e3  # Hz
 simulation_time = 0.5  # s
 
 # constants
 wavelength = 689e-9  # m
 linewidth = 7.4e3  # rad/s
 bohr_magneton = scipy.constants.value('Bohr magneton in Hz/T')
+print(bohr_magneton)
 atomic_mass_unit = scipy.constants.value('atomic mass constant')
 
 # derived constants
@@ -164,7 +165,7 @@ def run_parallel(nr_atoms, nr_nodes):
     return sols
 
 
-sols = run_parallel(nr_atoms=50, nr_nodes=4)
+sols = run_parallel(nr_atoms=1000, nr_nodes=4)
 
 # ejection criterion, if the position is larger than 500, the atom is said to be ejected
 ejected = [np.bitwise_or(

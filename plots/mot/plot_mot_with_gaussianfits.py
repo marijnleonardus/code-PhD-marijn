@@ -21,15 +21,12 @@ import matplotlib.gridspec as gridspec
 from decimal import Decimal
 
 # user defined functions
-from camera_image_class import CameraImage
-from fitting_functions_class import FittingFunctions
-from number_atoms_class import NumberAtoms
+from modules.camera_image_class import CameraImage
+from modules.fitting_functions_class import FittingFunctions
+from modules.number_atoms_class import NumberAtoms
 
 
 # %% Variables
-
-# atomic paramters
-gamma_461 = 2*pi*32e6  # Hz (32 MHz)
 
 # gridspec setup
 w = 330
@@ -38,7 +35,7 @@ h = 20000
 # %% functions
 
 
-def main(folder, file_name):
+def main(folder, file_name, color):
      # load image
     image = CameraImage.load_image_from_file(folder, file_name)
         
@@ -65,18 +62,11 @@ def main(folder, file_name):
     print(sigma_x_um)
     print(sigma_y_um)
 
-    # obtain atom number
-    atoms_mot = NumberAtoms.atom_number_from_image(popt_cols, popt_rows, max_nr_pixel_counts,
-        camera_gain, exposure_time, photon_percount, trans_const, gamma_461, lens_distance, lens_radius)
-
-    # obtain atoms per cubic cm
-    atom_density = NumberAtoms.atomic_density_from_atom_number(atoms_mot, popt_cols[3], popt_rows[3])
-
-        # Initialize gridspec with correct ratios
+    # Initialize gridspec with correct ratios
     fig = plt.figure(figsize=(5.1, 4))
 
     gs = gridspec.GridSpec(4, 4, hspace=0, wspace=0, figure=fig, 
-        height_ratios=[1, h, 1, h / 4.8],width_ratios=[1, w, 1, w / 4.28])
+        height_ratios=[1, h, 1, h/4.8], width_ratios=[1, w, 1, w/4.28])
 
     ax1 = plt.subplot(gs[0:3, 0:3])
     ax2 = plt.subplot(gs[1, 3])
@@ -84,7 +74,7 @@ def main(folder, file_name):
     ax4 = plt.subplot(gs[3, 3])
 
     img = ax1.imshow(image_cropped, interpolation='nearest', origin='lower', vmin=0.)
-    img.set_cmap('Blues')
+    img.set_cmap(color)
     ax1.axis('off')
 
     # Scalebar, nr of pixels has to be integer
@@ -106,7 +96,6 @@ def main(folder, file_name):
     ax3.plot(pixels_x * pixel_size/cam_mag*10e2, 
         FittingFunctions.gaussian_function(pixels_x, *popt_cols), color='r', linewidth=1)
 
-    # cosmetics plot ax2,3 and 4
     ax2.set_ylabel(r'$y$ [mm]')
     ax2.yaxis.set_label_position('right')
     ax2.yaxis.set_ticks_position('right')
@@ -115,19 +104,37 @@ def main(folder, file_name):
     ax3.set_yticks([])
     ax4.axis('off')
 
-    plt.savefig('mot_fluoresecence_fit.pdf', dpi = 400, pad_inches = 0, bbox_inches = 'tight') 
+    savefig()
 
-    print('Number of atoms ~ ' + str(f"{Decimal(atoms_mot):.0E}"))
-    print('Atom density ~ ' + str(f"{Decimal(atom_density):.0E}"))
+    ## ATOM NUMBER STUFF
+    # obtain atom number
+    atoms_mot = NumberAtoms.atom_number_from_image(popt_cols, popt_rows, max_nr_pixel_counts,
+        camera_gain, exposure_time, photon_percount, trans_const, gamma_461, lens_distance, lens_radius)
 
+    # obtain atoms per cubic cm
+    atom_density = NumberAtoms.atomic_density_from_atom_number(
+        atoms_mot, popt_cols[3], popt_rows[3])
+    
+    return atoms_mot, atom_density
+
+
+def savefig():
+    export_folder = 'exports/'
+    export_name = 'mot_fluoresecence_fit.pdf'
+    export_location = export_folder + export_name
+    plt.savefig(export_location, dpi = 300, pad_inches = 0, bbox_inches = 'tight') 
     plt.show()
 
 
 if __name__ == '__main__':
-    # camera image parameters
+    # MOT plot params
+    cam_mag = 0.8    
+    color_plot = 'Reds'
+
+    # atom nr parameters
+    gamma_461 = 2*pi*32e6  # Hz (32 MHz)
     crop_r = 150  # pixels
     pixel_size = 6.5e-6  # microns
-    cam_mag = 0.22    
     lens_radius = 25e-3  # m
     lens_distance = 20e-2  # m
     trans_const = 0.6
@@ -139,4 +146,7 @@ if __name__ == '__main__':
     folder = r'T:\KAT1\Marijn\redmot\time of flight\nov15measurements\atom number\1_blue'
     file_name = r'\0000.tif'
 
-    main(folder, file_name)
+    atoms_mot, atom_density = main(folder, file_name, color_plot)
+    
+    print('Number of atoms ~ ' + str(f"{Decimal(atoms_mot):.0E}"))
+    print('Atom density ~ ' + str(f"{Decimal(atom_density):.0E}"))

@@ -13,9 +13,11 @@ import matplotlib.pyplot as plt
 from freq_mod_class import FrequencyModulation
 
 # broadband red MOT parameters
-mod_depth = 5*1e6  # [Hz]
-mod_freq = 50*1e3  # [1/s]
-carrier_freq = 80*1e6  # [1/s] 
+mod_depth = 1.72*1e6*2  # [Hz]
+mod_freq = 44.9*1e3  # [1/s]
+aom_freq = 80*1e6  # [1/s]
+detuning = 120*1e3  # [1/s]
+carrier_freq = aom_freq - detuning
 
 # sampling parameters
 sample_overhead = 10  # how much higher sampling freq. is than carrier freq. 
@@ -48,11 +50,11 @@ def main():
     fft_signal = fft_signal[:nr_samples // 2]
 
     # Normalize y axis
-    fft_signal = fft_signal / np.max(np.abs(fft_signal))
+    fft_signal = fft_signal / np.sum(np.abs(fft_signal))
 
     # Plot frequency domain signal
     fig, ax = plt.subplots()
-    ax.plot(freqs/1e6, np.abs(fft_signal), label='FM signal')
+    ax.plot(freqs/1e6, np.abs(fft_signal), label='Frequency modulated signal')
     
     # Set axes limits, labels
     lower_xlim = (carrier_freq - 1.5 * mod_depth*.5)/mhz
@@ -63,7 +65,8 @@ def main():
     ax.set_ylabel("Intensity [a.u.]")
 
     # plot carrier freq. only for comparison
-    ax.axvline(x=carrier_freq/mhz, color="red", ls='--', label='carrier freq.')
+    ax.axvline(x=carrier_freq/mhz, color="red", ls='--', label='Carrier frequency')
+    ax.axvline(x=aom_freq/mhz, color="green", ls='--', label='Atomic resonance frequency')
 
     ax.legend()
     plt.show()
