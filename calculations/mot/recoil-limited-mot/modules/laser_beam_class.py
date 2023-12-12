@@ -5,6 +5,7 @@ from pylcp import laserBeams
 from pylcp.fields import infinitePlaneWaveBeam
 from scipy.spatial.transform import Rotation
 import numpy as np
+from scipy.constants import pi
 
 
 class AngledMOTBeams(laserBeams):
@@ -40,10 +41,11 @@ class AngledMOTBeams(laserBeams):
 
         rot_mat = Rotation.from_euler(rotation_spec, rotation_angles).as_matrix()
 
+        angle_deg = 30
+        angle_rad = 30/180*pi
         kvecs = [np.array([.5*np.sqrt(3), 0., -.5]), np.array([-0.5*np.sqrt(3), 0., +.5]),
-                 np.array([0,  1.,  0.]), np.array([ 0., -1.,  0.]),
                  np.array([.5*np.sqrt(3), 0., +.5]), np.array([-0.5*np.sqrt(3), 0., -.5])]
-        pols = [-pol, -pol, +pol, +pol, -pol, -pol,]
+        pols = [-pol, -pol, -pol, -pol]
 
         for kvec, pol in zip(kvecs, pols):
             self.add_laser(beam_type(kvec=rot_mat @ (k*kvec), pol=pol, **kwargs))

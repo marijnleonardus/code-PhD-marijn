@@ -16,6 +16,7 @@ The following packages were installed
 
 # %% imports 
 
+# standard libraries
 import numpy as np
 import scipy
 import matplotlib.pyplot as plt
@@ -26,13 +27,20 @@ from scipy.constants import hbar, pi, Boltzmann, proton_mass
 import pathos 
 from matplotlib.patches import Ellipse
 
+# user defined libraries
+from modules.plotting import Plotting
+from modules.magnetic_field_class import QuadrupoleYMagneticField
+from modules.laser_beam_class import AngledMOTBeams
+
 # %% constants
 
 # parameters
 b_gauss = 4.24  # Gauss
 saturation = 80 
 detuning = -120e3  # Hz
-simulation_time = 0.5  # s
+simulation_time = 0.1  # s
+nr_atoms = 2500
+nr_nodes = 4  # nr cores for multithreading
 
 # constants
 wavelength = 689e-9  # m
@@ -60,12 +68,17 @@ alpha = (3/2)*bohr_magneton*b_tesla*(x0*1e2)/linewidth
 # %% define magnetic field, laser beams, governing equation
 
 # quadrupole field
-from modules.magnetic_field_class import QuadrupoleYMagneticField
 magField = QuadrupoleYMagneticField(alpha)
 
 # laser beams
-from modules.laser_beam_class import AngledMOTBeams
-laserBeams = AngledMOTBeams(delta=det, s=saturation, beam_type=pylcp.infinitePlaneWaveBeam)
+# start with 4 diagonal beams
+laserBeams = AngledMOTBeams(delta = det, s = saturation,  beam_type = pylcp.infinitePlaneWaveBeam)
+
+# add 2 horizontal beams
+HorizontalBeam1 = pylcp.laserBeam(kvec=np.array([0, +1., 0.]), delta = det, pol=+1, s=0.5*saturation)
+HorizontalBeam2 = pylcp.laserBeam(kvec=np.array([0.,-1., 0.]), delta = det, pol=+1, s=0.5*saturation)
+laserBeams.add_laser(HorizontalBeam1)
+laserBeams.add_laser(HorizontalBeam2)
 
 # define hamiltonian
 Hg, mugq = pylcp.hamiltonians.singleF(F=0, muB=1)
@@ -78,45 +91,16 @@ eqn = pylcp.rateeq(laserBeams, magField, hamiltonian, g)
 # uncomment for the heuristic equation
 #eqn = pylcp.heuristiceq(laserBeams, magField, g, mass=mass)
 
-# for plotting rescaling
-length_mm = 1e3*x0  # mm
-z = np.linspace(-0.6, 0.6, 101)/length_mm
-r = np.array([np.zeros(z.shape), np.zeros(z.shape), z])
-v = np.zeros((3,) + z.shape)
+# %% plot force profiles
 
-eqn.generate_force_profile(r, v, name='Fz')
-
-# plot force profile
-fig, ax = plt.subplots(1, 1)
-ax.plot(z*length_mm, eqn.profile['Fz'].F[2])
-ax.set_xlabel('$z$ (mm)')
-ax.set_ylabel('$f/(\hbar k \Gamma)$')
-plt.show()
+Plot = Plotting(length_scale=x0, time_scale=t0)
+Plot.force_profile_3d(eqn)
 
 # %% dynamics
 
-if isinstance(eqn, pylcp.rateeq):
-    eqn.set_initial_pop(np.array([1., 0., 0., 0.]))
-eqn.set_initial_position(np.array([0., 0., 0.]))
-
-# simulate for 10% of the time
-eqn.evolve_motion([0, tmax*0.1], random_recoil=True, progress_bar=True, max_step=1.)
-
-# plot test solution
-fig, ax = plt.subplots(1, 2, figsize=(6.5, 2.75))
-ax[0].plot(eqn.sol.t*t0, eqn.sol.r.T*(1e6*x0))
-ax[1].plot(eqn.sol.t*t0, eqn.sol.v.T)
-ax[0].set_ylabel('$r$ ($\mu$m)')
-ax[0].set_xlabel('$t$ (s)')
-ax[1].set_ylabel('$v/(\Gamma/k)$')
-ax[1].set_xlabel('$t$ (s)')
-fig.subplots_adjust(left=0.08, wspace=0.22)
+Plot.trajectory_single_atom(eqn, tmax)
 
 # %% simulate many atoms
-
-
-if hasattr(eqn, 'sol'):
-    del eqn.sol
 
 
 def generate_random_solution(args):
@@ -146,9 +130,7 @@ def run_parallel(nr_atoms, nr_nodes):
     """Uses parallel processing to generate random solutions
 
     it creates a ProcessPool with 4 nodes and splits the task of 
-    generating random solutions into chunks
-    
-    Each chunk is processed in parallel using the map function
+    generating random solutions into chunks that are processed in parallel
     
     returns:
     - a list of solutions
@@ -165,26 +147,45 @@ def run_parallel(nr_atoms, nr_nodes):
     return sols
 
 
-sols = run_parallel(nr_atoms=1000, nr_nodes=4)
+def ejection_criterion(solution_list):
+    """ ejection criterion, if the position is larger than 500,
+    the atom is said to be ejected"""
 
-# ejection criterion, if the position is larger than 500, the atom is said to be ejected
-ejected = [np.bitwise_or(
-    np.abs(sol.r[0, -1]*(1e6*x0))>500,
-    np.abs(sol.r[1, -1]*(1e6*x0))>500
-) for sol in sols]
+    ejected = [np.bitwise_or(
+        np.abs(solution.r[0, -1]*(1e6*x0)) > 500,
+        np.abs(solution.r[1, -1]*(1e6*x0)) > 500
+    ) for solution in solution_list]
+    return ejected
 
-# %% plot trajectories
+
+sols = run_parallel(nr_atoms=nr_atoms, nr_nodes=nr_nodes)
+ejected = ejection_criterion(sols)
+
+# %% plot trajectories and calculate temperatures
+
+# empty matrices to later fill with trajectories of non-ejected atoms
+# for the temperature calculations
+allx = allz = np.array([], dtype='float64')
+allvx = allvz = np.array([], dtype='float64')
 
 fig1, ax1 = plt.subplots(3, 2, figsize=(7, 2*2.75))
 for sol, ejected_i in zip(sols, ejected):
     for ii in range(3):
         # if ejected, plot red, if not ejected plot blue
         if ejected_i:
+            # plot ejected atoms in red
             ax1[ii, 0].plot(sol.t/1e3, sol.v[ii], color='r', linewidth=0.25)
             ax1[ii, 1].plot(sol.t/1e3, sol.r[ii]*alpha, color='r', linewidth=0.25)
         else:
+            # plot non-ejected atoms in blue 
             ax1[ii, 0].plot(sol.t/1e3, sol.v[ii], color='b', linewidth=0.25)
-            ax1[ii, 1].plot(sol.t/1e3, sol.r[ii]*alpha, color='b', linewidth=0.25)
+            ax1[ii, 1].plot(sol.t/1e3, sol.r[ii]*alpha, color='b', linewidth=0.25) 
+            
+            # and log the velocities (temperature)
+            allx = np.append(allx, sol.r[0][::1]*(1e6*x0)) # um
+            allz = np.append(allz, sol.r[2][::1]*(1e6*x0)) # um
+            allvx = np.append(allvx, sol.v[0][::10]) # k/gamma
+            allvz = np.append(allvz, sol.v[2][::10]) # k/gamma
 
 # velocity (left) plots settings
 for ax_i in ax1[:, 0]:
@@ -205,19 +206,6 @@ for ax_i, lbl in zip(ax1[:, 1], ['x','y','z']):
     ax_i.set_ylabel('$\\alpha ' + lbl + '$')
 
 fig1.subplots_adjust(left=0.1, bottom=0.08, wspace=0.4)
-
-# %% plot histogram 2d and calculate temperatures
-
-# log coordinates at fixed points during trajectories, 
-# log velocties to compute temperatures
-allx = allz = np.array([], dtype='float64')
-allvx = allvz = np.array([], dtype='float64')
-
-for sol in sols:
-    allx = np.append(allx, sol.r[0][::1]*(1e6*x0)) # um
-    allz = np.append(allz, sol.r[2][::1]*(1e6*x0)) # um
-    allvx = np.append(allvx, sol.v[0][::1]) # k/gamma
-    allvz = np.append(allvz, sol.v[2][::1]) # k/gamma
 
 
 def calculate_temperature(array_gammaoverk):
@@ -243,13 +231,15 @@ def calculate_temperature(array_gammaoverk):
 calculate_temperature(allvx)
 calculate_temperature(allvz)
 
-# compute the 2d histogram and normalize
+# %% compute the 2d histogram 
+
+# and normalize
 img, x_edges, z_edges = np.histogram2d(allx, allz, 
-    bins=[np.arange(-600, 600, 5.), np.arange(-800., 600., 5.)])
+    bins=[np.arange(-400, 400, 5.), np.arange(-400., 50., 5.)])
 img = img/img.max()
 
 fig2, ax2 = plt.subplots(figsize = (4, 3))
-fig2.subplots_adjust(left=0.08, bottom=0.12, top=0.97, right=0.9)
+fig2.subplots_adjust(left=0.08, bottom=0.2, top=0.97, right=0.95)
 ax2.set_ylabel('$z$ ($\mu$m)')
 ax2.set_xlabel('$x$ ($\mu$m)')
 
@@ -269,9 +259,12 @@ ax2.legend()
 
 # colorbar
 pos = ax2.get_position()
-cbar_ax = fig2.add_axes([0.91, pos.y0, 0.015, pos.y1-pos.y0])
-cbar = fig.colorbar(im, cax=cbar_ax, ticks = [0., 0.5, 1.])
+cbar_ax = fig2.add_axes([1, pos.y0, 0.015, pos.y1-pos.y0])
+colorbar_ticks = [0, 0.5, 1.]
+cbar = fig2.colorbar(im, cax=cbar_ax, ticks = colorbar_ticks)
 cbar_ax.set_ylabel('Density (arb. units)')
 
 plt.show()
 
+
+# %%
