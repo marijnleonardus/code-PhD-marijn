@@ -89,11 +89,11 @@ def main(folder, file_name, color):
     # plot sum over rows, as well as a guassian fit
     ax2.scatter(-np.flip(hist_rows), pixels_y * pixel_size / cam_mag * 10e2, s=5)
     ax2.plot(-np.flip(FittingFunctions.gaussian_function(pixels_y, *popt_rows)),
-        pixels_y * pixel_size / cam_mag * 10e2, color='r', linewidth=1)
+        pixels_y * pixel_size/cam_mag * 10e2, color='r', linewidth=1)
 
     # plot sum over columns as well as gaussian fit
-    ax3.scatter(pixels_x * pixel_size / cam_mag * 10e2, hist_cols, s=5)
-    ax3.plot(pixels_x * pixel_size/cam_mag*10e2, 
+    ax3.scatter(pixels_x * pixel_size/cam_mag * 10e2, hist_cols, s=5)
+    ax3.plot(-pixels_x * pixel_size/cam_mag*10e2, 
         FittingFunctions.gaussian_function(pixels_x, *popt_cols), color='r', linewidth=1)
 
     ax2.set_ylabel(r'$y$ [mm]')
@@ -133,7 +133,7 @@ if __name__ == '__main__':
 
     # atom nr parameters
     gamma_461 = 2*pi*32e6  # Hz (32 MHz)
-    crop_r = 150  # pixels
+    crop_r = 198  # pixels
     pixel_size = 6.5e-6  # microns
     lens_radius = 25e-3  # m
     lens_distance = 20e-2  # m
@@ -143,8 +143,8 @@ if __name__ == '__main__':
     exposure_time = 10e-3  # s
 
     # importing data
-    folder = r'T:\KAT1\Marijn\redmot\time of flight\nov15measurements\atom number\1_blue'
-    file_name = r'\0000.tif'
+    folder = r'T:\KAT1\Marijn\redmot\redmot_bb'
+    file_name = r'\0002_crop.tif'
 
     atoms_mot, atom_density = main(folder, file_name, color_plot)
     

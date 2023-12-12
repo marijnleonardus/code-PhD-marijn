@@ -13,11 +13,12 @@ class CameraImage:
         
         """spits out numpy array of BMP image loaded into memory"""
         
-        # load image
+        # load image and convert to greyscale
         image_file = Image.open(location + name)
-        
+        image_file_grey = image_file.convert("L")
+
         # convert to numpy format
-        array = np.array(image_file)
+        array = np.array(image_file_grey)
         return array
 
     def crop_to_region_of_interest(image_file, roi_size):
