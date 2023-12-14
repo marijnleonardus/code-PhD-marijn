@@ -15,4 +15,4 @@ class FittingFunctions:
         - middle 
         - width (sigma)"""
         
-        return offset + amplitude * np.exp(-0.5 * ((x - middle) / width)**2)
+        return offset + amplitude*np.exp(-0.5*((x - middle)/width)**2)
