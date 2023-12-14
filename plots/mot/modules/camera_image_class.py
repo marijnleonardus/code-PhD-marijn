@@ -51,21 +51,21 @@ class CameraImage:
         histogram_rows = image_file.sum(axis=1)
         histogram_cols = image_file.sum(axis=0)
         
-        hist_rows_norm = histogram_rows / np.max(histogram_rows)
-        hist_cols_norm = histogram_cols / np.max(histogram_cols)
-        return hist_rows_norm, hist_cols_norm
-    
-    def return_pixel_array(dimension):
-        """return array of numered pixels. These numbers correspond to the cropped 
-        region of interest of the full MOT image"""
-        
-        return np.linspace(-dimension, dimension - 1, dimension)
+        # normalize
+        histogram_rows = histogram_rows / np.max(histogram_rows)
+        histogram_cols = histogram_cols / np.max(histogram_cols)
+        return histogram_rows, histogram_cols
 
-    def convert_pixels_to_distance(popt, coordinate, pixel_dimension, magnification):
-        """prints sigma x,y given fit parameter array 'popt'
-        The sigma is the 3rd (4th in python) of the popt array
-        The coordinate can be either a string 'x' or 'y'"""
-        
-        sigma = np.round(popt[3] * pixel_dimension / magnification * 10e5)
-        print(f'Sigma in {coordinate} direction is: ' + str(Decimal(sigma)) + ' micron')
-        return sigma
+    def pixels_to_m(nr_pixels, magnification, pixel_size, bin_size):
+        """converts number of pixels to meters"""
+
+        image_size = nr_pixels*pixel_size*bin_size
+        object_size = image_size/magnification
+        return object_size
+    
+    def m_to_pixels(object_size, magnification, pixel_size, bin_size):
+        """converts meters to number of pixels"""
+
+        image_size = object_size*magnification
+        nr_pixels = image_size/bin_size/pixel_size
+        return nr_pixels
