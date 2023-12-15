@@ -21,13 +21,20 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from scipy.optimize import curve_fit
 import matplotlib.gridspec as gridspec
 
-# user defined functions in modules folder (parent)
+# append path with 'modules' dir in parent folder
 import sys
-sys.path.append('../../modules')
-from modules.camera_image_class import CameraImage
-from modules.fitting_functions_class import FittingFunctions
-from modules.number_atoms_class import NumberAtoms
-from modules.plotting_class import Plotting
+import os
+script_dir = os.path.dirname(os.path.abspath(__file__))
+modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
+sys.path.append(modules_dir)
+
+# user defined functions in modules folder (parent)
+from camera_image_class import CameraImage
+from fitting_functions_class import FittingFunctions
+from plotting_class import Plotting
+
+# module specific for this script, currently unused
+from specific_modules.number_atoms_class import NumberAtoms
 
 
 # %% Variables
@@ -66,11 +73,11 @@ def main(image, color, show_gaussian_fit):
     pixels_x = pixels_z = np.linspace(-crop_r/2, crop_r/2 - 1, crop_r)
 
     # guess for fittin data
-    fitting_guess = [0.2, 0.8, 0, 12]  # offset, amplitude, middle, width
+    fit_guess = [0.2, 0.8, 0, 12]  # offset, amplitude, middle, width
 
     # fit pixel data
-    popt_rows, _ = curve_fit(FittingFunctions.gaussian_function, pixels_z, hist_rows, p0=fitting_guess)
-    popt_cols, _ = curve_fit(FittingFunctions.gaussian_function, pixels_x, hist_cols, p0=fitting_guess)
+    popt_rows, _ = curve_fit(FittingFunctions.gaussian_function, pixels_z, hist_rows, p0 = fit_guess)
+    popt_cols, _ = curve_fit(FittingFunctions.gaussian_function, pixels_x, hist_cols, p0 = fit_guess)
 
     # print sigma_x,y
     sigma_x_px = popt_cols[3]
@@ -124,7 +131,7 @@ def main(image, color, show_gaussian_fit):
 
         # plot sum over columns as well as gaussian fit
         # plot in mm (multiply 1e3)
-        offset_x= popt_rows[0]
+        offset_x = popt_rows[0]
         amplitude_x = popt_rows[1]
         fitted_gaussian_cols = FittingFunctions.gaussian_function(pixels_x, offset_x, amplitude_x, 0, sigma_x_px)
         ax3.scatter(axis_x*1e3, hist_cols, s=7)
@@ -185,6 +192,4 @@ if __name__ == '__main__':
     photon_percount = 6e3  
     camera_gain = 1
     exposure_time = 10e-3  # s
-
-    
    """
