@@ -9,8 +9,8 @@ from decimal import Decimal
 
 class CameraImage:
     """Collection of functions to do with loading and processing camera iamges"""
+    
     def load_image_from_file(location, name):
-        
         """spits out numpy array of BMP image loaded into memory"""
         
         # load image and convert to greyscale

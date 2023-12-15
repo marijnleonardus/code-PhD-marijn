@@ -73,7 +73,7 @@ def main(image, color, show_gaussian_fit):
     pixels_x = pixels_z = np.linspace(-crop_r/2, crop_r/2 - 1, crop_r)
 
     # guess for fittin data
-    fit_guess = [0.2, 0.8, 0, 12]  # offset, amplitude, middle, width
+    fit_guess = [0.1, 0.8, 0, 8]  # offset, amplitude, middle, width
 
     # fit pixel data
     popt_rows, _ = curve_fit(FittingFunctions.gaussian_function, pixels_z, hist_rows, p0 = fit_guess)
@@ -101,7 +101,7 @@ def main(image, color, show_gaussian_fit):
 
     # Scalebar, nr of pixels has to be integer
     scalebar_object_size = 0.5e-3  # m
-    scalebar_pixels= CameraImage.m_to_pixels(scalebar_object_size, cam_mag, pixel_size, bin_size)
+    scalebar_pixels = CameraImage.m_to_pixels(scalebar_object_size, cam_mag, pixel_size, bin_size)
     scale_bar = AnchoredSizeBar(ax1.transData,
         scalebar_pixels,  # pixels
         r'0.5 mm',  # real life distance of scale bar
@@ -167,21 +167,21 @@ def main(image, color, show_gaussian_fit):
 if __name__ == '__main__':
     # MOT plot params
     cam_mag = 0.8    
-    color_plot = 'Blues'
+    color_plot = 'Reds'
     pixel_size = 3.45e-6  # m
     bin_size = 4
     crop_r = 150  # pixels
 
     # importing data
-    folder = bluemot_folder #redmot_sf_folder
-    file_name = bluemot_filename #redmot_sf_file_name
+    folder = redmot_bb_folder #redmot_sf_folder
+    file_name = redmot_bb_file_name #redmot_sf_file_name
 
     # load image and crop to center
     image = CameraImage.load_image_from_file(folder, file_name)
     image_cropped = CameraImage.crop_center(image, crop_r, crop_r)
 
     # fit image and plot result
-    main(image_cropped, color_plot, show_gaussian_fit=True)
+    main(image_cropped, color_plot, show_gaussian_fit = False)
 
     
     """# atom nr parameters

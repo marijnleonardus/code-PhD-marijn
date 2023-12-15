@@ -2,39 +2,25 @@
 # november 2023
 """script for analyzing time of flight data"""
 
+# %% 
+# standard libraries
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.optimize import curve_fit
-import imageio.v2 as imageio 
 
+# append modules dir
+import sys
+script_dir = os.path.dirname(os.path.abspath(__file__))
+modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
+print(modules_dir)
+sys.path.append(modules_dir)
 
-def gaussian_2d(xy, amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
-    """2D Gaussian function.
+# user defined functions
+from fitting_functions_class import FittingFunctions
+from camera_image_class import CameraImage
 
-    Parameters:
-    - xy: 2D array containing x and y coordinates.
-    - amplitude: Amplitude of the Gaussian.
-    - xo: x-coordinate of the center.
-    - yo: y-coordinate of the center.
-    - sigma_x: Standard deviation along the x-axis.
-    - sigma_y: Standard deviation along the y-axis.
-    - theta: Rotation angle of the Gaussian in radians.
-    - offset: Offset or background.
-
-    Returns:
-    - Values of the Gaussian function evaluated at given coordinates.
-    """
-    x, y = xy
-    a = np.cos(theta)**2 / (2 * sigma_x**2) + np.sin(theta)**2 / (2 * sigma_y**2)
-    b = -np.sin(2 * theta) / (4 * sigma_x**2) + np.sin(2 * theta) / (4 * sigma_y**2)
-    c = np.sin(theta)**2 / (2 * sigma_x**2) + np.cos(theta)**2 / (2 * sigma_y**2)
-    
-    # Gaussian function
-    g = amplitude * np.exp(-(a * (x - xo)**2 + 2 * b * (x - xo) * (y - yo) + c * (y - yo)**2)) + offset
-    return g
-
+ # %% functions
 
 def fit_and_return_parameters(xy, data):
     """fit data and return parameters"""
@@ -46,7 +32,7 @@ def fit_and_return_parameters(xy, data):
     bounds = (0, [np.inf, np.inf, np.inf, np.inf, np.inf, np.pi, np.inf])
 
     # Fit 2D Gaussian to the entire image with constrained theta
-    params, _ = curve_fit(gaussian_2d, xy, data, p0=initial_guess, bounds=bounds)
+    params, _ = curve_fit(FittingFunctions.gaussian_2d, xy, data, p0=initial_guess, bounds=bounds)
 
     # Create a DataFrame to store parameters and standard errors
     result = pd.DataFrame({
@@ -56,14 +42,8 @@ def fit_and_return_parameters(xy, data):
     return result
 
 def main(folder_path, image_name):
-    image_path = os.path.join(folder_path, image_name)
-
     # Read the image using imageio
-    original_image = imageio.imread(image_path)
-
-    # Convert to grayscale if needed
-    if len(original_image.shape) == 3:
-        original_image = np.mean(original_image, axis=2).astype(np.uint8)
+    original_image = CameraImage.load_image_from_file(folder_path, image_name)
 
     # Precompute meshgrid
     x_max, y_max = 0, 0
@@ -71,10 +51,8 @@ def main(folder_path, image_name):
     x_max = max(x_max, original_image.shape[1])
     y_max = max(y_max, original_image.shape[0])
 
-
     x = np.arange(0, x_max, 1)
     y = np.arange(0, y_max, 1)
-
 
     # empty lists to fill later
     x, y = np.meshgrid(x, y)        
@@ -90,9 +68,10 @@ def main(folder_path, image_name):
     amplitude= fitted_params_df.loc[fitted_params_df['Parameter'] == 'Amplitude', 'Value'].values[0]
     print(sigmas_x*sigmas_y*amplitude)
 
+# %% execute script
 
 if __name__ == "__main__":
    folder_path = r"T:\KAT1\Marijn\redmot\time of flight\nov15measurements\atom number"
-   image_name = r"6_sf_final\0000.tif"
+   image_name = r"\6_sf_final\0000.tif"
 
    main(folder_path, image_name)
