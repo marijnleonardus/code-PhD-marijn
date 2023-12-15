@@ -4,23 +4,19 @@
 from arc import Strontium88
 import scipy
 import os 
+
+# add modules to path
 import sys
-
-# Get the current script's directory
 script_dir = os.path.dirname(os.path.abspath(__file__))
-
-# Construct the path to the 'modules' directory
 modules_dir = os.path.abspath(os.path.join(script_dir, '../modules'))
-
-# Add the 'modules' directory to the Python path
 sys.path.append(modules_dir)
 
+# load user defined module
 from conversion_class import Conversion
-
-
 
 bohr_radius = scipy.constants.physical_constants['Bohr radius'][0]
 Sr88 = Strontium88()
+
 
 class LightAtomInteraction:
     
@@ -36,7 +32,7 @@ class LightAtomInteraction:
         - scattering rate [rad/s]     
         """
         
-        rate = .5 * s0 * linewidth / (1 + s0 + (2 * detuning / linewidth)**2)
+        rate = .5*s0*linewidth/(1 + s0 + (2*detuning/linewidth)**2)
         return rate
     
     def scattering_rate_power(linewidth, detuning, wavelength, beam_waist, power):
@@ -56,16 +52,12 @@ class LightAtomInteraction:
         """
         
         # lifetime excited state
-        lifetime = 1 / linewidth
+        lifetime = 1/linewidth
         
-        # saturation intensity
+        # saturation intensity, intensity, and s0 parameter
         sat_intensity = Conversion.saturation_intensity(lifetime, wavelength)
-
-        # intensity 
         intensity = Conversion.gaussian_beam_intensity(beam_waist, power)
-        
-        # saturation parameter
-        s0 = intensity / sat_intensity
+        s0 = intensity/sat_intensity
         
         # off-resonant scattering rate computed from scattering rate formula
         off_resonant_rate = LightAtomInteraction.scattering_rate_sat(detuning, linewidth, s0)
@@ -92,6 +84,6 @@ class LightAtomInteraction:
         defect = Sr88.getQuantumDefect(n, 0, 1, s=1)
         
         # get RDME in atomic units
-        rdme_au = 1.728*(n-defect)**(-1.5)
+        rdme_au = 1.728*(n - defect)**(-1.5)
         
         return rdme_au
