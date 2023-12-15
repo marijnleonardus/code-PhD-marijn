@@ -20,9 +20,10 @@ from scipy.constants import pi
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from scipy.optimize import curve_fit
 import matplotlib.gridspec as gridspec
-from decimal import Decimal
 
-# user defined functions
+# user defined functions in modules folder (parent)
+import sys
+sys.path.append('../../modules')
 from modules.camera_image_class import CameraImage
 from modules.fitting_functions_class import FittingFunctions
 from modules.number_atoms_class import NumberAtoms
@@ -136,8 +137,8 @@ def main(image, color, show_gaussian_fit):
         ax3.set_xlabel(r'$x$ [mm]')
         ax3.set_yticks([])
 
-    Plotting.savefig(export_folder = 'exports/',
-        file_name = 'mot_fluorescence_fit.pdf')
+    Plotting.savefig(export_folder = 'output/',
+        file_name = 'blue_mot_fluorescence_fit.pdf')
 
     """ ATOM NUMBER STUFF
     # obtain atom number
