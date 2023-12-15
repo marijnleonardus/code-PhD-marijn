@@ -10,10 +10,22 @@ Takes into account losses along the way to the atoms"""
 from scipy.constants import epsilon_0, c, Boltzmann, hbar, pi
 import numpy as np
 
+import sys
+import os
+
+# Get the current script's directory
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Construct the path to the 'modules' directory
+modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
+
+# Add the 'modules' directory to the Python path
+sys.path.append(modules_dir)
+
 # user defined libraries
-from modules.optics import GaussianBeam
-from modules.atoms import AtomicCalculations
-from modules.units import UnitConversion
+from optics_tweezer import GaussianBeam
+from atoms_tweezer import AtomicCalculations
+from units import UnitConversion
 
 # %% variables
 

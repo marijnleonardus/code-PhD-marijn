@@ -1,9 +1,23 @@
 # author: Marijn Venderbosch
 # january 2023
 
-from modules.conversion_class import Conversion
 from arc import Strontium88
 import scipy
+import os 
+import sys
+
+# Get the current script's directory
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Construct the path to the 'modules' directory
+modules_dir = os.path.abspath(os.path.join(script_dir, '../modules'))
+
+# Add the 'modules' directory to the Python path
+sys.path.append(modules_dir)
+
+from conversion_class import Conversion
+
+
 
 bohr_radius = scipy.constants.physical_constants['Bohr radius'][0]
 Sr88 = Strontium88()

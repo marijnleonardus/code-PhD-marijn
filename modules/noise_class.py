@@ -4,9 +4,10 @@
 import numpy as np
 import scipy.integrate
 from arc import Strontium88
+from scipy.constants import pi 
 
-pi=np.pi
 Sr88 = Strontium88()
+
 
 class GateErrors:
     

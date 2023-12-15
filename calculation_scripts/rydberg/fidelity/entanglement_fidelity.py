@@ -7,23 +7,40 @@ mechanisms. In order to do this, it computes rabi frequencies, lifetimes and
 interaction strengths as a function of n
 """
 
+# %% 
+# standard modules
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.constants import proton_mass
-import pandas as pd
+from scipy.constants import proton_mass, pi
+# only use when you import specific data (phase noise i think)
+# import pandas as pd
 
-from modules.atom_class import AtomicMotion, VanDerWaals, Polarizability
-from modules.optics_class import Optics
-from modules.rates_class import LightAtomInteraction
-from modules.conversion_class import Conversion
-from modules.noise_class import PhaseNoise, IntensityNoise, GateErrors, Lifetime
+# user defined functions
+# Update sys.path to include the 'modules' directory
+import sys
+import os
+
+# Get the current script's directory
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Construct the path to the 'modules' directory
+modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
+
+# Add the 'modules' directory to the Python path
+sys.path.append(modules_dir)
+
+# Import custom modules
+from atom_class import AtomicMotion, VanDerWaals, Polarizability
+from optics_class import Optics
+from rates_class import LightAtomInteraction
+from conversion_class import Conversion
+from noise_class import PhaseNoise, IntensityNoise, GateErrors, Lifetime
 
 plt.style.use('default')
 
 # %% variables
 
 # fixed
-pi = np.pi
 mass_sr = 88*proton_mass  # [kg]
 uv_wavelength = 316.6e-9  # [m]
 
@@ -200,3 +217,4 @@ ax5.set_ylabel(r'Etanglement error, $1-\mathcal{F}$')
 ax5.set_yscale('log')
 ax5.legend(title='Stray electric field [V/cm]')
 plt.savefig('stray_field_fidelities.png', bbox_inches='tight', dpi=400)
+plt.show()

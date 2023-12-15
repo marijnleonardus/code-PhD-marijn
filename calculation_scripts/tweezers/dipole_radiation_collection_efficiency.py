@@ -7,10 +7,10 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.constants import pi
 
 # %% variables
 
-pi = np.pi
 theta = phi = np.linspace(0, 2*pi, 1000)
 
 # %% functions
