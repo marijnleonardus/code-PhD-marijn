@@ -25,14 +25,12 @@ from camera_image_class import CameraImage
 def fit_and_return_parameters(xy, data):
     """fit data and return parameters"""
 
-    # Initial guess for the parameters
+    # Initial guess for the parameters, bound theta parameter
     initial_guess = (50, 300, 200, 20, 20, 0, np.min(data))
-    
-    # Define bounds for the parameters, including the constraint for theta
     bounds = (0, [np.inf, np.inf, np.inf, np.inf, np.inf, np.pi, np.inf])
 
     # Fit 2D Gaussian to the entire image with constrained theta
-    params, _ = curve_fit(FittingFunctions.gaussian_2d, xy, data, p0=initial_guess, bounds=bounds)
+    params, _ = curve_fit(FittingFunctions.gaussian_2d_angled, xy, data, p0=initial_guess, bounds=bounds)
 
     # Create a DataFrame to store parameters and standard errors
     result = pd.DataFrame({

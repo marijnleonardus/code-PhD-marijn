@@ -2,6 +2,9 @@
 # november 2023
 """script for analyzing time of flight data"""
 
+#%% import modules
+
+# standard libraries
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,44 +12,35 @@ import pandas as pd
 from scipy.optimize import curve_fit
 import imageio.v2 as imageio 
 
+# append path with 'modules' dir in parent folder
+import sys
+script_dir = os.path.dirname(os.path.abspath(__file__))
+modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
+sys.path.append(modules_dir)
 
-def gaussian_2d(xy, amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
-    """2D Gaussian function.
+# user defined functions
+from fitting_functions_class import FittingFunctions
+from camera_image_class import CameraImage
 
-    Parameters:
-    - xy: 2D array containing x and y coordinates.
-    - amplitude: Amplitude of the Gaussian.
-    - xo: x-coordinate of the center.
-    - yo: y-coordinate of the center.
-    - sigma_x: Standard deviation along the x-axis.
-    - sigma_y: Standard deviation along the y-axis.
-    - theta: Rotation angle of the Gaussian in radians.
-    - offset: Offset or background.
+# %% parameters
 
-    Returns:
-    - Values of the Gaussian function evaluated at given coordinates.
-    """
-    x, y = xy
-    a = np.cos(theta)**2 / (2 * sigma_x**2) + np.sin(theta)**2 / (2 * sigma_y**2)
-    b = -np.sin(2 * theta) / (4 * sigma_x**2) + np.sin(2 * theta) / (4 * sigma_y**2)
-    c = np.sin(theta)**2 / (2 * sigma_x**2) + np.cos(theta)**2 / (2 * sigma_y**2)
-    
-    # Gaussian function
-    g = amplitude * np.exp(-(a * (x - xo)**2 + 2 * b * (x - xo) * (y - yo) + c * (y - yo)**2)) + offset
-    return g
+cam_mag = 0.8
+pix_size = 3.45e-6  # [m]
+bin_size = 4  # [pixels]
+
+# %% functions 
 
 
 def fit_and_return_parameters(xy, data, yguess):
     """fit data and return parameters"""
 
-    # Initial guess for the parameters
+    # Initial guess for the parameters, bounds
     initial_guess = (30, 300, yguess, 10, 10, 0, np.min(data))
-    
-    # Define bounds for the parameters, including the constraint for theta
     bounds = (0, [np.inf, np.inf, np.inf, np.inf, np.inf, np.pi, np.inf])
 
     # Fit 2D Gaussian to the entire image with constrained theta
-    params, covariance = curve_fit(gaussian_2d, xy, data, p0=initial_guess, bounds=bounds)
+    params, covariance = curve_fit(FittingFunctions.gaussian_2d_angled, xy, data, 
+        p0=initial_guess, bounds=bounds)
     
     # Calculate standard errors from the covariance matrix
     standard_errors = np.sqrt(np.diag(covariance))
@@ -60,7 +54,7 @@ def fit_and_return_parameters(xy, data, yguess):
     return result
 
 
-def compute_average_sigma(sigma_x, sigma_y, magnification=0.8, binning=4, pixel_size=3.45e-6):
+def compute_average_sigma(sigma_x, sigma_y, magnification, binning, pixel_size):
     """Calculate the average sigma in pixels"""
 
     avg_sigma_pixels = 0.5*(sigma_x + sigma_y)
@@ -73,23 +67,21 @@ def compute_average_sigma(sigma_x, sigma_y, magnification=0.8, binning=4, pixel_
     return sigma_meters_object
 
 
-def analyze_folder(folder_path, first_datapoint_ms, yguess=160):
+def analyze_folder(folder_path, first_datapoint_ms, yguess):
     """for a given folder, export the image data and fit to extract parameters"""
 
     # Get a list of image files in the folder
     # only get the background subtracted ...fluor.tif
-    image_files = sorted([f for f in os.listdir(folder_path) if f.lower().endswith('fluor.tif')])
+    image_files = sorted([f for f in os.listdir(folder_path) if f.lower().endswith(r'fluor.tif')])
 
     # Create a list to store individual DataFrames for each image
     parameters_list = []
 
     # Precompute meshgrid
-    x_max, y_max = 0, 0
-    for image_file in image_files:
-        image_path = os.path.join(folder_path, image_file)
-        original_image = imageio.imread(image_path)
-        x_max = max(x_max, original_image.shape[1])
-        y_max = max(y_max, original_image.shape[0])
+    original_image = CameraImage.load_image_from_file(folder_path, image_files[0])
+    x_max = y_max = 0
+    x_max = max(x_max, original_image.shape[1])
+    y_max = max(y_max, original_image.shape[0])
 
     x = np.arange(0, x_max, 1)
     y = np.arange(0, y_max, 1)
@@ -101,17 +93,8 @@ def analyze_folder(folder_path, first_datapoint_ms, yguess=160):
     tofs = []
 
     for idx, image_file in enumerate(image_files):
-        # Get the full image path
-        image_path = os.path.join(folder_path, image_file)
-
-        # Read the image using imageio
-        original_image = imageio.imread(image_path)
-
-        # Convert to grayscale if needed
-        if len(original_image.shape) == 3:
-            original_image = np.mean(original_image, axis=2).astype(np.uint8)
-
-        # Flatten the entire image
+        # load image and flatten for fit
+        original_image = CameraImage.load_image_from_file(folder_path, image_file)
         data = original_image.flatten()
 
         # Fit and get parameters for the entire image
@@ -124,12 +107,12 @@ def analyze_folder(folder_path, first_datapoint_ms, yguess=160):
         # Compute average sigma in meters
         sigmas_x = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_x', 'Value'].values[0]
         sigmas_y = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_y', 'Value'].values[0]
-        avg_sigma_meters = compute_average_sigma(sigmas_x, sigmas_y)
+        avg_sigma_meters = compute_average_sigma(sigmas_x, sigmas_y, cam_mag, bin_size, pix_size)
 
         # obtain error in average sigma
         error_sigma_x = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_x', 'Standard Error'].values[0]
         error_sigma_y = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_y', 'Standard Error'].values[0]
-        avg_err_sigma_meters = compute_average_sigma(error_sigma_x, error_sigma_y)
+        avg_err_sigma_meters = compute_average_sigma(error_sigma_x, error_sigma_y, cam_mag, bin_size, pix_size)
         print('sigma = ' + str(np.round(avg_sigma_meters*1e6, 1)) + ' +/- '
               + str(np.round(avg_err_sigma_meters*1e6, 1)) + ' um')
 
@@ -145,11 +128,6 @@ def analyze_folder(folder_path, first_datapoint_ms, yguess=160):
     return sigmas, err_sigmas, tofs
 
 
-def linear_func(x, offset, slope):
-    """linear function for fitting ToF data"""
-    return offset + slope*x
-
-
 def compute_temp_tof(tof_array, sigmas_array, error_bars):
     """fit data and return parameters"""
 
@@ -158,7 +136,7 @@ def compute_temp_tof(tof_array, sigmas_array, error_bars):
     sigmas_squared = sigmas_array**2
 
     # fit the data including errorbars
-    params, covariance = curve_fit(linear_func, 
+    params, covariance = curve_fit(FittingFunctions.linear_func, 
         xdata = t_squared, ydata= sigmas_squared, sigma = error_bars)
 
     # get sigma^2(t=0) from y-intersection point
@@ -181,7 +159,7 @@ def compute_temp_tof(tof_array, sigmas_array, error_bars):
 
 
 def main(folder, first_datapoint_ms, yguess):
-    sigmas, sigmas_error, tof_array = analyze_folder(folder_path, first_datapoint_ms, yguess)
+    sigmas, sigmas_error, tof_array = analyze_folder(folder, first_datapoint_ms, yguess)
     
     # compute errorbars
     error_bars = 2*sigmas*sigmas_error
@@ -196,7 +174,8 @@ def main(folder, first_datapoint_ms, yguess):
     # plot data points and errobars separately 
     fig, ax = plt.subplots()
     ax.scatter(tof_array**2, sigmas**2, label='datapoints', marker='o')
-    ax.errorbar(tof_array**2, sigmas**2, yerr=error_bars, linestyle='', color='black', capsize=3, markersize=5)
+    ax.errorbar(tof_array**2, sigmas**2,
+        yerr=error_bars, linestyle='', color='black', capsize=3, markersize=5)
 
     # plot a linear fit of the data
     t_squared_plotarray = np.linspace(np.min(tof_array**2), np.max(tof_array)**2, 100)
@@ -211,11 +190,12 @@ def main(folder, first_datapoint_ms, yguess):
 
 
 if __name__ == "__main__":
-   folder_path = r"T:\KAT1\Marijn\redmot\time of flight\nov15measurements\varying time\37898"
+   folder_path = r'T:\\KAT1\\Marijn\\redmot\\time of flight\\nov15measurements\\varying time\37898\\'
    
    # first time of flight image time in ms
    first_datapoint = 1  # ms
 
    # starting guess for y value of 2D gaussian. Vary if your fit fails
    y_guess = 160
+
    main(folder_path, first_datapoint_ms = first_datapoint, yguess = y_guess)

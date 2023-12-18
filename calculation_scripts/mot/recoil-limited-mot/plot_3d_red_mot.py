@@ -46,7 +46,6 @@ nr_nodes = 4  # nr cores for multithreading
 wavelength = 689e-9  # m
 linewidth = 7.4e3  # rad/s
 bohr_magneton = scipy.constants.value('Bohr magneton in Hz/T')
-print(bohr_magneton)
 atomic_mass_unit = scipy.constants.value('atomic mass constant')
 
 # derived constants
