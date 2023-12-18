@@ -172,3 +172,6 @@ dmypy.json
 Plots/Knife edge method/data.csv
 .vscode/launch.json
 .vscode/settings.json
+
+# data files for binary red mot data
+calculation_scripts/mot/recoil-limited-mot/data
