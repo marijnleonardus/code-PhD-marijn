@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.optimize import curve_fit
 import scipy.constants
+from scipy.constants import proton_mass, Boltzmann
 
 # append path with 'modules' dir in parent folder
 import sys
@@ -27,12 +28,21 @@ from camera_image_class import CameraImage
 cam_mag = 0.8
 pix_size = 3.45e-6  # [m]
 bin_size = 4  # [pixels]
+sr_mass = 88*proton_mass
 
 # %% functions 
 
 
 def fit_and_return_parameters(xy, data, yguess):
-    """fit data and return parameters"""
+    """fit data and return parameters in the form of a pd dataframe
+    
+    inputs:
+    - xy (2d np array): 2D array containing x and y coordinates.
+    - data (2d np array): image data
+    - yguess (float): initial guess for y
+    
+    returns:
+    - df (pd.DataFrame): dataframe containing parameters and standard errors"""
 
     # Initial guess for the parameters, bounds
     initial_guess = (30, 300, yguess, 10, 10, np.min(data))
@@ -46,16 +56,30 @@ def fit_and_return_parameters(xy, data, yguess):
     standard_errors = np.sqrt(np.diag(covariance))
 
     # Create a DataFrame to store parameters and standard errors
-    result = pd.DataFrame({
+    df = pd.DataFrame({
         'Parameter': ['Amplitude', 'xo', 'yo', 'sigma_x', 'sigma_y', 'Offset'],
         'Value': params,
         'Standard Error': standard_errors
     })
-    return result
+    return df
 
 
-def analyze_folder(folder_path, first_datapoint_ms, yguess):
-    """for a given folder, export the image data and fit to extract parameters"""
+def analyze_folder(folder_path, first_datapoint_ms, yguess, plot_gaussian_fits=False):
+    """for a given folder, export the image data and fit to extract parameters  
+    
+    inputs:
+    - folder_path (str): path to folder
+    - first_datapoint_ms (float): time of first datapoint in ms
+    - yguess (float): initial guess for y
+    - plot_gaussian_fits (bool): whether to plot gaussian fits or not
+    
+    returns:
+    - sigmas_x (np.array): array of sigma_x
+    - d_sigmas_x (np.array): array of standard errors of sigma_x
+    - sigmas_y (np.array): array of sigma_y
+    - d_sigmas_y (np.array): array of standard errors of sigma_y
+    - tofs (np.array): array of tofs in ms
+    """
 
     # Get a list of image files in the folder
     # only get the background subtracted ...fluor.tif
@@ -115,9 +139,15 @@ def analyze_folder(folder_path, first_datapoint_ms, yguess):
               + str(np.round(d_sigma_x*1e6, 1)) + ' um') 
         print('sigma_y = ' + str(np.round(sigma_y*1e6, 1)) + ' +/- '
               + str(np.round(d_sigma_y*1e6, 1)) + ' um') 
+        print('========================================================')
         
         # Convert the individual DataFrame to a list
         parameters_list.append(fitted_params_df)
+
+        # plot result of each fit, if enabled
+        if plot_gaussian_fits == True:
+            fig_test, ax_test = plt.subplots()
+            ax_test.imshow(FittingFunctions.gaussian_2d((x,y), *fitted_params_df['Value'].values))
     
     # Convert 'sigma' column to a NumPy array
     sigmas_x = np.array(sigmas_x)
@@ -131,7 +161,20 @@ def analyze_folder(folder_path, first_datapoint_ms, yguess):
 
 
 def compute_temp_tof(tof_array, sigmas_array, error_bars):
-    """fit data and return parameters"""
+    """fit data and return parameters
+    
+    inputs:
+    - tof_array (1d np array): time-of-flight array
+    - sigmas_array (1d np array): sigma array
+    - error_bars (1d np array): errorbars array
+
+    returns:
+    - params (1d np array): parameters array
+    - sigma0 (float): sigma^2(t=0)
+    - temperature (float): temperature
+    - err_sigm0 (float): error in sigma^2(t=0)
+    - error_temp (float): error in temperature
+    """
 
     # square x,y so we can do a linear fit
     t_squared = tof_array**2
@@ -144,10 +187,6 @@ def compute_temp_tof(tof_array, sigmas_array, error_bars):
     # get sigma^2(t=0) from y-intersection point
     sigma0 = np.sqrt(params[0])
 
-    # extract temperature from slope
-    sr_mass = 88*scipy.constants.proton_mass
-    Boltzmann = scipy.constants.Boltzmann
-
     # get temperature from slope
     slope = params[1]
     temperature = slope*sr_mass/Boltzmann
@@ -159,10 +198,10 @@ def compute_temp_tof(tof_array, sigmas_array, error_bars):
     return params, sigma0, temperature, err_sigm0, error_temp
 
 
-def main(folder, first_datapoint_ms, yguess):
+def main(folder, first_datapoint_ms, yguess, plot_gaussian_fits):
     # fit each image in the specified folder directly with 2d gaussians
     sigmas_x, d_sigmas_x, sigmas_y, d_sigmas_y, tof_array = analyze_folder(
-        folder, first_datapoint_ms, yguess)
+        folder, first_datapoint_ms, yguess, plot_gaussian_fits)
 
     # compute error bars
     error_bars_x = 2*sigmas_x*d_sigmas_x
@@ -183,13 +222,13 @@ def main(folder, first_datapoint_ms, yguess):
 
     fig, ax = plt.subplots()
 
-    # plot datapoints and error bars separately for x
-    ax.scatter(tof_array**2, sigmas_x**2, label=r'$\sigma_x$', marker='o')
+    # plot datapoints and error bars separately for x only
+    ax.scatter(tof_array**2, sigmas_x**2, label=r'$\sigma_x^2(t)$', marker='o')
     ax.errorbar(tof_array**2, sigmas_x**2,
         yerr = error_bars_x, linestyle='', color='black', capsize=3, markersize=5)
     
-    # and y
-    ax.scatter(tof_array**2, sigmas_y**2, label=r'$\sigma_y$', marker='o')
+    # plot datapoints and error bars separately for y only
+    ax.scatter(tof_array**2, sigmas_y**2, label=r'$\sigma_y^2(t)$', marker='o')
     ax.errorbar(tof_array**2, sigmas_y**2,
         yerr = error_bars_y, linestyle='', color='black', capsize=3, markersize=5)
 
@@ -213,7 +252,7 @@ def main(folder, first_datapoint_ms, yguess):
 
 
 if __name__ == "__main__":
-    folder_path = r'T:\\KAT1\\Marijn\\redmot\\time of flight\\nov15measurements\\varying intensity\37741\\'
+    folder_path = r'T:\\KAT1\\Marijn\\redmot\\time of flight\\nov15measurements\\varying time\37898\\'
 
     # first time of flight image time in ms
     first_datapoint = 1  # ms
@@ -221,6 +260,6 @@ if __name__ == "__main__":
     # starting guess for y value of 2D gaussian. Vary if your fit fails
     # because the S/N drops for later times, probably good idea to match roughly y position
     # in the later fits
-    y_guess = 200
+    y_guess = 170
 
-    main(folder_path, first_datapoint_ms = first_datapoint, yguess = y_guess)
+    main(folder_path, first_datapoint_ms=first_datapoint, yguess=y_guess, plot_gaussian_fits=True)
