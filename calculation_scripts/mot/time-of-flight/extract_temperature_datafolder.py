@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.optimize import curve_fit
-import imageio.v2 as imageio 
+import scipy.constants
 
 # append path with 'modules' dir in parent folder
 import sys
@@ -35,36 +35,23 @@ def fit_and_return_parameters(xy, data, yguess):
     """fit data and return parameters"""
 
     # Initial guess for the parameters, bounds
-    initial_guess = (30, 300, yguess, 10, 10, 0, np.min(data))
-    bounds = (0, [np.inf, np.inf, np.inf, np.inf, np.inf, np.pi, np.inf])
+    initial_guess = (30, 300, yguess, 10, 10, np.min(data))
+    bounds = (0, [400, 1000, 1000, 50, 50, np.inf])
 
     # Fit 2D Gaussian to the entire image with constrained theta
-    params, covariance = curve_fit(FittingFunctions.gaussian_2d_angled, xy, data, 
-        p0=initial_guess, bounds=bounds)
+    params, covariance = curve_fit(FittingFunctions.gaussian_2d, xy, data, 
+        p0 = initial_guess, bounds = bounds)
     
     # Calculate standard errors from the covariance matrix
     standard_errors = np.sqrt(np.diag(covariance))
 
     # Create a DataFrame to store parameters and standard errors
     result = pd.DataFrame({
-        'Parameter': ['Amplitude', 'xo', 'yo', 'sigma_x', 'sigma_y', 'theta', 'Offset'],
+        'Parameter': ['Amplitude', 'xo', 'yo', 'sigma_x', 'sigma_y', 'Offset'],
         'Value': params,
         'Standard Error': standard_errors
     })
     return result
-
-
-def compute_average_sigma(sigma_x, sigma_y, magnification, binning, pixel_size):
-    """Calculate the average sigma in pixels"""
-
-    avg_sigma_pixels = 0.5*(sigma_x + sigma_y)
-
-    # Convert sigma from pixels to meters
-    sigma_meters_image = avg_sigma_pixels*binning*pixel_size
-
-    # convert pixels to meters based on magnification
-    sigma_meters_object = sigma_meters_image/magnification
-    return sigma_meters_object
 
 
 def analyze_folder(folder_path, first_datapoint_ms, yguess):
@@ -77,19 +64,20 @@ def analyze_folder(folder_path, first_datapoint_ms, yguess):
     # Create a list to store individual DataFrames for each image
     parameters_list = []
 
-    # Precompute meshgrid
+    # Precompute meshgrid getting image size from first image in the list (image_files[0])
     original_image = CameraImage.load_image_from_file(folder_path, image_files[0])
     x_max = y_max = 0
     x_max = max(x_max, original_image.shape[1])
     y_max = max(y_max, original_image.shape[0])
-
     x = np.arange(0, x_max, 1)
     y = np.arange(0, y_max, 1)
+    x, y = np.meshgrid(x, y)
 
     # empty lists to fill later
-    x, y = np.meshgrid(x, y)
-    sigmas = []
-    err_sigmas = []
+    sigmas_x = []
+    d_sigmas_x = []
+    sigmas_y = []
+    d_sigmas_y = []
     tofs = []
 
     for idx, image_file in enumerate(image_files):
@@ -104,28 +92,42 @@ def analyze_folder(folder_path, first_datapoint_ms, yguess):
         tof_ms = (idx + first_datapoint_ms)*1e-3
         tofs.append(tof_ms)
 
-        # Compute average sigma in meters
-        sigmas_x = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_x', 'Value'].values[0]
-        sigmas_y = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_y', 'Value'].values[0]
-        avg_sigma_meters = compute_average_sigma(sigmas_x, sigmas_y, cam_mag, bin_size, pix_size)
+        # Compute average sigma in pixels and convert to meter for x,y separately
+        sigmas_x_px = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_x', 'Value'].values[0]
+        sigma_x = CameraImage.pixels_to_m(sigmas_x_px, cam_mag, pix_size, bin_size)
+        sigmas_x.append(sigma_x)
 
-        # obtain error in average sigma
-        error_sigma_x = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_x', 'Standard Error'].values[0]
-        error_sigma_y = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_y', 'Standard Error'].values[0]
-        avg_err_sigma_meters = compute_average_sigma(error_sigma_x, error_sigma_y, cam_mag, bin_size, pix_size)
-        print('sigma = ' + str(np.round(avg_sigma_meters*1e6, 1)) + ' +/- '
-              + str(np.round(avg_err_sigma_meters*1e6, 1)) + ' um')
+        sigmas_y_px = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_y', 'Value'].values[0]
+        sigma_y = CameraImage.pixels_to_m(sigmas_y_px, cam_mag, pix_size, bin_size)
+        sigmas_y.append(sigma_y)
+ 
+        # obtain error in average sigma for x, y separately
+        err_sigma_x_px = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_x', 'Standard Error'].values[0]
+        d_sigma_x = CameraImage.pixels_to_m(err_sigma_x_px, cam_mag, pix_size, bin_size)
+        d_sigmas_x.append(d_sigma_x)
 
+        err_sigma_y_px = fitted_params_df.loc[fitted_params_df['Parameter'] == 'sigma_y', 'Standard Error'].values[0]
+        d_sigma_y = CameraImage.pixels_to_m(err_sigma_y_px, cam_mag, pix_size, bin_size)
+        d_sigmas_y.append(d_sigma_y)
+
+        print('fitting ' + str(image_file))
+        print('sigma_x = ' + str(np.round(sigma_x*1e6, 1)) + ' +/- '
+              + str(np.round(d_sigma_x*1e6, 1)) + ' um') 
+        print('sigma_y = ' + str(np.round(sigma_y*1e6, 1)) + ' +/- '
+              + str(np.round(d_sigma_y*1e6, 1)) + ' um') 
+        
         # Convert the individual DataFrame to a list
         parameters_list.append(fitted_params_df)
-        sigmas.append(avg_sigma_meters)
-        err_sigmas.append(avg_err_sigma_meters)
-
+    
     # Convert 'sigma' column to a NumPy array
-    sigmas = np.array(sigmas)
-    err_sigmas = np.array(err_sigmas)
+    sigmas_x = np.array(sigmas_x)
+    d_sigmas_x = np.array(d_sigmas_x)
+    sigmas_y = np.array(sigmas_y)
+    d_sigmas_y = np.array(d_sigmas_y)
     tofs = np.array(tofs)
-    return sigmas, err_sigmas, tofs
+    print('fitted all images')
+
+    return sigmas_x, d_sigmas_x, sigmas_y, d_sigmas_y, tofs
 
 
 def compute_temp_tof(tof_array, sigmas_array, error_bars):
@@ -143,7 +145,6 @@ def compute_temp_tof(tof_array, sigmas_array, error_bars):
     sigma0 = np.sqrt(params[0])
 
     # extract temperature from slope
-    import scipy.constants
     sr_mass = 88*scipy.constants.proton_mass
     Boltzmann = scipy.constants.Boltzmann
 
@@ -159,29 +160,51 @@ def compute_temp_tof(tof_array, sigmas_array, error_bars):
 
 
 def main(folder, first_datapoint_ms, yguess):
-    sigmas, sigmas_error, tof_array = analyze_folder(folder, first_datapoint_ms, yguess)
-    
-    # compute errorbars
-    error_bars = 2*sigmas*sigmas_error
-    
+    # fit each image in the specified folder directly with 2d gaussians
+    sigmas_x, d_sigmas_x, sigmas_y, d_sigmas_y, tof_array = analyze_folder(
+        folder, first_datapoint_ms, yguess)
+
+    # compute error bars
+    error_bars_x = 2*sigmas_x*d_sigmas_x
+    error_bars_y = 2*sigmas_y*d_sigmas_y
+
     # fit the sigmas as a function of time of flight to extract temperature
     # at the same time also compute sigma(t=0) by extrapolating to t=0
-    params, sigma0, temp, sigma0_error, temp_error = compute_temp_tof(tof_array, sigmas, error_bars)
-    
-    print(f"T = {np.round(temp*1e6, 2)} +/- {np.round(temp_error*1e6, 2)} uK")
-    print(f"sigma = {np.round(sigma0*1e6, 2)} +/- {np.round(sigma0_error*1e6, 2)} um")
-    
-    # plot data points and errobars separately 
-    fig, ax = plt.subplots()
-    ax.scatter(tof_array**2, sigmas**2, label='datapoints', marker='o')
-    ax.errorbar(tof_array**2, sigmas**2,
-        yerr=error_bars, linestyle='', color='black', capsize=3, markersize=5)
+    params_x, sigma0_x, temp_x, sigma0_error_x, temp_error_x = compute_temp_tof(
+        tof_array, sigmas_x, error_bars_x)
+    params_y, sigma0_y, temp_y, sigma0_error_y, temp_error_y = compute_temp_tof(
+        tof_array, sigmas_y, error_bars_y)
 
-    # plot a linear fit of the data
-    t_squared_plotarray = np.linspace(np.min(tof_array**2), np.max(tof_array)**2, 100)
-    ax.plot(t_squared_plotarray, linear_func(t_squared_plotarray, *params),
-        label='linear Fit: T = ' + str(np.round(temp*1e6, 2)) + r' $\pm$ ' + 
-        str(np.round(temp_error*1e6, 2)) + ' uK', color='red')
+    # print result
+    print(f"Tx = {np.round(temp_x*1e6, 2)} +/- {np.round(temp_error_x*1e6, 2)} uK")
+    print(f"Ty = {np.round(temp_y*1e6, 2)} +/- {np.round(temp_error_y*1e6, 2)} uK")
+    print(f"sigma_x(t=0) = {np.round(sigma0_x*1e6, 2)} +/- {np.round(sigma0_error_x*1e6, 2)} um")
+    print(f"sigma_y(t=0) = {np.round(sigma0_y*1e6, 2)} +/- {np.round(sigma0_error_y*1e6, 2)} um")
+
+    fig, ax = plt.subplots()
+
+    # plot datapoints and error bars separately for x
+    ax.scatter(tof_array**2, sigmas_x**2, label=r'$\sigma_x$', marker='o')
+    ax.errorbar(tof_array**2, sigmas_x**2,
+        yerr = error_bars_x, linestyle='', color='black', capsize=3, markersize=5)
+    
+    # and y
+    ax.scatter(tof_array**2, sigmas_y**2, label=r'$\sigma_y$', marker='o')
+    ax.errorbar(tof_array**2, sigmas_y**2,
+        yerr = error_bars_y, linestyle='', color='black', capsize=3, markersize=5)
+
+    # x axis for linear fit
+    t2_plot_arr = np.linspace(np.min(tof_array**2), np.max(tof_array)**2, 100)
+
+    # plot linear fit Tx
+    ax.plot(t2_plot_arr, FittingFunctions.linear_func(t2_plot_arr, *params_x),
+        label='linear Fit: Tx = ' + str(np.round(temp_x*1e6, 2)) + r' $\pm$ ' + 
+        str(np.round(temp_error_x*1e6, 2)) + ' uK', color='blue')
+    
+    # plot linear fit Ty
+    ax.plot(t2_plot_arr, FittingFunctions.linear_func(t2_plot_arr, *params_y),
+        label='linear Fit: Ty = ' + str(np.round(temp_y*1e6, 2)) + r' $\pm$ ' + 
+        str(np.round(temp_error_y*1e6, 2)) + ' uK', color='orange')
     
     ax.set_xlabel(r'$t^2$ [s${}^2$]')
     ax.set_ylabel(r'$\sigma(t)^2$ [m${}^2$]')
@@ -190,12 +213,14 @@ def main(folder, first_datapoint_ms, yguess):
 
 
 if __name__ == "__main__":
-   folder_path = r'T:\\KAT1\\Marijn\\redmot\\time of flight\\nov15measurements\\varying time\37898\\'
-   
-   # first time of flight image time in ms
-   first_datapoint = 1  # ms
+    folder_path = r'T:\\KAT1\\Marijn\\redmot\\time of flight\\nov15measurements\\varying intensity\37741\\'
 
-   # starting guess for y value of 2D gaussian. Vary if your fit fails
-   y_guess = 160
+    # first time of flight image time in ms
+    first_datapoint = 1  # ms
 
-   main(folder_path, first_datapoint_ms = first_datapoint, yguess = y_guess)
+    # starting guess for y value of 2D gaussian. Vary if your fit fails
+    # because the S/N drops for later times, probably good idea to match roughly y position
+    # in the later fits
+    y_guess = 200
+
+    main(folder_path, first_datapoint_ms = first_datapoint, yguess = y_guess)

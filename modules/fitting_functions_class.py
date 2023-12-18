@@ -45,7 +45,8 @@ class FittingFunctions:
         c = np.sin(theta)**2/(2*sigma_x**2) + np.cos(theta)**2/(2*sigma_y**2)
         
         # Gaussian function
-        gaussian2d_angled = ampl*np.exp(-(a*(x - xo)**2 + 2*b*(x - xo)*(y - yo) + c*(y - yo)**2)) + offset
+        exponent = -(a*(x - xo)**2 + 2*b*(x - xo)*(y - yo) + c*(y - yo)**2)
+        gaussian2d_angled = ampl*np.exp(exponent) + offset
         return gaussian2d_angled
     
     def gaussian_2d(xy, ampl, xo, yo, sigma_x, sigma_y, offset):
@@ -66,9 +67,11 @@ class FittingFunctions:
         x, y = xy
         
         # Gaussian function
-        gaussian2d = ampl*np.exp(-((x - xo)**2/(2*sigma_x**2) + (y - yo)**2)/(2*sigma_y**2)) + offset
+        exponent = (x - xo)**2/(2*sigma_x**2) + (y - yo)**2/(2*sigma_y**2)
+        gaussian2d = ampl*np.exp(-1*exponent) + offset
         return gaussian2d
     
+
     def linear_func(x, offset, slope):
         """linear function for with offset and slope"""
 
