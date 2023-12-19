@@ -26,6 +26,7 @@ from pylcp.common import progressBar
 from scipy.constants import hbar, pi, Boltzmann, proton_mass
 import pathos 
 from matplotlib.patches import Ellipse
+import pickle
 
 # user defined libraries
 from modules.plotting import Plotting
@@ -37,9 +38,9 @@ from modules.laser_beam_class import AngledMOTBeams
 # parameters
 b_gauss = 4.24  # Gauss
 saturation = 80 
-detuning = -120e3  # Hz
+detuning = -50e3  # Hz
 simulation_time = 0.1  # s
-nr_atoms = 2500
+nr_atoms = 500
 nr_nodes = 4  # nr cores for multithreading
 
 # constants
@@ -159,6 +160,23 @@ def ejection_criterion(solution_list):
 
 sols = run_parallel(nr_atoms=nr_atoms, nr_nodes=nr_nodes)
 ejected = ejection_criterion(sols)
+
+# %% save solution to be used later
+
+# open a file where you want to save the save the data
+data_folder = r'data/'
+
+# name of the file
+data_name = r'detmin50b4_42n500s80'
+
+# save solutions to data folder
+data_path = data_folder + data_name
+pickle.dump(sols, open(data_path, 'wb'))
+
+# %% load solution from earlier run
+
+file = open(data_path, 'rb')
+sols = pickle.load(file)
 
 # %% plot trajectories and calculate temperatures
 
