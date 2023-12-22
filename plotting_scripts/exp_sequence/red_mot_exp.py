@@ -133,12 +133,10 @@ ax4.legend()
 
 # vertical lines
 for ax_i in (ax1, ax2, ax3, ax4):
-    ax_i.axvline(t_bb1,
-        color='grey', linestyle='--', label='t1')
-    ax_i.axvline(t_bb,
-        color='grey', linestyle='--', label='t2')
-    ax_i.axvline(t_bb+t_sf1,
-        color='grey', linestyle='--', label='t2')
+    ax_i.axvline(0, color = 'grey', linestyle = '--')
+    ax_i.axvline(t_bb1, color='grey', linestyle='--')
+    ax_i.axvline(t_bb, color='grey', linestyle='--')
+    ax_i.axvline(t_bb + t_sf1, color='grey', linestyle='--')
 
 # labels for the various stages
 # Add labels for the various stages
