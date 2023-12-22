@@ -26,13 +26,14 @@ ax4.set_xlabel('time [ms]')
 
 blue_beams = np.piecewise(time, [time < 0, time >= 0], [1, 0])
 
-ax1.plot(time, blue_beams)
+ax1.plot(time, blue_beams, label = 'blue beams', color = 'blue')
 ax1.grid()
 ax1.sharex(ax2)
 y_ticks = [0, 1]
 y_tick_labels = ['off', 'on']
 ax1.set_yticks(y_ticks)
 ax1.set_yticklabels(y_tick_labels)
+ax1.legend()
 
 # %% quadropole field gradient
 
@@ -59,6 +60,7 @@ grad_field = [grad_field(t) for t in time]
 ax2.grid()
 ax2.plot(time, grad_field, color = 'black', label = 'magnetic field gradient')
 ax2.set_ylabel('Gradient [G/cm]')
+ax2.legend()
 
 # %% red MOT beams intensity
 
@@ -90,6 +92,7 @@ ax3.grid()
 ax3.plot(time, red_intensity, color = 'red', label = '689 intensity')
 ax3.set_yscale('log')
 ax3.set_ylabel('Intensity [mW]')
+ax3.legend()
 
 # %% red MOT beams frequency
 
@@ -124,7 +127,24 @@ ax4.plot(time, red_freqencies/1e6, color = 'red', label = '689 detuning')
 ax4.hlines(y = detuning_bb1/1e6, xmin = -t_blue, xmax = t_bb1 + t_bb2, color = 'red')
 ax4.vlines(x = t_bb1 + t_bb2, ymin = -moddepth_bb2/1e6, ymax = detuning_bb1/1e6, color = 'red')
 ax4.set_ylabel('Detuning [MHz]')
+ax4.legend()
 
 # %% plotting
+
+# vertical lines
+for ax_i in (ax1, ax2, ax3, ax4):
+    ax_i.axvline(t_bb1,
+        color='grey', linestyle='--', label='t1')
+    ax_i.axvline(t_bb,
+        color='grey', linestyle='--', label='t2')
+    ax_i.axvline(t_bb+t_sf1,
+        color='grey', linestyle='--', label='t2')
+
+# labels for the various stages
+# Add labels for the various stages
+ax1.text(0, ax1.get_ylim()[1], r'$t_0$', color='black', ha='center', va='bottom')
+ax1.text(t_bb1, ax1.get_ylim()[1], r'$t_1$', color='black', ha='center', va='bottom')
+ax1.text(t_bb, ax1.get_ylim()[1], r'$t_2$', color='black', ha='center', va='bottom')
+ax1.text(t_bb + t_sf1, ax1.get_ylim()[1], r'$t_3$', color='black', ha='center', va='bottom')
 
 plt.show()
