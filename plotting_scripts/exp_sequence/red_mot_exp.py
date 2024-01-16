@@ -1,6 +1,27 @@
 import matplotlib.pyplot as plt 
 import numpy as np
 
+"""plots experimental sequence of the red MOT, as well as the relative amount of atoms
+
+there are a lot of different timestamps, which i will summarize here:
+	t_0: the 461 nm (blue) MOT beams are shut off and the gradient field
+    is sharply jumped from 55 G/cm to 1.48 G/cm. 
+
+	At this point, the red beams have been on for 90 ms, and the frequency is scanned 
+    from -100 kHz to -1.72 MHz using a 45 kHz scan frequency. 
+	After 23 ms, the cloud is compressed by linearly ramping up
+    the gradient field to 4.24 G/cm. 
+
+	$t_1$: subsequently, the modulation depth is reduced, to prepare for
+    the transition to single frequency operation. 
+
+	$t_2$, the scanning is switched to single-frequency operation. 
+
+	Over a duration of 73 ms, The intensity and detuning are exponentially decreased until 
+    they reach the values of the final red MOT stage at $t=t_4$. 
+	The final stage lasts 30 ms.
+"""
+
 # %% time
 # t parameters
 t_blue = 20
@@ -18,9 +39,9 @@ time = np.linspace(-t_blue, t_bb + t_sf, 1000)
 
 # %% intialize plot
 
-fig1, (ax1, ax2, ax3, ax4) = plt.subplots(nrows = 4, ncols = 1,
-                                          figsize = (5, 7), sharex = True)
-ax4.set_xlabel('time [ms]')
+fig1, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(nrows = 5, ncols = 1,
+                                          figsize = (5, 9), sharex = True)
+ax5.set_xlabel('time [ms]')
 
 # %% blue MOT beams
 
@@ -129,10 +150,28 @@ ax4.vlines(x = t_bb1 + t_bb2, ymin = -moddepth_bb2/1e6, ymax = detuning_bb1/1e6,
 ax4.set_ylabel('Detuning [MHz]')
 ax4.legend()
 
+# %% plot atom number
+
+times_atom_nr = [0, t_cap, t_bb1, t_bb, t_bb + t_sf1, t_bb + t_sf]
+atom_nr= [145934.30376075473, 53684.178798866975, 43024.98826138505,
+          40680.60235048706, 25054.22079618794, 7458.480563721959]
+
+# normalize
+atom_nr = atom_nr/np.max(atom_nr)
+
+# labels
+labels = ['blue MOT', 'bMOT capture', 'bMOT compressed', 'bMOT decreased mod. depth',
+          'sMOT decay', 'sMOT final']
+
+ax5.grid()
+ax5.scatter(times_atom_nr, atom_nr)
+ax5.set_ylabel('rel. atom number')
+
+
 # %% plotting
 
 # vertical lines
-for ax_i in (ax1, ax2, ax3, ax4):
+for ax_i in (ax1, ax2, ax3, ax4, ax5):
     ax_i.axvline(0, color = 'grey', linestyle = '--')
     ax_i.axvline(t_bb1, color='grey', linestyle='--')
     ax_i.axvline(t_bb, color='grey', linestyle='--')

@@ -69,7 +69,8 @@ def main(folder_path, image_name):
 # %% execute script
 
 if __name__ == "__main__":
-   folder_path = r"T:\KAT1\Marijn\redmot\time of flight\nov15measurements\atom number"
+   folder_path = r"C:\Users\s163673\OneDrive - TU Eindhoven\Documents\MyFiles\Git\personal\code-PhD-marijn\temp"
    image_name = r"\6_sf_final\0000.tif"
-
    main(folder_path, image_name)
+
+# %%
