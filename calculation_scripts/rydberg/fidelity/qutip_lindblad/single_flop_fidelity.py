@@ -1,11 +1,18 @@
 # author: Marijn Venderbosch
 # January 2023
 
+# standard modules
 import qutip as qt
 import matplotlib.pyplot as plt
 import numpy as np
-from classes.atom_class import AtomicMotion
 from scipy.constants import proton_mass
+
+# custom module
+import sys
+import os
+custom_module_dir = os.path.abspath("../code-PhD-marijn/modules/")
+sys.path.append(custom_module_dir)
+from atom_class import AtomicMotion
 
 """starting in the clock state, compute fidelity after doing a pi pulse: 
 clock-rydberg, or equivalently: rydberg-clock
@@ -236,3 +243,5 @@ ax2.set_xscale('log')
 ax2.set_title('Fidelity error after $\pi$ pulse')
 ax2.set_xlabel('Laser linewidth [$2\pi \cdot Hz$]')
 ax2.set_ylabel('Fidelity error')
+
+plt.show()
