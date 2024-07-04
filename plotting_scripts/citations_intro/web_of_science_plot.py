@@ -8,12 +8,15 @@ import matplotlib.pyplot as plt
 
 # %% raw data
 
-years = np.linspace(2010, 2021, 12)
-publications = [343, 403, 463, 402, 457, 485, 553, 600, 762, 1122, 1362, 1842]
+start_year = 2010
+end_year = 2023
+nr_years = end_year - start_year + 1
+years = np.linspace(start_year, end_year, nr_years)
+publications = [373, 458, 517, 475, 529, 602, 708, 828, 1066, 1543, 1937, 2578, 3251, 4265]
 
 # %% plotting
 
-fig, ax = plt.subplots(figsize=(4, 3))
+fig, ax = plt.subplots(figsize=(5, 3))
 ax.bar(years, publications)
 
 ax.set_xlabel('Year')

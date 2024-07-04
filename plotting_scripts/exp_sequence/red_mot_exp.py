@@ -28,9 +28,9 @@ t_blue = 20
 t_cap= 23
 t_ramp = 73
 t_bb1 = t_cap + t_ramp
-t_bb2 = 20
-t_sf1 = 73
-t_sf2 = 30
+t_bb2 = 46
+t_sf1 = 144
+t_sf2 = 5
 
 # derived parameters
 t_bb = t_bb1 + t_bb2
@@ -88,10 +88,10 @@ ax2.legend()
 # red intensity parameters
 i_bb1 = 2
 i_bb2 = 2
-i_dec_start = 0.0259
-i_dec_end = 0.0033
-i_dec_tau = 16.8
-i_dec_time = 73
+i_dec_start = 0.5
+i_dec_end = 0.03
+i_dec_tau = 20
+i_dec_time = 144
 
 
 def red_intensity(t):
@@ -118,14 +118,14 @@ ax3.legend()
 # %% red MOT beams frequency
 
 # bb stages
-detuning_bb1 = -110*1e3
-moddepth_bb1 = 1.72*1e6
-moddepth_bb2 = 500e3
+detuning_bb1 = -189*1e3
+moddepth_bb1 = 1.22*1e6
+moddepth_bb2 = 0.788*1e6
 
 # sf stages
-freq_dec_start = -780*1e3
-freq_dec_tau = 16.0
-freq_dec_end = -50e3
+freq_dec_start = -421*1e3
+freq_dec_tau =20
+freq_dec_end = -100e3
 
 
 def red_frequency(t):
@@ -162,10 +162,11 @@ atom_nr = atom_nr/np.max(atom_nr)
 # labels
 labels = ['blue MOT', 'bMOT capture', 'bMOT compressed', 'bMOT decreased mod. depth',
           'sMOT decay', 'sMOT final']
-
+"""
 ax5.grid()
 ax5.scatter(times_atom_nr, atom_nr)
 ax5.set_ylabel('rel. atom number')
+"""
 
 
 # %% plotting

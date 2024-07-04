@@ -148,6 +148,7 @@ def analyze_folder(folder_path, first_datapoint_ms, yguess, plot_gaussian_fits=F
         if plot_gaussian_fits == True:
             fig_test, ax_test = plt.subplots()
             ax_test.imshow(FittingFunctions.gaussian_2d((x,y), *fitted_params_df['Value'].values))
+            #plt.savefig('test' + str(idx) + '.png')	
     
     # Convert 'sigma' column to a NumPy array
     sigmas_x = np.array(sigmas_x)
@@ -252,7 +253,7 @@ def main(folder, first_datapoint_ms, yguess, plot_gaussian_fits):
 
 
 if __name__ == "__main__":
-    folder_path = r'T:\\KAT1\\Marijn\\redmot\\time of flight\\nov15measurements\\varying time\37898\\'
+    folder_path = r'T:\\KAT1\\Marijn\\redmot\\time of flight\\nov15measurements\\varying detuning\\37801\\'
 
     # first time of flight image time in ms
     first_datapoint = 1  # ms
