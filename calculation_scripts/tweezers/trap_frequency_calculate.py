@@ -16,6 +16,8 @@ from units import UnitConversion
 polarizability_au = 286 # au
 power_trap = 5e-3 # W
 trapdepth=35e-6*Boltzmann  # 35 uK
+mass = 88*proton_mass
+lamb = 813e-9
 
 # %% compute polarizability
 
@@ -34,6 +36,8 @@ print(waist)
 # %% calculate trap frequency 
 
 TrapFreqs = TrapFrequencies()
-mass = 88*proton_mass
 trap_freq_rad = TrapFreqs.trap_freq_radial(trapdepth, mass, waist)
+trap_freq_axial = TrapFreqs.trap_freq_axial(trapdepth, mass, np.pi*waist**2/lamb)
+
 print(trap_freq_rad/2/np.pi)
+print(trap_freq_axial/2/np.pi)
