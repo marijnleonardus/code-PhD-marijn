@@ -14,88 +14,103 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 sys.path.append(modules_dir)
 
-from image_analysis import ManipulateImage
+# user defined libraries
+from image_analysis import ManipulateImage, LoadImageData
 
 # %% variables
 
-rois_radius = 2
-nr_bins_histogram = 20
+rois_radius = 0
+nr_bins_histogram = 50
 images_path = 'Z://Strontium//Images//2024-07-11//scan335929//'
-crop_pixels = 15 
+file_name_suffix = '0000image'
+crop_pixels_x = 20
+crop_pixels_y = 20 
 
-# %% import images
+# %% import images and crop images
 
-# i want the first image of each sequence. they end with 0000image
-images_filenames = glob.glob(os.path.join(images_path, '*0000image.tif'))
+# images without cropping ('raw' data)
+image_stack_raw = LoadImageData().import_image_sequence(images_path, file_name_suffix)
 
-# create a 3d array of all 2d images stacked 
+# crop images to remove spurious noise peaks at the edges
 image_stack = []
-for file_name in images_filenames:
-    img = np.array(Image.open(file_name))
-    cropped_array = ManipulateImage().crop_array(img, crop_pixels)
+for img in image_stack_raw:
+    cropped_array = ManipulateImage().crop_array_edge(img, crop_pixels_x, crop_pixels_y)
     image_stack.append(cropped_array)
 image_stack = np.array(image_stack)
-print("nr_images, pixels_x, pixels_y = ", image_stack.shape)
 
-# compute average image and plot
+# print("nr_images, nr_rows, nr_columns = ", image_stack.shape)
+
+# %% compute average image and peak locations
+
+# compute cropped average image and plot
 z_project = np.mean(image_stack, axis=0)
 
+# compute laplacian of gaussian spot locations
 spots_LoG = blob_log(z_project, max_sigma=3, min_sigma=1, num_sigma=10, threshold=50)
-y = spots_LoG[:, 0]
-x = spots_LoG[:, 1]
-rois_array = np.column_stack((x, y))
-num_rois = len(rois_array)
 
-plt, ax = plt.subplots()
-ax.imshow(z_project)
-ax.scatter(x,y, marker='x', color='r')
-plt.show()
+# return rows, columns of detected spots 
+y_coor = spots_LoG[:, 0]
+x_coor = spots_LoG[:, 1]
+
+# store in a 2d array for convenient passing down to other functions
+rois_array = np.column_stack((x_coor, y_coor))
+
+# print("ROIs: ", rois_array)
+
+# plot average image and mark detected maximum locations in red
+fig0, ax0 = plt.subplots()
+ax0.imshow(z_project)
+ax0.scatter(x_coor, y_coor, marker='x', color='r')
+fig0.show()
 
 # %% read counts within each ROI
 
-def read_counts_within_rois(rois_array, image_stack):
-    num_rois = rois_array.shape[0]
-    num_images = image_stack.shape[0]
+def read_counts_within_rois(rois_array, stack_of_images):
+    nr_rois = int(rois_array.shape[0])
+    nr_images = int(stack_of_images.shape[0])
     
     # Initialize a matrix to store counts with shape (num_rois, num_images)
-    counts_matrix = np.zeros((num_rois, num_images), dtype=int)
+    counts_matrix = np.zeros((nr_rois, nr_images), dtype=int)
     
-    for image_index in range(num_images):
-        image = image_stack[image_index]
+    # Iterate through each image and ROI
+    for image_i in range(nr_images):
+        image = stack_of_images[image_i]
         
-        for roi_index, roi in enumerate(rois_array):
-            x, y = roi
-
+        for roi_i in range(nr_rois):
+            col, row = rois_array[roi_i]
+            row = int(row)
+            col = int(col)
+            
             if rois_radius > 0:
-                roi_region = image[int(y - rois_radius):int(y + rois_radius), int(x - rois_radius):int(x + rois_radius)]
+                # select an ROI area of multiple pixels 
+                roi_region = ManipulateImage().crop_array_center(image, col, row, rois_radius)
+                counts = np.sum(roi_region)
             else:
-                roi_region=image[x,y]
-
-            counts = np.sum(roi_region)
-            counts_matrix[roi_index, image_index] = counts
-    
+                # only select the one pixel corresponding to the maximum
+                counts = image[row, col]
+            
+            counts_matrix[roi_i, image_i] = counts
     return counts_matrix
 
-
 counts_matrix = read_counts_within_rois(rois_array, image_stack)
+
 counts_matrix = np.array(counts_matrix)
 print("nr ROIs, nr counts = ", counts_matrix.shape)
 
 # %% plot histograms
 
 # Create a figure and axes for the subplots
-fig, axes = plt.subplots(num_rois, 1, figsize=(10, 10))
+num_rois = len(rois_array)
+array_dim = int(np.sqrt(num_rois))
+fig, axes = plt.subplots(nrows=array_dim, ncols=array_dim, figsize=(12, 12), constrained_layout=True)
+ax = axes.flatten()
 
 # Plot histograms for each ROI
-for i in range(num_rois):
-    ax = axes[i]
-    ax.hist(counts_matrix[i], bins=20, edgecolor='black')
-    ax.set_title(f'Histogram of Counts for ROI {i+1}')
-    ax.set_xlabel('Counts')
-    ax.set_ylabel('Frequency')
+for roi in range(num_rois):
+    ax[roi].hist(counts_matrix[roi], bins=nr_bins_histogram, edgecolor='black')
+    ax[roi].set_title(f'Histogram of Counts for ROI {roi+1}')
+    ax[roi].set_xlabel('Counts')
+    ax[roi].set_ylabel('Frequency')
 
-# Adjust layout to prevent overlap
-plt.tight_layout()
-
-# Show the plots
+# %%
 plt.show()
