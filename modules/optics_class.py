@@ -66,4 +66,15 @@ class Optics:
         
         relative_intensity = np.exp(-2 * r**2 / beam_waist**2)
         return relative_intensity
-    
+
+
+class GaussianBeam:
+    def __init__(self, power, waist):
+        self.power = power
+        self.waist = waist
+
+    def get_intensity(self):
+        """"""Intensity of Gaussian beam""""""
+            
+        intensity = 2*self.power/pi/self.waist**2
+        return intensity
