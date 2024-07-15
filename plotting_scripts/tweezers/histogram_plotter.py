@@ -65,32 +65,23 @@ fig0.show()
 
 # %% read counts within each ROI
 
-def read_counts_within_rois(rois_array, stack_of_images):
-    nr_rois = int(rois_array.shape[0])
-    nr_images = int(stack_of_images.shape[0])
+def read_counts_within_rois(regions, stack_of_images):
+    num_regions = len(regions)
+    num_images = len(stack_of_images)
     
-    # Initialize a matrix to store counts with shape (num_rois, num_images)
-    counts_matrix = np.zeros((nr_rois, nr_images), dtype=int)
+    counts_matrix = np.zeros((num_regions, num_images), dtype=int)
     
-    # Iterate through each image and ROI
-    for image_i in range(nr_images):
-        image = stack_of_images[image_i]
-        
-        for roi_i in range(nr_rois):
-            col, row = rois_array[roi_i]
-            row = int(row)
-            col = int(col)
-            
+    for image_index, image in enumerate(stack_of_images):
+        for region_index, (col, row) in enumerate(regions):
             if rois_radius > 0:
-                # select an ROI area of multiple pixels 
-                roi_region = ManipulateImage().crop_array_center(image, col, row, rois_radius)
+                roi_region = ManipulateImage().crop_array_center(
+                    image, col, row, rois_radius)
                 counts = np.sum(roi_region)
             else:
-                # only select the one pixel corresponding to the maximum
-                counts = image[row, col]
-            
-            counts_matrix[roi_i, image_i] = counts
-    return np.array(counts_matrix)
+                counts = image[int(row), int(col)]
+            counts_matrix[region_index, image_index] = counts
+    
+    return counts_matrix
 
 
 counts_matrix = read_counts_within_rois(rois_array, image_stack)
