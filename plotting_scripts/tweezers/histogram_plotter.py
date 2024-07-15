@@ -15,16 +15,19 @@ modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 sys.path.append(modules_dir)
 
 # user defined libraries
-from image_analysis import ManipulateImage, LoadImageData
+from image_analysis import ManipulateImage, LoadImageData, Histograms
 
 # %% variables
 
-rois_radius = 0
+rois_radius = 1  # ROI size. Radius 1 means 3x3 array
 nr_bins_histogram = 50
 images_path = 'Z://Strontium//Images//2024-07-11//scan335929//'
-file_name_suffix = '0000image'
-crop_pixels_x = 20
-crop_pixels_y = 20 
+file_name_suffix = '0000image'  # import files ending with 0000image.tif
+crop_pixels_x = 20  # amount of columns to remove left and right
+crop_pixels_y = 20  # columns to remove top and bottom
+show_plots = True
+weighted_sum = True
+weight_center_pixel = 5 # when computing weighted sum, relative contribution center pixel
 
 # %% import images and crop images
 
@@ -55,8 +58,6 @@ x_coor = spots_LoG[:, 1]
 # store in a 2d array for convenient passing down to other functions
 rois_array = np.column_stack((x_coor, y_coor))
 
-# print("ROIs: ", rois_array)
-
 # plot average image and mark detected maximum locations in red
 fig0, ax0 = plt.subplots()
 ax0.imshow(z_project)
@@ -65,43 +66,70 @@ fig0.show()
 
 # %% read counts within each ROI
 
-def read_counts_within_rois(regions, stack_of_images):
-    num_regions = len(regions)
+
+def read_counts_within_rois(rois, stack_of_images):
+    """given a set (stack) of images and ROIs set, 
+    computes the number of counts within each ROI within each image
+
+    Args:
+        rois (2d np array): set of the maxima locations
+        stack_of_images (3d np array): set of 2d images (np arrays)
+
+    Returns:
+        rois_list (list): list of all ROI regions for all images
+        counts_matrix (np array): matrix of counts within each ROI for each image
+    """
+    num_regions = len(rois)
     num_images = len(stack_of_images)
     
     counts_matrix = np.zeros((num_regions, num_images), dtype=int)
-    
+    rois_list = []
+
     for image_index, image in enumerate(stack_of_images):
-        for region_index, (col, row) in enumerate(regions):
+        for region_index, (col, row) in enumerate(rois):
             if rois_radius > 0:
                 roi_region = ManipulateImage().crop_array_center(
                     image, col, row, rois_radius)
-                counts = np.sum(roi_region)
+                rois_list.append(roi_region)
+                if weighted_sum == True:
+                    counts = Histograms().weighted_count_roi(weight_center_pixel, roi_region)
+                else:
+                    counts = np.sum(roi_region)
             else:
                 counts = image[int(row), int(col)]
             counts_matrix[region_index, image_index] = counts
-    
-    return counts_matrix
+    return (rois_list, counts_matrix)
 
 
-counts_matrix = read_counts_within_rois(rois_array, image_stack)
-print("nr ROIs, nr counts = ", counts_matrix.shape)
+regions_list, roi_counts_matrix = read_counts_within_rois(rois_array, image_stack)
+
+# all regions of interest for all ROIs and all images
+regions_array = np.array(regions_list)
+
+# compute average ROI for all ROIs of all images and ROIs
+avg_roi = np.mean(regions_array, axis=0)
+fig1, ax1 = plt.subplots()
+ax1.imshow(avg_roi)
 
 # %% plot histograms
 
-# Create a figure and axes for the subplots
 num_rois = len(rois_array)
 array_dim = int(np.sqrt(num_rois))
-fig1, axes = plt.subplots(nrows=array_dim, ncols=array_dim, figsize=(12, 12), 
+
+fig2, axes = plt.subplots(nrows=array_dim, ncols=array_dim, figsize=(12, 12), 
     sharex=True, sharey=True, constrained_layout=True)
+
+# needs to be a 1d array for the for loop
 ax = axes.flatten()
 
 # Plot histograms for each ROI
 for roi in range(num_rois):
-    ax[roi].hist(counts_matrix[roi], bins=nr_bins_histogram, edgecolor='black')
+    ax[roi].hist(roi_counts_matrix[roi], bins=nr_bins_histogram, edgecolor='black')
     ax[roi].set_title(f'Histogram of Counts for ROI {roi+1}')
     ax[roi].set_xlabel('Counts')
     ax[roi].set_ylabel('Frequency')
 
 # %%
-plt.show()
+
+if show_plots == True:
+    plt.show()
