@@ -5,5 +5,4 @@ Scripts have been tested in a conda environment with default settins.
 
 The working directory should be set to the parent folder `code-PhD-marijn` for the imports to work.
 
-If a script produces a plot, it will be saved to `output` folder. 
-`Modules` folder contains functions/classes that can be shared between scripts. 
+`Modules` folder contains functions/classes that are imported in the functional scripts under `plotting_scripts` and `calculation_scripts`. 
