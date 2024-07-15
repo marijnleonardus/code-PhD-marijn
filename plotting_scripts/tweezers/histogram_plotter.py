@@ -15,7 +15,8 @@ modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 sys.path.append(modules_dir)
 
 # user defined libraries
-from image_analysis import ManipulateImage, LoadImageData, Histograms
+from cammera_image_class import CameraImage
+from image_analysis import ManipulateImage, Histograms
 
 # %% variables
 
@@ -32,7 +33,7 @@ weight_center_pixel = 5 # when computing weighted sum, relative contribution cen
 # %% import images and crop images
 
 # images without cropping ('raw' data)
-image_stack_raw = LoadImageData().import_image_sequence(images_path, file_name_suffix)
+image_stack_raw = CameraImage.import_image_sequence(images_path, file_name_suffix)
 
 # crop images to remove spurious noise peaks at the edges
 image_stack = []

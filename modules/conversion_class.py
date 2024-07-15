@@ -36,7 +36,6 @@ class Conversion:
         rdme = np.sqrt(3 * np.pi * eps0 * hbar * c**3 / (a0**2 * e0* 2 *np.abs(En1 - En2)**3) * (2 * J + 1) * Aki)
         return rdme
 
-
     def rdme_to_rate(rdme, J, En1, En2):
         """
         From Radial density matrix element to Einstein coefficient
@@ -53,7 +52,6 @@ class Conversion:
         rate = np.abs(En1 - En2)**3 * e0**2 / (3 * np.pi * eps0 * hbar* c**3 *(2 * J + 1)) * (a0 * rdme)**2
         return rate
     
-    
     def rate_to_rabi(intensity, linewidth, omega21):
         """
         inputs:
@@ -66,8 +64,7 @@ class Conversion:
         """
         rabi_square = 6 * np.pi * c**2 * intensity * linewidth / (hbar * omega21**3)
         rabi = rabi_square**(0.5)
-        return rabi
-        
+        return rabi   
 
     def rabi_freq_to_rate(intensity, rabi_freq, omega21):
         """
@@ -82,7 +79,6 @@ class Conversion:
         
         rate = hbar *  omega21**3 * rabi_freq**2 / (6 * np.pi * c**2 * intensity)
         return rate
-    
 
     def intensity_to_electric_field(intensity):
         """
@@ -96,7 +92,6 @@ class Conversion:
         electric_field = np.sqrt(electric_field_square)
         return electric_field
 
-
     def wavelength_to_freq(wavelength):
         """
         inputs:
@@ -108,7 +103,6 @@ class Conversion:
 
         frequency = 2 * np.pi * c / wavelength
         return frequency
-
 
     def energy_to_wavelength(transition_energy):
         """
@@ -122,7 +116,6 @@ class Conversion:
         
         wavelength = 2 * np.pi * hbar * c / transition_energy
         return wavelength
-
 
     def rdme_to_rabi(rdme, intensity, j_e):
         """
@@ -147,7 +140,6 @@ class Conversion:
         rabi = (rdme*e0*a0)/hbar*np.sqrt(2*intensity/(eps0*c*(2*j_e+1)))
         return rabi
 
-
     def gaussian_beam_intensity(beam_waist, power):
         """
         inputs:
@@ -160,7 +152,6 @@ class Conversion:
         
         I0 = 2 * power / (np.pi * beam_waist**2)
         return I0
-
 
     def cylindrical_gaussian_beam(waist_x, waist_y, power):
         """
@@ -177,7 +168,6 @@ class Conversion:
         I0 = 2 * power / (np.pi * waist_x * waist_y)
         return I0
 
-
     def saturation_intensity(lifetime, wavelength):
         """
         inputs:
@@ -189,7 +179,6 @@ class Conversion:
         """
         isat = np.pi * (hbar * 2 * np.pi) * c / (3 * lifetime * wavelength**3)
         return isat
-
 
     def compute_rabi_freq(rdme, electric_field):
         """
@@ -207,7 +196,6 @@ class Conversion:
         omega = electric_field / hbar * rdme_se
         return omega
     
-
     def compute_ac_stark_shift(rabi_freq, detuning):
         """
         inputs:

@@ -8,7 +8,7 @@ from decimal import Decimal
 
 
 class CameraImage:
-    """Collection of functions to do with loading and processing camera iamges"""
+    """Collection of functions to do with loading and processing camera images"""
     
     def load_image_from_file(location, name):
         """spits out numpy array of BMP image loaded into memory"""
@@ -20,6 +20,26 @@ class CameraImage:
         # convert to numpy format
         array = np.array(image_file_grey)
         return array
+
+    def import_image_sequence(self, image_path, file_name_suffix):
+        """Imports a sequence of images from a given path and file name suffix.
+
+        Args:
+            image_path (str): The path to the directory containing the images.
+            file_name_suffix (str): The suffix that should be present in each image file name.
+
+        Returns:
+            numpy.ndarray: A 3D array representing the stack of images.
+        """
+        image_filenames = glob.glob(os.path.join(image_path, f"*{file_name_suffix}.tif"))
+
+        image_stack = []
+        for filename in image_filenames:
+            with Image.open(filename) as img:
+                image_array = np.array(img)
+                image_stack.append(image_array)
+
+        return np.array(image_stack)
 
     def crop_to_region_of_interest(image_file, roi_size):
         """crops image file to region of interest"""

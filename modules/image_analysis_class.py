@@ -7,30 +7,10 @@ import glob
 from PIL import Image
 
 
-class LoadImageData:
-    def import_image_sequence(self, image_path, file_name_suffix):
-        """Imports a sequence of images from a given path and file name suffix.
 
-        Args:
-            image_path (str): The path to the directory containing the images.
-            file_name_suffix (str): The suffix that should be present in each image file name.
-
-        Returns:
-            numpy.ndarray: A 3D array representing the stack of images.
-        """
-        image_filenames = glob.glob(os.path.join(image_path, f"*{file_name_suffix}.tif"))
-
-        image_stack = []
-        for filename in image_filenames:
-            with Image.open(filename) as img:
-                image_array = np.array(img)
-                image_stack.append(image_array)
-
-        return np.array(image_stack)
     
 
 class ManipulateImage:
-
     def crop_array_edge(self, array, crop_range_x, crop_range_y):
         """
         Crops an array by removing `x` number of rows and columns from each side.
@@ -69,7 +49,6 @@ class ManipulateImage:
 
 
 class Histograms():
-
     def weighted_count_roi(self, center_weight, pixel_box):
         """compute weighted sum of counts in a pixel box
 
