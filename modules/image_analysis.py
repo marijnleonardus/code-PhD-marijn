@@ -28,6 +28,7 @@ class LoadImageData:
 
         return np.array(image_stack)
     
+    
 class ManipulateImage:
 
     def crop_array_edge(self, array, crop_range_x, crop_range_y):

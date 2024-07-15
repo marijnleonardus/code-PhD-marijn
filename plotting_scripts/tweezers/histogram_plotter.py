@@ -90,11 +90,10 @@ def read_counts_within_rois(rois_array, stack_of_images):
                 counts = image[row, col]
             
             counts_matrix[roi_i, image_i] = counts
-    return counts_matrix
+    return np.array(counts_matrix)
+
 
 counts_matrix = read_counts_within_rois(rois_array, image_stack)
-
-counts_matrix = np.array(counts_matrix)
 print("nr ROIs, nr counts = ", counts_matrix.shape)
 
 # %% plot histograms
@@ -102,7 +101,7 @@ print("nr ROIs, nr counts = ", counts_matrix.shape)
 # Create a figure and axes for the subplots
 num_rois = len(rois_array)
 array_dim = int(np.sqrt(num_rois))
-fig, axes = plt.subplots(nrows=array_dim, ncols=array_dim, figsize=(12, 12), constrained_layout=True)
+fig1, axes = plt.subplots(nrows=array_dim, ncols=array_dim, figsize=(12, 12), constrained_layout=True)
 ax = axes.flatten()
 
 # Plot histograms for each ROI
