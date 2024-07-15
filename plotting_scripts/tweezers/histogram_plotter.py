@@ -92,7 +92,8 @@ print("nr ROIs, nr counts = ", counts_matrix.shape)
 # Create a figure and axes for the subplots
 num_rois = len(rois_array)
 array_dim = int(np.sqrt(num_rois))
-fig1, axes = plt.subplots(nrows=array_dim, ncols=array_dim, figsize=(12, 12), constrained_layout=True)
+fig1, axes = plt.subplots(nrows=array_dim, ncols=array_dim, figsize=(12, 12), 
+    sharex=True, sharey=True, constrained_layout=True)
 ax = axes.flatten()
 
 # Plot histograms for each ROI
