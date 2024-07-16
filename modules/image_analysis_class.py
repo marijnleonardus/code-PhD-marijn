@@ -2,15 +2,11 @@
 # July 2024
 
 import numpy as np
-import os
-import glob
-from PIL import Image
-
-
-
+from numpy import unravel_index
     
 
 class ManipulateImage:
+    """to do; need to merge some of these cropping functions that are similar"""
     def crop_array_edge(self, array, crop_range_x, crop_range_y):
         """
         Crops an array by removing `x` number of rows and columns from each side.
@@ -46,6 +42,30 @@ class ManipulateImage:
         cols_end = int(center_x + crop_radius)
         center_roi = array[cols_start:cols_end, rows_start:rows_end]
         return center_roi
+    
+    def crop_to_region_of_interest(image_file, roi_size):
+        """crops image file to region of interest, used for MOT images"""
+    
+        # Finding center MOT
+        location_maximum = image_file.argmax()
+        indices = unravel_index(location_maximum, image_file.shape)
+    
+        # Crop image                                                     
+        region_of_interest = image_file[indices[0] - roi_size:indices[0] + roi_size,
+            indices[1] - roi_size:indices[1] + roi_size]
+    
+        # Normalize but keep max. number of counts to be used in atom number formula
+        max_counts = np.max(region_of_interest)
+        roi_normalized = region_of_interest/max_counts
+        return roi_normalized, max_counts
+    
+    def crop_center(img, cropx, cropy):
+        """crop image centered around middle"""
+        
+        y, x, *_ = img.shape
+        startx = x//2 - (cropx//2)
+        starty = y//2 - (cropy//2)    
+        return img[starty:starty + cropy, startx:startx + cropx, ...]
 
 
 class Histograms():
