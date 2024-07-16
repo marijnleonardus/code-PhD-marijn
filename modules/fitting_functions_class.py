@@ -7,6 +7,7 @@ import numpy as np
 class FittingFunctions:
     """collection of functions to be used for fitting"""
     
+    @staticmethod
     def gaussian_function(x, offset, amplitude, middle, width):
         """returns gaussian function with standard parameters
 
@@ -23,6 +24,7 @@ class FittingFunctions:
         gaussian1d = offset + amplitude*np.exp(-0.5*((x - middle)/width)**2)
         return gaussian1d
 
+    @staticmethod
     def gaussian_2d_angled(xy, ampl, xo, yo, sigma_x, sigma_y, theta, offset):
         """2D Gaussian function that may rotate with xy plane (theta angle)
 
@@ -49,6 +51,7 @@ class FittingFunctions:
         gaussian2d_angled = ampl*np.exp(exponent) + offset
         return gaussian2d_angled
     
+    @staticmethod
     def gaussian_2d(xy, ampl, xo, yo, sigma_x, sigma_y, offset):
         """2D Gaussian function with no theta (angled) dependence
 
@@ -71,9 +74,18 @@ class FittingFunctions:
         gaussian2d = ampl*np.exp(-1*exponent) + offset
         return gaussian2d
     
-
+    @staticmethod
     def linear_func(x, offset, slope):
-        """linear function for with offset and slope"""
+        """linear function for with offset and slope
 
-        return offset + slope*x
+        Args:
+            x (np array): independent variable
+            offset (float): y axis intercept
+            slope (float): 
+
+        Returns:
+            y (np array): dependent variable
+        """
+        y = offset + slope*x
+        return y
     

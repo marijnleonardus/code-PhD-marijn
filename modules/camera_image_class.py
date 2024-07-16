@@ -12,6 +12,7 @@ from PIL import Image
 class CameraImage:
     """Collection of functions to do with loading and processing camera images"""
     
+    @staticmethod
     def load_image_from_file(location, name):
         """spits out numpy array of BMP image loaded into memory"""
         
@@ -43,6 +44,7 @@ class CameraImage:
 
         return np.array(image_stack)
 
+    @staticmethod
     def compute_pixel_sums_x_y(image_file):
         """computes pixel sums over rows (y) and columns (x) of given image"""
         
@@ -54,6 +56,7 @@ class CameraImage:
         sum_cols = sum_cols/np.max(sum_cols)
         return sum_rows, sum_cols
 
+    @staticmethod
     def pixels_to_m(nr_pixels, magnification, pixel_size, bin_size):
         """converts number of pixels to meters"""
 
@@ -61,6 +64,7 @@ class CameraImage:
         object_size = image_size/magnification
         return object_size
     
+    @staticmethod
     def m_to_pixels(object_size, magnification, pixel_size, bin_size):
         """converts meters to number of pixels"""
 

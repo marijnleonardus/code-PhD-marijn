@@ -6,7 +6,6 @@ import numpy as np
 
 
 class AtomicCalculations:
-
     def __init__(self, atomic_unit):
         self.au = atomic_unit
 
@@ -39,8 +38,8 @@ class TrapFrequencies:
         Returns:
             _type_: _description_
         """
-
-        return np.sqrt(4*trapdepth/(mass*waist**2))
+        trap_freq_radial = np.sqrt(4*trapdepth/(mass*waist**2))
+        return trap_freq_radial
     
     def trap_freq_axial(self, trapdepth, mass, rayleigh_range):
         """compute axial trap frequency in rad/s, divide by 2pi to get Hz
@@ -50,5 +49,6 @@ class TrapFrequencies:
             mass (float): in units of kg
             rayleigh_range (float): in units of m
         """
-
-        return np.sqrt(4*trapdepth/(mass*rayleigh_range**2))
+        trap_freq_axial = np.sqrt(4*trapdepth/(mass*rayleigh_range**2))
+        return trap_freq_axial
+    

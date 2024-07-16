@@ -6,7 +6,8 @@ from numpy import unravel_index
     
 
 class ManipulateImage:
-    """to do; need to merge some of these cropping functions that are similar"""
+    """to do; need to merge some of these cropping functions that are similar
+    crop_array_edge and crop_array_center can be static methods i think"""
     def crop_array_edge(self, array, crop_range_x, crop_range_y):
         """
         Crops an array by removing `x` number of rows and columns from each side.
@@ -43,6 +44,7 @@ class ManipulateImage:
         center_roi = array[cols_start:cols_end, rows_start:rows_end]
         return center_roi
     
+    @staticmethod
     def crop_to_region_of_interest(image_file, roi_size):
         """crops image file to region of interest, used for MOT images"""
     
@@ -59,6 +61,7 @@ class ManipulateImage:
         roi_normalized = region_of_interest/max_counts
         return roi_normalized, max_counts
     
+    @staticmethod
     def crop_center(img, cropx, cropy):
         """crop image centered around middle"""
         

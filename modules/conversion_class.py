@@ -2,23 +2,27 @@
 # January 2023
 
 import numpy as np
-from scipy.constants import electron_mass, c, hbar, alpha
+from scipy.constants import electron_mass, c, hbar, alpha, pi
 from scipy.constants import epsilon_0 as eps0
 from scipy.constants import elementary_charge as e0
 import scipy.constants
 
-
 # %% variables
 
 a0 = scipy.constants.physical_constants['Bohr radius'][0] # m
-hartree_energy = electron_mass * c**2 * alpha**2 # J
-t = c**2 * alpha**2
-
+hartree_energy = electron_mass*c**2*alpha**2 # J
+t = c**2*alpha**2
 
 # %% functions
 
-class Conversion:
 
+class Conversion:
+    """Collection of functions to do with conversion between different units
+    
+    Because these function do not need external input, 
+    I have chosen to use static methods (can be changed where needed)"""
+
+    @staticmethod
     def rate_to_rdme(Aki, J, En1, En2):
         """
         from Einstein coefficient to Radial density matrix element
@@ -33,9 +37,10 @@ class Conversion:
         - radial dipole matrix element in atomic units [a0*e]
         """
         
-        rdme = np.sqrt(3 * np.pi * eps0 * hbar * c**3 / (a0**2 * e0* 2 *np.abs(En1 - En2)**3) * (2 * J + 1) * Aki)
+        rdme = np.sqrt(3*pi*eps0*hbar*c**3/(a0**2*e0*2*np.abs(En1-En2)**3)*(2*J + 1)*Aki)
         return rdme
-
+    
+    @staticmethod
     def rdme_to_rate(rdme, J, En1, En2):
         """
         From Radial density matrix element to Einstein coefficient
@@ -49,9 +54,10 @@ class Conversion:
         - Einstein coefficient in Hz
         """
         
-        rate = np.abs(En1 - En2)**3 * e0**2 / (3 * np.pi * eps0 * hbar* c**3 *(2 * J + 1)) * (a0 * rdme)**2
+        rate = np.abs(En1 - En2)**3*e0**2/(3*pi*eps0*hbar*c**3*(2*J + 1))*(a0*rdme)**2
         return rate
     
+    @staticmethod
     def rate_to_rabi(intensity, linewidth, omega21):
         """
         inputs:
@@ -62,10 +68,11 @@ class Conversion:
         returns:
         - Rabi frequency [Hz]
         """
-        rabi_square = 6 * np.pi * c**2 * intensity * linewidth / (hbar * omega21**3)
+        rabi_square = 6*pi*c**2*intensity*linewidth/(hbar*omega21**3)
         rabi = rabi_square**(0.5)
         return rabi   
-
+    
+    @staticmethod
     def rabi_freq_to_rate(intensity, rabi_freq, omega21):
         """
         inputs:
@@ -77,9 +84,10 @@ class Conversion:
         - einstein coefficient [Hz]
         """
         
-        rate = hbar *  omega21**3 * rabi_freq**2 / (6 * np.pi * c**2 * intensity)
+        rate = hbar*omega21**3*rabi_freq**2/(6*pi*c**2*intensity)
         return rate
 
+    @staticmethod
     def intensity_to_electric_field(intensity):
         """
         inputs:
@@ -92,6 +100,7 @@ class Conversion:
         electric_field = np.sqrt(electric_field_square)
         return electric_field
 
+    @staticmethod
     def wavelength_to_freq(wavelength):
         """
         inputs:
@@ -101,9 +110,10 @@ class Conversion:
         - angular freq [rad/s]
         """
 
-        frequency = 2 * np.pi * c / wavelength
+        frequency = 2*pi*c/wavelength
         return frequency
 
+    @staticmethod
     def energy_to_wavelength(transition_energy):
         """
         inputs:
@@ -114,9 +124,10 @@ class Conversion:
         - transition wavelength
         """
         
-        wavelength = 2 * np.pi * hbar * c / transition_energy
+        wavelength = 2*pi*hbar*c/transition_energy
         return wavelength
 
+    @staticmethod
     def rdme_to_rabi(rdme, intensity, j_e):
         """
         computes Rabi frequency given RDME (radial dipole matrix element)
@@ -140,6 +151,7 @@ class Conversion:
         rabi = (rdme*e0*a0)/hbar*np.sqrt(2*intensity/(eps0*c*(2*j_e+1)))
         return rabi
 
+    @staticmethod
     def gaussian_beam_intensity(beam_waist, power):
         """
         inputs:
@@ -150,9 +162,10 @@ class Conversion:
         - I0 (max intensity) [W/m^2]
         """
         
-        I0 = 2 * power / (np.pi * beam_waist**2)
+        I0 = 2*power/(pi*beam_waist**2)
         return I0
 
+    @staticmethod
     def cylindrical_gaussian_beam(waist_x, waist_y, power):
         """
         gaussian beam but waist in x and y are not the same (cylindrical)
@@ -165,9 +178,10 @@ class Conversion:
         - I0 (max intensity) [W/m^2]
         """
             
-        I0 = 2 * power / (np.pi * waist_x * waist_y)
+        I0 = 2*power/(pi*waist_x*waist_y)
         return I0
 
+    @staticmethod
     def saturation_intensity(lifetime, wavelength):
         """
         inputs:
@@ -177,9 +191,10 @@ class Conversion:
         returns:
         - saturation intensity
         """
-        isat = np.pi * (hbar * 2 * np.pi) * c / (3 * lifetime * wavelength**3)
+        isat = pi*(hbar*2*pi)*c/(3*lifetime*wavelength**3)
         return isat
 
+    @staticmethod
     def compute_rabi_freq(rdme, electric_field):
         """
         inputs:
@@ -190,12 +205,13 @@ class Conversion:
         - rabi frequency
         """
         # convert to SI units from atomic
-        rdme_se = abs(rdme *a0 * e0) # coulom * m
+        rdme_se = abs(rdme*a0*e0) # coulom * m
 
         # compute rabi frequency
-        omega = electric_field / hbar * rdme_se
+        omega = electric_field/hbar*rdme_se
         return omega
     
+    @staticmethod
     def compute_ac_stark_shift(rabi_freq, detuning):
         """
         inputs:
@@ -205,9 +221,10 @@ class Conversion:
         returns:
         - AC Stark shift in [Hz]
         """
-        stark_shift = rabi_freq**2 / (4 *detuning)
+        stark_shift = rabi_freq**2/(4*detuning)
         return stark_shift
     
+    @staticmethod
     def dc_stark_shift(polarizability, electric_field):
         """
         see paper Mohan 2022 for Sr88 datda
@@ -227,6 +244,7 @@ class Conversion:
         dc_stark = 1/2*polarizability*electric_field**2
         return dc_stark
 
+    @staticmethod
     def get_atomic_pol_unit():
         """
         inputs:
@@ -236,5 +254,5 @@ class Conversion:
             -atomic polarizability unit
         """
         
-        au = e0**2 * a0**2 / hartree_energy
+        au = e0**2*a0**2/hartree_energy
         return au

@@ -10,7 +10,7 @@ Sr88 = Strontium88()
 
 
 class GateErrors:
-    
+    @staticmethod
     def atomic_motion_error(k, variance, mass, rabifreq):
         """
         Parameters
@@ -33,7 +33,7 @@ class GateErrors:
         error=5*k**2*variance/(4*mass**2*rabifreq**2)
         return error
     
-    
+    @staticmethod
     def imperfect_blockade_error(rabifreq, interaction):
         """
         Parameters
@@ -53,7 +53,6 @@ class GateErrors:
     
 
 class IntensityNoise:
-    
     def shot_to_shot_fidelity_error(sigma):
         """
         compute entangling error as a result of intensity noise
@@ -68,11 +67,9 @@ class IntensityNoise:
         -------
         error : float
             fidelity error 1-F.
-
         """
-        
-        fidelity=0.5*(1+np.exp(-0.5*pi**2*sigma**2))
-        error=1-fidelity
+        fidelity=0.5*(1 + np.exp(-0.5*pi**2*sigma**2))
+        error=1 - fidelity
         return error
         
     
@@ -159,7 +156,7 @@ class IntensityNoise:
     #     return fidelity_error
 
 class PhaseNoise:
-    
+    @staticmethod
     def window_function_1(r, w, t):
         """
         windows function that selects relevant of frequency spectrum as a function of time
@@ -180,18 +177,14 @@ class PhaseNoise:
             spectral window function that selects parts of spectrum.
     
         """
-        
-        # compute numerator
-        term1=3*r**2+w**2+(r**2-w**2)*np.cos(2*r*t)
-        term2=-4*r**2*np.cos(r*t)*np.cos(w*t)-4*r*w*np.sin(r*t)*np.sin(w*t)
-        numerator = term1+term2
-        
+        numerator = 3*r**2+w**2 + (r**2 - w**2)*np.cos(2*r*t) - 4*r**2*np.cos(r*t)*np.cos(w*t) - 4*r*w*np.sin(r*t)*np.sin(w*t)
+
         # compute denominator and fraction
-        denominator = (r**2-w**2)**2*t**2
+        denominator = (r**2 - w**2)**2*t**2
         window = numerator/denominator
         return window 
     
-    
+    @staticmethod
     def product_function_1(rabi, omega, noise_spectrum):
         """
         computes product of window function with frequency noise spectrum
@@ -215,10 +208,10 @@ class PhaseNoise:
         t1 = pi/rabi
         window1t = PhaseNoise.window_function_1(rabi, omega, t1)
         
-        product = window1t * noise_spectrum
+        product = window1t*noise_spectrum
         return product
     
-    
+    @staticmethod
     def compute_fidelity_error(rabi, omega, noise_spectrum):
         """
         computes fidelity error as result of phase noise 
@@ -250,7 +243,7 @@ class PhaseNoise:
         return fidelity_error
     
 class Lifetime:
-    
+    @staticmethod
     def rydberg_state(n):
         """
         computes rydberg lifetime (black body, sponatneous emission)
@@ -276,6 +269,5 @@ class Lifetime:
         delta = Sr88.getQuantumDefect(n, 0, 1, s=1)
         
         # compute lifetime rydberg state in s
-        lifetime = (A*(n-delta)**(-2)+B*(n-delta)**(-3))**(-1)*1e-6
+        lifetime = (A*(n - delta)**(-2) + B*(n - delta)**(-3))**(-1)*1e-6
         return lifetime
-        

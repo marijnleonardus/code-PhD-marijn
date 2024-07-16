@@ -20,6 +20,7 @@ Sr88 = Strontium88()
 
 class LightAtomInteraction:
     
+    @staticmethod
     def scattering_rate_sat(detuning, linewidth, s):
         """off-resonant scattering rate given saturation parameter s
         formula 9.4, foot atomic physics
@@ -34,9 +35,10 @@ class LightAtomInteraction:
         - scattering rate [rad/s]     
         """
         
-        rate = .5*s*linewidth/(1 + s + (2*detuning/linewidth)**2)
+        rate = 0.5*s*linewidth/(1 + s + (2*detuning/linewidth)**2)
         return rate
     
+    @staticmethod
     def scattering_rate_power(linewidth, detuning, wavelength, beam_waist, power):
         """
         computes off-resonant scattering rate for a transition with linewidth
@@ -65,6 +67,7 @@ class LightAtomInteraction:
         off_resonant_rate = LightAtomInteraction.scattering_rate_sat(detuning, linewidth, s0)
         return off_resonant_rate
 
+    @staticmethod
     def sr88_rdme_value_au(n):
         """
         computes RDME (radial dipole matrix element) for Sr88 in atomic units
