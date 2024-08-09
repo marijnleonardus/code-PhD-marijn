@@ -20,6 +20,7 @@ from frequency_analysis_class import AllanDevFromDataset
 # %% general parameters
 
 # parameters
+f0 = 194.4e12  # approximate ORS (optical reference system) refrequency [Hz]
 sample_rate = 1.0  # cavity freq. sampling rate [Hz]
 data_location = 'T:\\KAT1\\Marijn\\FC1500measurements\\cavity drift\\'
 
