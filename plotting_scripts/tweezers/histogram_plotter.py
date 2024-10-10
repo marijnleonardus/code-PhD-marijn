@@ -19,7 +19,7 @@ from image_analysis_class import ManipulateImage, Histograms
 # variables
 rois_radius = 1  # ROI size. Radius 1 means 3x3 array
 nr_bins_histogram = 50
-images_path = 'Z://Strontium//Images//2024-10-10//scan114820//'
+images_path = 'Z://Strontium//Images//2024-10-10//scan112253//'
 file_name_suffix = 'image'  # import files ending with image.tif
 crop_pixels_x = 5  # amount of columns to remove left and right
 crop_pixels_y = 5  # columns to remove top and bottom
@@ -37,7 +37,7 @@ z_project = np.mean(image_stack, axis=0)
 spots_LoG = blob_log(z_project, max_sigma=3, min_sigma=1, num_sigma=10, threshold=50)
 
 # return rows, columns of detected spots 
-y_coor = spots_LoG[:, 0] + 1 # no idea why +1, but i don't do it the cropped ROIs look off by 1 pixel
+y_coor = spots_LoG[:, 0] 
 x_coor = spots_LoG[:, 1] 
 
 # store in a 2d array for convenient passing down to other functions
