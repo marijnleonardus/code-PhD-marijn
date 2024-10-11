@@ -4,6 +4,7 @@
 e.g. there is 2 gaussian beam intensity functions now"""
 
 import numpy as np
+from scipy.constants import pi
 
 
 class Optics:

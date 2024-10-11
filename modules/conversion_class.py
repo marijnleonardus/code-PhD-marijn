@@ -185,14 +185,14 @@ class Conversion:
     def saturation_intensity(lifetime, wavelength):
         """
         inputs:
-        - wavelength in m
         - excited state lifetime tau in s
+        - wavelength in m
 
         returns:
         - saturation intensity
         """
-        isat = pi*(hbar*2*pi)*c/(3*lifetime*wavelength**3)
-        return isat
+        saturation_intensity = pi*(hbar*2*pi)*c/(3*lifetime*wavelength**3)
+        return saturation_intensity
 
     @staticmethod
     def compute_rabi_freq(rdme, electric_field):
