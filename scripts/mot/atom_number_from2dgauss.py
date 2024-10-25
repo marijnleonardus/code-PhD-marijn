@@ -24,19 +24,23 @@ from image_analysis_class import SpotDetection
 
 os.system('cls')
 
+folder_path = r"Z://Strontium//Images//2024-10-21//442187//"
+image_name = r"0000absorption.tif"
+
 
 def main(folder_path, image_name):
     # Read the image using imageio and flatten to 1d
     image_original = CameraImage.load_image_from_file(folder_path, image_name)
     image_original_flat = image_original.ravel()
 
-    SpotDetectionObject = SpotDetection(sigma=60, threshold_detection=0.0925, image=image_original_flat)
+    SpotDetectionObject = SpotDetection(sigma=60, threshold_detection=0.06, image=image_original)
     spots_laplaciangaussian = SpotDetectionObject.laplacian_of_gaussian_detection()
     print(spots_laplaciangaussian)
+    blob_y, blob_x, blob_radius = spots_laplaciangaussian[0]
 
     # Initial guess for the parameters, bound theta parameter
-    initial_guess = (100, 100, 500, 50, 50, 0, 200) # amplitude, x0, y0, sigma_x, sigma_y, theta, offset
-    bounds = (0, [1000,2000, 2000, 300, 300, np.pi, 200])
+    initial_guess = (200, blob_x, blob_y, blob_radius*.5, blob_radius*.5, 0, 200) # amplitude, x0, y0, sigma_x, sigma_y, theta, offset
+    bounds = (0, [1000,2000, 2000, 200,  200, np.pi, 300])
 
     # Precompute meshgrid
     x_max, y_max = 0, 0
@@ -62,15 +66,17 @@ def main(folder_path, image_name):
     sigy = 204e-6
     crosssec = 3*(461e-9)**2/2/np.pi
     atom_nr = 2*np.pi*0.1*sigx*sigy/crosssec
-    print(atom_nr/1e5)
+    print(f"{atom_nr:.0e}")
 
     fig, ax = plt.subplots()
     ax.imshow(image_original)
 
     ellipse = Ellipse((x0, y0), width=sigma_x*2, edgecolor='r', facecolor='none', height=sigma_y*2, angle=angle)
+    cross = Ellipse((blob_x, blob_y), width=blob_radius, edgecolor='b', facecolor='none', height=blob_radius)
     ax.add_patch(ellipse)
+    ax.add_patch(cross)
     plt.show()    
 
-folder_path = r"Z://Strontium//Images//2024-10-21//442187//"
-image_name = r"0000absorption.tif"
-main(folder_path, image_name)
+
+if __name__ == '__main__':
+    main(folder_path, image_name)
