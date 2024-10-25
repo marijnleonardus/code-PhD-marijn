@@ -19,7 +19,7 @@ from image_analysis_class import ManipulateImage, Histograms
 # variables
 rois_radius = 1  # ROI size. Radius 1 means 3x3 array
 nr_bins_histogram = 50
-images_path = 'Z://Strontium//Images//2024-10-10//scan112253//'
+images_path = 'Z://Strontium//Images//2024-10-11//scan438302//'
 file_name_suffix = 'image'  # import files ending with image.tif
 crop_pixels_x = 5  # amount of columns to remove left and right
 crop_pixels_y = 5  # columns to remove top and bottom
@@ -32,9 +32,11 @@ image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
 
 # compute cropped average image and plot
 z_project = np.mean(image_stack, axis=0)
+print(z_project)
 
 # compute laplacian of gaussian spot locations
-spots_LoG = blob_log(z_project, max_sigma=3, min_sigma=1, num_sigma=10, threshold=50)
+spots_LoG = blob_log(z_project, max_sigma=4, min_sigma=1, num_sigma=12, threshold=1e-1)
+print(spots_LoG)
 
 # return rows, columns of detected spots 
 y_coor = spots_LoG[:, 0] 
@@ -87,7 +89,6 @@ regions_list, roi_counts_matrix = read_counts_within_rois(rois_array, image_stac
 
 # all regions of interest for all ROIs and all images
 regions_array = np.array(regions_list)
-print(regions_array)
 
 # compute average ROI for all ROIs of all images and ROIs
 avg_roi = np.mean(regions_array, axis=0)
@@ -100,14 +101,19 @@ array_dim = int(np.sqrt(num_rois))
 
 fig2, axes = plt.subplots(nrows=array_dim, ncols=array_dim, figsize=(12, 12), 
     sharex=True, sharey=True, constrained_layout=True)
-ax = axes.flatten() # needs to be a 1d array for the for loop
+
+# If there's only one subplot (axes is not an array), wrap it in a list
+if num_rois == 1:
+    axes = [axes]  # Convert single Axes object to list for iteration
+elif isinstance(axes, np.ndarray):
+    axes = axes.flatten()  # Flatten the 2D array of Axes objects if necessary
 
 # Plot histograms for each ROI
 for roi in range(num_rois):
-    ax[roi].hist(roi_counts_matrix[roi], bins=nr_bins_histogram, edgecolor='black')
-    ax[roi].set_title(f'Histogram of Counts for ROI {roi+1}')
-    ax[roi].set_xlabel('Counts')
-    ax[roi].set_ylabel('Frequency')
+    axes[roi].hist(roi_counts_matrix[roi], bins=nr_bins_histogram, edgecolor='black')
+    axes[roi].set_title(f'Histogram of Counts for ROI {roi+1}')
+    axes[roi].set_xlabel('Counts')
+    axes[roi].set_ylabel('Frequency')
 
 if show_plots == True:
     plt.show()

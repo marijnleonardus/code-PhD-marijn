@@ -3,7 +3,8 @@
 
 import numpy as np
 from numpy import unravel_index
-    
+from skimage.feature import blob_log
+
 
 class ManipulateImage:
     """to do; need to merge some of these cropping functions that are similar
@@ -90,3 +91,18 @@ class Histograms():
         # so when adding the center pixel contribution, remove 1 to avoid counting twice 
         weighted_sum = 1/(center_weight + nr_edge_pixels)*(np.sum(pixel_box) + (center_weight - 1)*center_pixel_value)
         return weighted_sum
+
+
+class SpotDetection():
+    def __init__(self, sigma, threshold_detection, image):
+        self.sigma = sigma
+        self.threshold_detection = threshold_detection
+        self.image = image
+
+    def laplacian_of_gaussian_detection(self):
+        """do a gaussian blur, then compute laplacian. 
+        if this is above a threhsold, return the location of this spot"""
+
+        spots_laplacian_gaussian = blob_log(self.image, max_sigma=2*self.sigma, min_sigma=0.5*self.sigma,
+            num_sigma=10, threshold=self.threshold_detection)
+        return spots_laplacian_gaussian
