@@ -118,7 +118,7 @@ class SpotDetectionFitting():
             num_sigma=10, threshold=self.threshold_detection)
         return spots_laplacian_gaussian
     
-    def twod_gaussian_fit(self, amplitude_guess, offset_guess, plot_enabled):
+    def twod_gaussian_fit(self, amplitude_guess, offset_guess, print_enabled, plot_enabled):
         """fit 2d gaussian
 
         Args:
@@ -136,12 +136,13 @@ class SpotDetectionFitting():
         # detect spots using laplacian of gaussian filter
         #SpotDetectionObject = SpotDetection(sigma=expected_pixel_size, threshold_detection=0.06, image=image_original)
         spots_laplaciangaussian = self.laplacian_of_gaussian_detection()
-        print("detected spot: row, column, radius", spots_laplaciangaussian)
+        if print_enabled:
+            print("detected spot: row, column, radius", spots_laplaciangaussian)
         blob_y, blob_x, blob_radius = spots_laplaciangaussian[0]
 
         # Initial guess for the parameters, bound theta parameter
          # amplitude, x0, y0, sigma_x, sigma_y, theta, offset
-        initial_guess = (amplitude_guess, blob_x, blob_y, blob_radius*.5, blob_radius*.5, 0, offset_guess)
+        initial_guess = (amplitude_guess, blob_x, blob_y, blob_radius*.5, blob_radius*.5, np.pi/4, offset_guess)
         bounds = (0, [200,2000, 2000, 300,  300, np.pi, 300])
 
         # Define mesh grid for fitting, flatten for fitting
@@ -161,14 +162,18 @@ class SpotDetectionFitting():
             p0=initial_guess,
             bounds=bounds
         )
-        amplitude, x0, y0, sigma_x, sigma_y, angle, _ = fit_params
-        print("fitted amplitude, x0, y0: ", int(y0), int(x0), int(amplitude))
+        amplitude, x0, y0, sigma_x, sigma_y, rotation_angle, offset = fit_params
+        if print_enabled:
+            print("fitted amplitude: ", amplitude) 
+            print("fitted peak location (x,y): ", x0, y0)
+            print("fitted angle: ", rotation_angle*180/np.pi, " degrees")
+            print("fitted offset: ", offset)
 
         if plot_enabled:
             fig, ax = plt.subplots()
-            ax.imshow(self.image, cmap="inferno")
-            ellipse = Ellipse((x0, y0), width=sigma_x*2, edgecolor='r', 
-                facecolor='none', height=sigma_y*2, angle=angle)
+            ax.imshow(self.image, cmap="jet")
+            ellipse = Ellipse((x0, y0), width=sigma_x*2, edgecolor='r', angle=-rotation_angle*180/np.pi, 
+                facecolor='none', height=sigma_y*2)
             cross = Ellipse((blob_x, blob_y), width=blob_radius, edgecolor='b',
                 facecolor='none', height=blob_radius)
             ax.add_patch(ellipse)
@@ -176,4 +181,36 @@ class SpotDetectionFitting():
             plt.show()    
 
         return amplitude, sigma_x, sigma_y
+
+    def total_pixel_count(self, window_radius, print_enabled, plot_enabled):
+        """compute total pixel count for absorption image
+
+        Args:
+            window_radius (int): radius of window around image to crop around
+            print_enabled (Boolean): 
+            plot_enabled (Boolean): 
+        """
+        spots_laplaciangaussian = self.laplacian_of_gaussian_detection()
+        blob_y, blob_x, _ = spots_laplaciangaussian[0]
+        if print_enabled:
+            print(spots_laplaciangaussian)
+
+        Manipulate = ManipulateImage()
+        array_cropped = Manipulate.crop_array_center(array=self.image, center_x=blob_y,
+            center_y=blob_x, crop_radius=window_radius)
+
+        if plot_enabled:
+            fig, ax = plt.subplots()
+            fig.subplots_adjust(right=0.85)
+            cbar_ax = fig.add_axes([0.88, 0.15, 0.04, 0.7])
+            im1 = ax.imshow(array_cropped, cmap="jet")
+            fig.colorbar(im1, cax=cbar_ax)
+            plt.show()
+
+        # we use an offset of 200 px counts to prevent negative values. 
+        offset = 200
+        rows = np.shape(array_cropped)[0]
+        cols = np.shape(array_cropped)[1]
+        total_pixel_count = np.sum(array_cropped) - rows*cols*offset
+        return total_pixel_count
     
