@@ -4,6 +4,17 @@
 import numpy as np
 from numpy import unravel_index
 from skimage.feature import blob_log
+from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
+from matplotlib.patches import Ellipse
+
+# append modules dir
+import sys
+import os
+script_dir = os.path.dirname(os.path.abspath(__file__))
+modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
+sys.path.append(modules_dir)
+from fitting_functions_class import FittingFunctions
 
 
 class ManipulateImage:
@@ -93,7 +104,7 @@ class Histograms():
         return weighted_sum
 
 
-class SpotDetection():
+class SpotDetectionFitting():
     def __init__(self, sigma, threshold_detection, image):
         self.sigma = sigma
         self.threshold_detection = threshold_detection
@@ -106,3 +117,63 @@ class SpotDetection():
         spots_laplacian_gaussian = blob_log(self.image, max_sigma=2*self.sigma, min_sigma=0.5*self.sigma,
             num_sigma=10, threshold=self.threshold_detection)
         return spots_laplacian_gaussian
+    
+    def twod_gaussian_fit(self, amplitude_guess, offset_guess, plot_enabled):
+        """fit 2d gaussian
+
+        Args:
+            amplitude_guess (float): _description_
+            offset_guess (float): _description_
+            plot_enabled (float): _description_
+
+        Returns:
+            amplitude, sigma_x, sigma_y (list): fit parameters of 2d gaussian result
+        """
+
+        # Read the image using imageio and flatten to 1d
+        image_flat = self.image.ravel()
+
+        # detect spots using laplacian of gaussian filter
+        #SpotDetectionObject = SpotDetection(sigma=expected_pixel_size, threshold_detection=0.06, image=image_original)
+        spots_laplaciangaussian = self.laplacian_of_gaussian_detection()
+        print("detected spot: row, column, radius", spots_laplaciangaussian)
+        blob_y, blob_x, blob_radius = spots_laplaciangaussian[0]
+
+        # Initial guess for the parameters, bound theta parameter
+         # amplitude, x0, y0, sigma_x, sigma_y, theta, offset
+        initial_guess = (amplitude_guess, blob_x, blob_y, blob_radius*.5, blob_radius*.5, 0, offset_guess)
+        bounds = (0, [200,2000, 2000, 300,  300, np.pi, 300])
+
+        # Define mesh grid for fitting, flatten for fitting
+        x_max, y_max = 0, 0
+        x_max = max(x_max, self.image.shape[1])
+        y_max = max(y_max, self.image.shape[0])
+        x = np.arange(0, x_max, 1)
+        y = np.arange(0, y_max, 1)
+        xy_mesh = np.meshgrid(x, y)
+        xy_flat = np.vstack((xy_mesh[0].ravel(), xy_mesh[1].ravel())) 
+
+        # Fit 2D Gaussian to the entire image
+        fit_params, _ = curve_fit(
+            FittingFunctions.gaussian_2d_angled,
+            xy_flat,
+            image_flat,
+            p0=initial_guess,
+            bounds=bounds
+        )
+        amplitude, x0, y0, sigma_x, sigma_y, angle, _ = fit_params
+        print("fitted amplitude, x0, y0: ", int(y0), int(x0), int(amplitude))
+
+        if plot_enabled:
+            fig, ax = plt.subplots()
+            ax.imshow(self.image, cmap="inferno")
+            ellipse = Ellipse((x0, y0), width=sigma_x*2, edgecolor='r', 
+                facecolor='none', height=sigma_y*2, angle=angle)
+            cross = Ellipse((blob_x, blob_y), width=blob_radius, edgecolor='b',
+                facecolor='none', height=blob_radius)
+            ax.add_patch(ellipse)
+            ax.add_patch(cross)
+            plt.show()    
+
+        return amplitude, sigma_x, sigma_y
+    
