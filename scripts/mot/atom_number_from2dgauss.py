@@ -62,14 +62,14 @@ def main(method):
     raw_data = CameraImage.load_image_from_file(folder_path, image_name)
 
     # Create image analysis object from class 
-    ImageAnalysis = SpotDetectionFitting(sigma=60, threshold_detection=0.06, image=raw_data)
+    ImageAnalysis = SpotDetectionFitting(sigma=40, threshold_detection=0.0007, image=raw_data)
 
     # atomic cross section used for both methods
     cross_section = compute_cross_section(461e-9)
     
-    if method == "pixel_count":
+    if method == "pixel_sum":
     # compute atom number from pixel count
-        signal_px_count = ImageAnalysis.total_pixel_count(window_radius=50, print_enabled=True, plot_enabled=False)
+        signal_px_count = ImageAnalysis.total_pixel_count(window_radius=50, print_enabled=True, plot_enabled=True)
 
         # the amplitude was multiplied by 1000 in the analyze function of artiq. So divide by this to get OD
         total_od_count = signal_px_count/1000

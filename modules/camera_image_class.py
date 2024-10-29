@@ -2,11 +2,11 @@
 # December 2022
 
 import numpy as np
-from numpy import unravel_index
 from PIL import Image
 import os
 import glob
 from PIL import Image
+import matplotlib.pyplot as plt
 
 
 class CameraImage:
@@ -18,7 +18,9 @@ class CameraImage:
         
         # load image and convert to greyscale
         image_file = Image.open(location + name)
-        image_file_grey = image_file.convert("L")
+        image_file_grey = image_file.convert("I;16") 
+        #for 8 bit 
+        #image_file_grey = image_file.convert("L")
 
         # convert to numpy format
         array = np.array(image_file_grey)
@@ -71,3 +73,20 @@ class CameraImage:
         image_size = object_size*magnification
         nr_pixels = image_size/bin_size/pixel_size
         return nr_pixels
+
+
+def main():
+    "for debugging the load_image_from_file function"
+    folder_path = r"Z://Strontium//Images//2024-10-21//442187//"
+    image_name = r"0000absorption.tif"
+
+    image = CameraImage.load_image_from_file(folder_path, image_name)
+
+    fig, ax1 = plt.subplots()
+    plot = ax1.imshow(image, cmap='jet')
+    fig.colorbar(plot, ax=ax1)
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
