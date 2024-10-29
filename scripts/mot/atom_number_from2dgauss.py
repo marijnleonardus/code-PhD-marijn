@@ -57,18 +57,15 @@ def main(method):
     5. Prints the computed atom number.
     """
     os.system('cls')
-
-    # load image from file
     raw_data = CameraImage.load_image_from_file(folder_path, image_name)
 
     # Create image analysis object from class 
     ImageAnalysis = SpotDetectionFitting(sigma=40, threshold_detection=0.0007, image=raw_data)
-
-    # atomic cross section used for both methods
+   
     cross_section = compute_cross_section(461e-9)
     
     if method == "pixel_sum":
-    # compute atom number from pixel count
+        # compute atom number from pixel count
         signal_px_count = ImageAnalysis.total_pixel_count(window_radius=50, print_enabled=True, plot_enabled=True)
 
         # the amplitude was multiplied by 1000 in the analyze function of artiq. So divide by this to get OD
@@ -81,16 +78,23 @@ def main(method):
     if method == "gaussian_fit":
         # compute atom number from 2d image 
         amplitude_px, sigma_x_px, sigma_y_px = ImageAnalysis.twod_gaussian_fit(
-            amplitude_guess=200, offset_guess=200, print_enabled=True, plot_enabled=True)
+            amplitude_guess=200, offset_guess=200, print_enabled=False, plot_enabled=False)
 
+        # convert sigma from pixels to meters
         sigma_x = CameraImage.pixels_to_m(sigma_x_px, magnification, pixel_size, bin_size=1)
         sigma_y = CameraImage.pixels_to_m(sigma_y_px, magnification, pixel_size, bin_size=1)
-
-        # compute atom number
-        amplitude_od = amplitude_px/1000
+        
+        # divide by 1000 because we multiplied by 1000 in the analyze function of artiq
+        amplitude_od = amplitude_px/1000 
         atom_nr = 2*np.pi*amplitude_od*sigma_x*sigma_y/cross_section
+
+        # compute density. We don't know sigma in the z direction. Take average of x and y
+        sigma_z = (sigma_x + sigma_y)/2
+        atomic_density = atom_nr/((2*np.pi)**1.5*sigma_x*sigma_y*sigma_z)
+        atomic_density_cm3 = atomic_density/(100)**3
+        print("atomic density: " , f"{atomic_density_cm3:.0e}", " cm^-3")
     
-    print("computed atom: " , f"{atom_nr:.1e}")
+    print("computed atom number: " , f"{atom_nr:.0e}")
 
 
 if __name__ == '__main__':
