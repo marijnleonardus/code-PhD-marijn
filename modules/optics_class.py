@@ -88,3 +88,16 @@ class GaussianBeam:
             
         intensity = 2*self.power/pi/self.waist**2
         return intensity
+    
+    def get_rayleigh_range(self, wavelength):
+        """rayleigh range of gaussian beam
+
+        Args:
+            wavelength (float): units [m]
+
+        Returns:
+            rayleigh_range (float): units [m]
+        """
+            
+        rayleigh_range = pi*self.waist**2/wavelength
+        return rayleigh_range

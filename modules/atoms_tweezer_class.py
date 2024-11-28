@@ -26,9 +26,8 @@ class AtomicCalculations:
     
 
 class TrapFrequencies:
-
     def trap_freq_radial(self, trapdepth, mass, waist):
-        """compute radial trap frequency in rad/s, divide by 2pi to get Hz
+        """compute radial trap frequency omega in rad/s, divide by 2pi to get Hz
 
         Args:
             trapdepth (float): in unit of J
@@ -36,19 +35,19 @@ class TrapFrequencies:
             waist (float): in m
 
         Returns:
-            _type_: _description_
+            trap_freq_radial (float): 
         """
         trap_freq_radial = np.sqrt(4*trapdepth/(mass*waist**2))
         return trap_freq_radial
     
     def trap_freq_axial(self, trapdepth, mass, rayleigh_range):
-        """compute axial trap frequency in rad/s, divide by 2pi to get Hz
+        """compute axial trap frequency in omega rad/s, divide by 2pi to get Hz
 
         Args:
             trapdepth (float): in units of J
             mass (float): in units of kg
             rayleigh_range (float): in units of m
         """
-        trap_freq_axial = np.sqrt(4*trapdepth/(mass*rayleigh_range**2))
+        trap_freq_axial = np.sqrt(2*trapdepth/(mass*rayleigh_range**2))
         return trap_freq_axial
     

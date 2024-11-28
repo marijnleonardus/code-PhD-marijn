@@ -40,7 +40,6 @@ class AtomicMotion:
         
         return variance_momentum, sigma_detuning
     
-    
     def trap_frequency_tweezer_radial(mass, waist, trapdepth):
         """
         Parameters
