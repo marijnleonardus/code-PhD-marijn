@@ -16,99 +16,63 @@ sys.path.append(modules_dir)
 from camera_image_class import CameraImage
 from image_analysis_class import ManipulateImage, Histograms
 
+# clear terminal
+os.system('cls' if os.name == 'nt' else 'clear')
+
 # variables
-rois_radius = 4  # ROI size. Radius 1 means 3x3 array
-nr_bins_histogram = 50
+rois_radius = 2  # ROI size. Radius 1 means 3x3 array
+nr_bins_histogram = 15
 images_path = 'T://KAT1//Marijn//tweezers//scan28nov//'
 file_name_suffix = 'image'  # import files ending with image.tif
 show_plots = True
-weighted_sum = True
-weight_center_pixel = 3 # when computing weighted sum, relative contribution center pixel
+log_threshold = 10 # laplacian of gaussian kernel sensitivity
+roi_weight_matrix = np.array([
+    [1, 1, 1, 1, 1],
+    [1, 4, 4, 4, 1],
+    [1, 4, 10, 4, 1], 
+    [1, 4, 4, 4, 1],
+    [1, 1, 1, 1, 1]
+])
 
 # images without cropping ('raw' data)
 image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
+images_list = [image_stack[i] for i in range(image_stack.shape[0])]
 
-# compute cropped average image and plot
+# detect laplacian of gaussian spot locations from avg. over all images
 z_project = np.mean(image_stack, axis=0)
-
-# compute laplacian of gaussian spot locations
-spots_LoG = blob_log(z_project, max_sigma=3, min_sigma=1, num_sigma=3, threshold=10)
-print(spots_LoG)
-
-# return rows, columns of detected spots. Store in a 2d array for convenient passing down to other functions
+spots_LoG = blob_log(z_project, max_sigma=3, min_sigma=1, num_sigma=3, threshold=log_threshold)
 y_coor = spots_LoG[:, 0] 
 x_coor = spots_LoG[:, 1]
-rois_array = np.column_stack((x_coor, y_coor))
 
-# plot average image and mark detected maximum locations in red
-fig0, ax0 = plt.subplots()
-ax0.imshow(z_project)
-ax0.scatter(x_coor, y_coor, marker='x', color='r')
-fig0.show()
-
-def read_counts_within_rois(rois, stack_of_images):
-    """given a set (stack) of images and ROIs set, 
-    computes the number of counts within each ROI within each image
-
-    Args:
-        rois (2d np array): set of the maxima locations
-        stack_of_images (3d np array): set of 2d images (np arrays)
-
-    Returns:
-        rois_list (list): list of all ROI regions for all images
-        counts_matrix (np array): matrix of counts within each ROI for each image
-    """
-    num_regions = len(rois)
-    num_images = len(stack_of_images)
-    
-    counts_matrix = np.zeros((num_regions, num_images), dtype=int)
-    rois_list = []
-
-    for image_index, image in enumerate(stack_of_images):
-        for region_index, (col, row) in enumerate(rois):
-            if rois_radius > 0:
-                roi_region = ManipulateImage().crop_array_center(
-                    image, col, row, rois_radius)
-                rois_list.append(roi_region)
-                if weighted_sum == True:
-                    counts = Histograms().weighted_count_roi(weight_center_pixel, roi_region)
-                else:
-                    counts = np.sum(roi_region)
-            else:
-                counts = image[int(row), int(col)]
-            counts_matrix[region_index, image_index] = counts
-    return (rois_list, counts_matrix)
-
-
-regions_list, roi_counts_matrix = read_counts_within_rois(rois_array, image_stack)
-
-# all regions of interest for all ROIs and all images
-regions_array = np.array(regions_list)
-
-# compute average ROI for all ROIs of all images and ROIs
-avg_roi = np.mean(regions_array, axis=0)
+# plot average image and mark detected maximum locations in red, check if LoG was correctly detected
 fig1, ax1 = plt.subplots()
-ax1.imshow(avg_roi)
+ax1.imshow(z_project)
+ax1.scatter(x_coor, y_coor, marker='x', color='r')
+fig1.show()
 
-# plot histograms
-num_rois = len(rois_array)
-array_dim = int(np.sqrt(num_rois))
+# define ROIs around the LOG spots, and compute a weighted sum over the pixel count in the ROI
+rois_list = []*len(images_list)
+roi_counts_array = np.zeros(len(images_list))
+for im in range(len(images_list)):
+    # define ROI as cropped image
+    roi = ManipulateImage().crop_array_center(images_list[im], y_coor, x_coor, crop_radius=rois_radius)
+    rois_list.append(roi)
 
-""" fig2, axes = plt.subplots(nrows=array_dim, ncols=array_dim, figsize=(12, 12), 
-    sharex=True, sharey=True, constrained_layout=True)
+    # get ROI counts (weighted)
+    roi_count = Histograms().weighted_count_roi(roi_weight_matrix, roi)
+    roi_counts_array[im] = roi_count
 
-# If there's only one subplot (axes is not an array), wrap it in a list
-if num_rois == 1:
-    axes = [axes]  # Convert single Axes object to list for iteration
-elif isinstance(axes, np.ndarray):
-    axes = axes.flatten()  # Flatten the 2D array of Axes objects if necessary
+# compute average over all ROIs
+rois_array_3d = np.stack(rois_list, axis=0)
+average_image = np.mean(rois_array_3d, axis=0)
+fig2, ax2 = plt.subplots()
+ax2.imshow(average_image)
 
 # Plot histograms for each ROI
-for roi in range(num_rois):
-    axes[roi].hist(roi_counts_matrix[roi], bins=nr_bins_histogram, edgecolor='black')
-    axes[roi].set_title(f'Histogram of Counts for ROI {roi+1}')
-    axes[roi].set_xlabel('Counts')
-    axes[roi].set_ylabel('Frequency')
- """
+fig3, ax3 = plt.subplots()
+ax3.hist(roi_counts_array, bins=nr_bins_histogram, edgecolor='black')
+ax3.set_xlabel('Counts')
+ax3.set_ylabel('Frequency')
+
 if show_plots == True:
-    plt.show()
+    plt.show() 

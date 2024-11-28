@@ -50,9 +50,9 @@ class ManipulateImage:
         """
 
         rows_start = int(center_y - crop_radius)
-        rows_end = int(center_y + (crop_radius))
+        rows_end = int(center_y + (crop_radius) + 1)
         cols_start = int(center_x - (crop_radius))
-        cols_end = int(center_x + crop_radius)
+        cols_end = int(center_x + crop_radius + 1)
         center_roi = array[cols_start:cols_end, rows_start:rows_end]
         return center_roi
     
@@ -84,24 +84,20 @@ class ManipulateImage:
 
 
 class Histograms():
-    def weighted_count_roi(self, center_weight, pixel_box):
-        """compute weighted sum of counts in a pixel box
+    def weighted_count_roi(self, weights_matrix, pixel_box):
+        """compute weighted sum of counts in a pixel box using element wise multiplication 
 
         Args:
-            center_weight (float): weight of center compared to edge pixels
+            weights_matrix (np 2d array): 
             pixel_box (np array): the ROI
 
         Returns:
             counts (int): weighted number of counts
         """
-        pixel_dim = len(pixel_box)
-        center_pixel_value = pixel_box[int(0.5*(pixel_dim - 1)), int(0.5*(pixel_dim - 1))]
-        nr_edge_pixels = pixel_dim**2 - 1
         
-        # summing over all pixels
-        # so when adding the center pixel contribution, remove 1 to avoid counting twice 
-        weighted_sum = 1/(center_weight + nr_edge_pixels)*(np.sum(pixel_box) + (center_weight - 1)*center_pixel_value)
-        return weighted_sum
+        weighted_pixel_box = weights_matrix*pixel_box
+        counts = np.sum(weighted_pixel_box)
+        return counts
 
 
 class SpotDetectionFitting():
