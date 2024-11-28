@@ -50,8 +50,8 @@ class ManipulateImage:
         """
 
         rows_start = int(center_y - crop_radius)
-        rows_end = int(center_y + (crop_radius + 1))
-        cols_start = int(center_x - (crop_radius + 1))
+        rows_end = int(center_y + (crop_radius))
+        cols_start = int(center_x - (crop_radius))
         cols_end = int(center_x + crop_radius)
         center_roi = array[cols_start:cols_end, rows_start:rows_end]
         return center_roi

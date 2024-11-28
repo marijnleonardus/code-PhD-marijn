@@ -17,12 +17,10 @@ from camera_image_class import CameraImage
 from image_analysis_class import ManipulateImage, Histograms
 
 # variables
-rois_radius = 1  # ROI size. Radius 1 means 3x3 array
+rois_radius = 4  # ROI size. Radius 1 means 3x3 array
 nr_bins_histogram = 50
-images_path = 'Z://Strontium//Images//2024-10-11//scan438302//'
+images_path = 'T://KAT1//Marijn//tweezers//scan28nov//'
 file_name_suffix = 'image'  # import files ending with image.tif
-crop_pixels_x = 5  # amount of columns to remove left and right
-crop_pixels_y = 5  # columns to remove top and bottom
 show_plots = True
 weighted_sum = True
 weight_center_pixel = 3 # when computing weighted sum, relative contribution center pixel
@@ -32,17 +30,14 @@ image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
 
 # compute cropped average image and plot
 z_project = np.mean(image_stack, axis=0)
-print(z_project)
 
 # compute laplacian of gaussian spot locations
-spots_LoG = blob_log(z_project, max_sigma=4, min_sigma=1, num_sigma=12, threshold=1e-1)
+spots_LoG = blob_log(z_project, max_sigma=3, min_sigma=1, num_sigma=3, threshold=10)
 print(spots_LoG)
 
-# return rows, columns of detected spots 
+# return rows, columns of detected spots. Store in a 2d array for convenient passing down to other functions
 y_coor = spots_LoG[:, 0] 
-x_coor = spots_LoG[:, 1] 
-
-# store in a 2d array for convenient passing down to other functions
+x_coor = spots_LoG[:, 1]
 rois_array = np.column_stack((x_coor, y_coor))
 
 # plot average image and mark detected maximum locations in red
@@ -99,7 +94,7 @@ ax1.imshow(avg_roi)
 num_rois = len(rois_array)
 array_dim = int(np.sqrt(num_rois))
 
-fig2, axes = plt.subplots(nrows=array_dim, ncols=array_dim, figsize=(12, 12), 
+""" fig2, axes = plt.subplots(nrows=array_dim, ncols=array_dim, figsize=(12, 12), 
     sharex=True, sharey=True, constrained_layout=True)
 
 # If there's only one subplot (axes is not an array), wrap it in a list
@@ -114,6 +109,6 @@ for roi in range(num_rois):
     axes[roi].set_title(f'Histogram of Counts for ROI {roi+1}')
     axes[roi].set_xlabel('Counts')
     axes[roi].set_ylabel('Frequency')
-
+ """
 if show_plots == True:
     plt.show()
