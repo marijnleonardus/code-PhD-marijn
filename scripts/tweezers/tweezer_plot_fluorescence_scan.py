@@ -1,5 +1,5 @@
 # author: Marijn Venderbosch
-# july 2024
+# December 2024
 
 import numpy as np
 import os
@@ -21,8 +21,7 @@ os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
 rois_radius = 2  # ROI size. Radius 1 means 3x3 array
-nr_bins_histogram = 15
-images_path = 'T://KAT1//Marijn//tweezers//scan28nov//'
+images_path = 'Z://Strontium/Images//2024-11-27//scan124532//'
 file_name_suffix = 'image'  # import files ending with image.tif
 show_plots = True
 log_threshold = 10 # laplacian of gaussian kernel sensitivity
@@ -47,17 +46,13 @@ fig1.show()
 ROI = RoiCounts(weight_center_pixel, rois_radius)
 rois_list, roi_counts_array = ROI.compute_pixel_sum_counts(images_list, y_coor, x_coor)
 
+print(len(roi_counts_array))
+
 # compute average over all ROIs
 rois_array_3d = np.stack(rois_list, axis=0)
 average_image = np.mean(rois_array_3d, axis=0)
 fig2, ax2 = plt.subplots()
 ax2.imshow(average_image)
-
-# Plot histograms for each ROI
-fig3, ax3 = plt.subplots()
-ax3.hist(roi_counts_array, bins=nr_bins_histogram, edgecolor='black')
-ax3.set_xlabel('Counts')
-ax3.set_ylabel('Frequency')
 
 if show_plots == True:
     plt.show() 
