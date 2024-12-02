@@ -135,6 +135,16 @@ class RoiCounts:
             roi_count = self.weighted_count_roi(roi)
             roi_counts_array[im] = roi_count
         return rois_list, roi_counts_array
+    
+    def plot_average_of_roi(self, rois_list):
+        """given a list of ROI pixel boxes, plot the average to check everything went correctly
+
+        Args:
+            rois_list (np array): list of ROIs
+        """
+        rois_array_3d = np.stack(rois_list, axis=0)
+        average_image = np.mean(rois_array_3d, axis=0)
+        plt.imshow(average_image)
 
 class SpotDetectionFitting():
     def __init__(self, sigma, threshold_detection, image):

@@ -48,10 +48,7 @@ ROI = RoiCounts(weight_center_pixel, rois_radius)
 rois_list, roi_counts_array = ROI.compute_pixel_sum_counts(images_list, y_coor, x_coor)
 
 # compute average over all ROIs
-rois_array_3d = np.stack(rois_list, axis=0)
-average_image = np.mean(rois_array_3d, axis=0)
-fig2, ax2 = plt.subplots()
-ax2.imshow(average_image)
+ROI.plot_average_of_roi(rois_list)
 
 # Plot histograms for each ROI
 fig3, ax3 = plt.subplots()
