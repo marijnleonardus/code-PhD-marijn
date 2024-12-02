@@ -21,7 +21,7 @@ from image_analysis_class import ManipulateImage, RoiCounts
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-rois_radius = 2  # ROI size. Radius 1 means 3x3 array
+rois_radius = 1  # ROI size. Radius 1 means 3x3 array
 images_path = 'Z://Strontium/Images//2024-11-27//scan124532//'
 file_name_suffix = 'image'  # import files ending with image.tif
 show_plots = True
@@ -43,7 +43,6 @@ x_coor = spots_LoG[:, 1]
 fig1, ax1 = plt.subplots()
 ax1.imshow(z_project)
 ax1.scatter(x_coor, y_coor, marker='x', color='r')
-fig1.show()
 
 # obtain counts over all ROIs
 ROI = RoiCounts(weight_center_pixel, rois_radius)
@@ -58,7 +57,7 @@ detunings = df.iloc[:, column_xvalues].to_numpy() # select right column, if muli
 detunings_unique = np.unique(detunings)
 averages_per_xvalue = int(len(detunings)/len(detunings_unique))
 
-# group detunings and counts together
+# Create a dictionary to group y-values by x
 grouped_counts = {}
 for detuning, count in zip(detunings, roi_counts_array):
     grouped_counts.setdefault(detuning, []).append(count)
@@ -67,15 +66,15 @@ for detuning, count in zip(detunings, roi_counts_array):
 unique_detunings = sorted(grouped_counts.keys())
 new_grouped_counts = [grouped_counts[detuning] for detuning in unique_detunings]
 
-print("Unique x-values:", unique_detunings)
-print("Grouped counts:", new_grouped_counts)
+# avg and standard dev. 
+avg_counts = np.mean(new_grouped_counts, axis=1)
+std_counts = np.std(new_grouped_counts, axis=1)
 
+fig2, ax2 = plt.subplots()
+ax2.errorbar(unique_detunings, avg_counts, yerr=std_counts, fmt='o', capsize=4, capthick=1, label='Counts')
+
+# plot average over all iterations for for ROI to check it went correctly
 ROI.plot_average_of_roi(rois_list)
-# compute average over all ROIs
-# rois_array_3d = np.stack(rois_list, axis=0)
-# average_image = np.mean(rois_array_3d, axis=0)
-# fig2, ax2 = plt.subplots()
-# ax2.imshow(average_image)
 
 if show_plots == True:
     plt.show() 

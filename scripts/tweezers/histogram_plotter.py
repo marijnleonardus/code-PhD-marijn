@@ -51,10 +51,10 @@ rois_list, roi_counts_array = ROI.compute_pixel_sum_counts(images_list, y_coor, 
 ROI.plot_average_of_roi(rois_list)
 
 # Plot histograms for each ROI
-fig3, ax3 = plt.subplots()
-ax3.hist(roi_counts_array, bins=nr_bins_histogram, edgecolor='black')
-ax3.set_xlabel('Counts')
-ax3.set_ylabel('Frequency')
+fig2, ax2 = plt.subplots()
+ax2.hist(roi_counts_array, bins=nr_bins_histogram, edgecolor='black')
+ax2.set_xlabel('Counts')
+ax2.set_ylabel('Frequency')
 
 if show_plots == True:
     plt.show() 

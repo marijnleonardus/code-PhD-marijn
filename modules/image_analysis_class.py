@@ -144,7 +144,8 @@ class RoiCounts:
         """
         rois_array_3d = np.stack(rois_list, axis=0)
         average_image = np.mean(rois_array_3d, axis=0)
-        plt.imshow(average_image)
+        fig, ax = plt.subplots()
+        ax.imshow(average_image)
 
 class SpotDetectionFitting():
     def __init__(self, sigma, threshold_detection, image):
