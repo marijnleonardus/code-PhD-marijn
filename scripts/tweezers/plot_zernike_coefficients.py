@@ -1,15 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-indices = np.arange(3, 15, 1)
+# we use the Noll index convention. We use the first 15 polynomials. 
+indices = np.arange(4, 16, 1)
 coefficients = np.zeros(len(indices))
-coefficients[0] = -1.84
-coefficients[1] = -0.416
-coefficients[2] = 0.461
-coefficients[3] = 0.807
-coefficients[4] = 0.84
-coefficients[5] = 0.99
-coefficients[6] = -0.15
+coefficients[0] = -1.385
+coefficients[1] = -0.705
+coefficients[2] = 0.299
+coefficients[3] = 0.688
+coefficients[4] = 1.19
+coefficients[5] = 0.80
+coefficients[6] = -0.45
 coefficients[7] = -0.77
 coefficients[8] = -0.45
 coefficients[9] = 0.05
