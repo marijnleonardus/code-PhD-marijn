@@ -88,21 +88,6 @@ class RoiCounts:
         self.center_weight = center_weight
         self.roi_radius = roi_radius
 
-    def generate_weighted_counts(self):
-        """generate a matrix of weights for weighted sum of counts in a pixel box, 
-        for example 
-        
-        [1, 1, 1, 
-        1, 3, 1, 
-        1, 1, 1]
-        
-        for center weight 3
-        """
-
-        roi_weight_matrix = np.ones((2*self.roi_radius + 1, 2*self.roi_radius + 1))
-        roi_weight_matrix[self.roi_radius, self.roi_radius] = self.center_weight
-        return roi_weight_matrix
-
     def weighted_count_roi(self, pixel_box):
         """compute weighted sum of counts in a pixel box using element wise multiplication 
 
@@ -114,27 +99,46 @@ class RoiCounts:
             counts (int): weighted number of counts
         """
         
-        weights_matrix = self.generate_weighted_counts()
-        weighted_pixel_box = weights_matrix*pixel_box
+        weight_matrix = np.ones((2*self.roi_radius + 1, 2*self.roi_radius + 1))
+        weight_matrix[self.roi_radius, self.roi_radius] = self.center_weight
+        weighted_pixel_box = weight_matrix*pixel_box
         counts = np.sum(weighted_pixel_box)
         return counts
     
-    def compute_pixel_sum_counts(self, images_list, y_coor, x_coor):
+    def compute_pixel_sum_counts(self, images_list: list[np.ndarray], y_coor: np.ndarray, x_coor: np.ndarray):
         """define ROIs around the LOG spots, 
-        and compute a weighted sum over the pixel count in the ROI"""
+        and compute a weighted sum over the pixel count in the ROI
+        
+        do a double sum: first sum over the ROIs, then over the images in the list
+        store result in 4d array: (roi, image, px_x, px_y)"""
 
-        rois_list = []*len(images_list)
-        roi_counts_array = np.zeros(len(images_list))
-        for im in range(len(images_list)):
-            # define ROI as cropped image
-            roi = ManipulateImage().crop_array_center(images_list[im], y_coor, x_coor, crop_radius=self.roi_radius)
-            rois_list.append(roi)
+        rois_matrix = []
+        rois_counts_matrix = []
+        nr_rois = len(y_coor)
+    
+        for roi in range(nr_rois):
+            # iterate over multiple ROIs for each image
 
-            # get ROI counts (weighted)
-            roi_weight_matrix = self.generate_weighted_counts()
-            roi_count = self.weighted_count_roi(roi)
-            roi_counts_array[im] = roi_count
-        return rois_list, roi_counts_array
+            rois_list = []
+            roi_counts_array = np.zeros(len(images_list))
+
+            for im in range(len(images_list)):
+                # iterate over multipe images
+
+                # define ROI as cropped image
+                roi_pixelbox = ManipulateImage().crop_array_center(images_list[im], y_coor[roi], x_coor[roi], crop_radius=self.roi_radius)
+                rois_list.append(roi_pixelbox)
+
+                # get ROI counts (weighted)
+                roi_count = self.weighted_count_roi(roi_pixelbox)
+                roi_counts_array[im] = roi_count
+
+            rois_matrix.append(rois_list)
+            rois_counts_matrix.append(roi_counts_array)
+        
+        rois_matrix = np.array(rois_matrix)
+        rois_counts_matrix = np.array(rois_counts_matrix)
+        return rois_matrix, rois_counts_matrix
     
     def plot_average_of_roi(self, rois_list):
         """given a list of ROI pixel boxes, plot the average to check everything went correctly

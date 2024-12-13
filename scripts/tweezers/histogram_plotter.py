@@ -20,12 +20,12 @@ from image_analysis_class import ManipulateImage, RoiCounts
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-rois_radius = 2  # ROI size. Radius 1 means 3x3 array
+rois_radius = 1  # ROI size. Radius 1 means 3x3 array
 nr_bins_histogram = 15
-images_path = 'T://KAT1//Marijn//tweezers//scan28nov//'
+images_path = 'Z:\\Strontium\\Images\\2024-12-10\\scan144824\\'
 file_name_suffix = 'image'  # import files ending with image.tif
 show_plots = True
-log_threshold = 10 # laplacian of gaussian kernel sensitivity
+log_threshold = 20 # laplacian of gaussian kernel sensitivity
 weight_center_pixel = 3
 
 # images without cropping ('raw' data)
@@ -45,16 +45,16 @@ ax1.scatter(x_coor, y_coor, marker='x', color='r')
 fig1.show()
 
 ROI = RoiCounts(weight_center_pixel, rois_radius)
-rois_list, roi_counts_array = ROI.compute_pixel_sum_counts(images_list, y_coor, x_coor)
+rois_matrix, roi_counts_matrix = ROI.compute_pixel_sum_counts(images_list, y_coor, x_coor)
 
-# compute average over all ROIs
-ROI.plot_average_of_roi(rois_list)
+# plot average pixel box for ROI 1 to check everythign went correctly
+ROI.plot_average_of_roi(rois_matrix[0, :, :, :])
 
-# Plot histograms for each ROI
-fig2, ax2 = plt.subplots()
-ax2.hist(roi_counts_array, bins=nr_bins_histogram, edgecolor='black')
-ax2.set_xlabel('Counts')
-ax2.set_ylabel('Frequency')
+# # Plot histograms for each ROI
+# fig2, ax2 = plt.subplots()
+# ax2.hist(roi_counts_array, bins=nr_bins_histogram, edgecolor='black')
+# ax2.set_xlabel('Counts')
+# ax2.set_ylabel('Frequency')
 
 if show_plots == True:
     plt.show() 
