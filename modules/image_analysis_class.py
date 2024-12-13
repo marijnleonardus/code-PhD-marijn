@@ -105,40 +105,58 @@ class RoiCounts:
         counts = np.sum(weighted_pixel_box)
         return counts
     
-    def compute_pixel_sum_counts(self, images_list: list[np.ndarray], y_coor: np.ndarray, x_coor: np.ndarray):
-        """define ROIs around the LOG spots, 
-        and compute a weighted sum over the pixel count in the ROI
         
-        do a double sum: first sum over the ROIs, then over the images in the list
-        store result in 4d array: (roi, image, px_x, px_y)"""
+    def compute_pixel_sum_counts(self, images: list[np.ndarray], y_coords: np.ndarray, x_coords: np.ndarray):
+            """
+            Compute weighted pixel sums within Regions of Interest (ROIs) around specified coordinates
+            across multiple images.
 
-        rois_matrix = []
-        rois_counts_matrix = []
-        nr_rois = len(y_coor)
-    
-        for roi in range(nr_rois):
-            # iterate over multiple ROIs for each image
+            Args:
+                images (list[np.ndarray]): List of images (2D arrays) to process.
+                y_coords (np.ndarray): Array of y-coordinates for ROI centers.
+                x_coords (np.ndarray): Array of x-coordinates for ROI centers.
 
-            rois_list = []
-            roi_counts_array = np.zeros(len(images_list))
+            Returns:
+                tuple: 
+                    - rois_matrix (np.ndarray): 4D array storing cropped ROIs (roi, image, px_y, px_x).
+                    - rois_counts_matrix (np.ndarray): 2D array storing weighted ROI sums (roi, image).
+            """
+            # Initialize containers for storing ROIs and their weighted counts
+            roi_crops = []  # List to store cropped ROIs for all ROIs across images
+            roi_weighted_sums = []  # List to store weighted pixel sums for all ROIs across images
 
-            for im in range(len(images_list)):
-                # iterate over multipe images
+            num_rois = len(y_coords)  # Number of ROIs
+            num_images = len(images)  # Number of images
 
-                # define ROI as cropped image
-                roi_pixelbox = ManipulateImage().crop_array_center(images_list[im], y_coor[roi], x_coor[roi], crop_radius=self.roi_radius)
-                rois_list.append(roi_pixelbox)
+            for roi_idx in range(num_rois):
+                # Containers for current ROI across all images
+                roi_crops_per_image = []
+                weighted_sums_per_image = np.zeros(num_images)
 
-                # get ROI counts (weighted)
-                roi_count = self.weighted_count_roi(roi_pixelbox)
-                roi_counts_array[im] = roi_count
+                for image_idx, image in enumerate(images):
+                    # Extract ROI as a cropped section of the image
+                    cropped_roi = ManipulateImage().crop_array_center(
+                        image, 
+                        y_coords[roi_idx], 
+                        x_coords[roi_idx], 
+                        crop_radius=self.roi_radius
+                    )
+                    roi_crops_per_image.append(cropped_roi)
 
-            rois_matrix.append(rois_list)
-            rois_counts_matrix.append(roi_counts_array)
-        
-        rois_matrix = np.array(rois_matrix)
-        rois_counts_matrix = np.array(rois_counts_matrix)
-        return rois_matrix, rois_counts_matrix
+                    # Compute the weighted sum for the current ROI
+                    weighted_sum = self.weighted_count_roi(cropped_roi)
+                    weighted_sums_per_image[image_idx] = weighted_sum
+
+                # Append data for this ROI to the main containers
+                roi_crops.append(roi_crops_per_image)
+                roi_weighted_sums.append(weighted_sums_per_image)
+
+            # Convert results to numpy arrays
+            rois_matrix = np.array(roi_crops)
+            rois_counts_matrix = np.array(roi_weighted_sums)
+
+            return rois_matrix, rois_counts_matrix
+
     
     def plot_average_of_roi(self, rois_list):
         """given a list of ROI pixel boxes, plot the average to check everything went correctly
@@ -149,7 +167,10 @@ class RoiCounts:
         rois_array_3d = np.stack(rois_list, axis=0)
         average_image = np.mean(rois_array_3d, axis=0)
         fig, ax = plt.subplots()
+        ax.set_axis_off()
         ax.imshow(average_image)
+        ax.set_title('Average pixel box for ROI 0')
+
 
 class SpotDetectionFitting():
     def __init__(self, sigma, threshold_detection, image):

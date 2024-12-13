@@ -21,7 +21,7 @@ os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
 rois_radius = 1  # ROI size. Radius 1 means 3x3 array
-nr_bins_histogram = 15
+nr_bins_histogram = 30
 images_path = 'Z:\\Strontium\\Images\\2024-12-10\\scan144824\\'
 file_name_suffix = 'image'  # import files ending with image.tif
 show_plots = True
@@ -43,6 +43,7 @@ fig1, ax1 = plt.subplots()
 ax1.imshow(z_project)
 ax1.scatter(x_coor, y_coor, marker='x', color='r')
 fig1.show()
+ax1.set_title('Average image and LoG detected spots')
 
 ROI = RoiCounts(weight_center_pixel, rois_radius)
 rois_matrix, roi_counts_matrix = ROI.compute_pixel_sum_counts(images_list, y_coor, x_coor)
@@ -50,11 +51,15 @@ rois_matrix, roi_counts_matrix = ROI.compute_pixel_sum_counts(images_list, y_coo
 # plot average pixel box for ROI 1 to check everythign went correctly
 ROI.plot_average_of_roi(rois_matrix[0, :, :, :])
 
-# # Plot histograms for each ROI
-# fig2, ax2 = plt.subplots()
-# ax2.hist(roi_counts_array, bins=nr_bins_histogram, edgecolor='black')
-# ax2.set_xlabel('Counts')
-# ax2.set_ylabel('Frequency')
+# Plot histograms for each ROI
+nr_rois = np.shape(rois_matrix)[0]
+fig2, axs = plt.subplots(ncols=int(np.sqrt(nr_rois)), nrows=int(np.sqrt(nr_rois)))
+axs = axs.ravel()
+for roi_idx in range(nr_rois):
+    axs[roi_idx].hist(roi_counts_matrix[roi_idx, :], bins=nr_bins_histogram, edgecolor='black')
+    axs[roi_idx].set_title(f'ROI {roi_idx}')
+    axs[roi_idx].set_xlabel('Counts')
+    axs[roi_idx].set_ylabel('Occurunces')
 
 if show_plots == True:
     plt.show() 
