@@ -17,16 +17,19 @@ from conversion_class import Conversion
 from optics_class import GaussianBeam
 from atoms_tweezer_class import AtomicCalculations
 
-#  variables
+# constants
 h=hbar*2*pi
 polarizability_ground_au=286 # atomic units
 polarizability_3p1_au=349 # atomic units
-power_trap=25e-3 # W
 mass=88*proton_mass
+kHz=1e3
+MHz=1e6
+
+# variables
 lamb=813e-9 # m
 waist_diff_limited=0.8e-6 # m
-diff_stark_measured_J=2.37*1e6*h # J
-beam_power = 24e-3 # W
+diff_stark_measured_J=2.8*MHz*h # J
+beam_power = 90*1e-3/4 # W
 
 # polarizatility in SI units
 pol_atomic_units = Conversion().get_atomic_pol_unit()
@@ -50,7 +53,7 @@ print("diffraction limited U0 ground state: ", round(U0_theory_g_J/Boltzmann*1e3
 
 # calculate waist from diff. limited vs measured trap depth
 waist_measured = waist_diff_limited*np.sqrt(U0_theory_g_J/U0_measured_g_J)
-print("estimated waist: ", round(waist_measured*1e6, 1), "um")
+print("estimated waist: ", round(waist_measured*1e6, 2), "um")
 
 # calculate trap frequency 
 trap_freq_rad = TrapFrequencies().trap_freq_radial(U0_measured_g_J, mass, waist_measured)
