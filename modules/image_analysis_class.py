@@ -104,7 +104,6 @@ class RoiCounts:
         weighted_pixel_box = weight_matrix*pixel_box
         counts = np.sum(weighted_pixel_box)
         return counts
-    
         
     def compute_pixel_sum_counts(self, images: list[np.ndarray], y_coords: np.ndarray, x_coords: np.ndarray):
             """
@@ -156,7 +155,6 @@ class RoiCounts:
             rois_counts_matrix = np.array(roi_weighted_sums)
 
             return rois_matrix, rois_counts_matrix
-
     
     def plot_average_of_roi(self, rois_list):
         """given a list of ROI pixel boxes, plot the average to check everything went correctly
@@ -174,7 +172,6 @@ class RoiCounts:
 
 class SpotDetectionFitting():
     def __init__(self, sigma, threshold_detection, image):
-        
         self.sigma = sigma
         self.threshold_detection = threshold_detection
         self.image = image

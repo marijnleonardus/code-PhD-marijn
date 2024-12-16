@@ -21,14 +21,14 @@ from image_analysis_class import ManipulateImage, RoiCounts
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-rois_radius = 2  # ROI size. Radius 1 means 3x3 array
+rois_radius = 3  # ROI size. Radius 1 means 3x3 array
 images_path = 'Z:\\Strontium\\Images\\2024-12-11\\scan100229\\'
 file_name_suffix = 'image'  # import files ending with image.tif
 show_plots = True
 log_threshold = 80 # laplacian of gaussian kernel sensitivity
-weight_center_pixel = 1 # if weighted pixel box is to be used
+weight_center_pixel = 3 # if weighted pixel box is to be used
 crop_images = True
-crop_radius = 15
+crop_radius = 17
 crop_y_center = 35
 crop_x_center = 40
 
@@ -79,25 +79,32 @@ x_values_unique = np.unique(x_values)
 nr_avg = int(np.shape(x_values)[0]/np.shape(x_values_unique)[0])
 nr_rois = np.shape(rois_matrix)[0]
 roi_counts_reshaped = roi_counts_matrix.reshape(nr_rois, len(x_values_unique), nr_avg)
-
 counts_avg_perroi = np.mean(roi_counts_reshaped, axis=2)
 counts_std_perroi = np.std(roi_counts_reshaped, axis=2)
 
 # Plot number of counts as function of detuning for each ROI
 fig2, axs = plt.subplots(figsize = (10,8), sharex=True, sharey=True,
     ncols=int(np.sqrt(nr_rois)), nrows=int(np.sqrt(nr_rois)))
+
+# needs to be 1d to iterate
 axs = axs.ravel()
+
+# rescale x axis
+x_axis = x_values_unique*100/160/16*1e3
+
 for roi_idx in range(nr_rois):
-    axs[roi_idx].errorbar(x_values_unique/MHz, counts_avg_perroi[roi_idx], 
+    axs[roi_idx].errorbar(x_axis, counts_avg_perroi[roi_idx], 
         yerr=counts_std_perroi[roi_idx], fmt='o', capsize=4, capthick=1, label='Counts')
     axs[roi_idx].set_title(f'ROI {roi_idx}')
-    fig2.supxlabel('Detuning [MHz]')
+    fig2.supxlabel('Tweezer power [mW]')
     fig2.supylabel('EMCCD Counts')
 
 # Plot average over all ROIs as a function of detuning
 fig3, ax3 = plt.subplots()
-ax3.errorbar(x_values_unique/MHz, np.mean(counts_avg_perroi, axis=0), 
+ax3.errorbar(x_axis, np.mean(counts_avg_perroi, axis=0), 
     yerr=np.std(counts_std_perroi, axis=0), fmt='o', capsize=4, capthick=1, label='Counts')
+ax3.set_xlabel('tweezer power [mW]')
+ax3.set_ylabel('EMCCD Counts')
 
 if show_plots == True:
     plt.show() 
