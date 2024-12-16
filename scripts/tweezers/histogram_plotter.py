@@ -32,6 +32,11 @@ weight_center_pixel = 3
 image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
 images_list = [image_stack[i] for i in range(image_stack.shape[0])]
 
+if np.shape(image_stack)[0] == 0:
+    raise ValueError("No images loaded, check image path and file name suffix")
+else:
+    print(np.shape(image_stack))
+
 # detect laplacian of gaussian spot locations from avg. over all images
 z_project = np.mean(image_stack, axis=0)
 spots_LoG = blob_log(z_project, max_sigma=3, min_sigma=1, num_sigma=3, threshold=log_threshold)
