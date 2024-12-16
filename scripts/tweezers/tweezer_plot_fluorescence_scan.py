@@ -21,19 +21,32 @@ from image_analysis_class import ManipulateImage, RoiCounts
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-rois_radius = 1  # ROI size. Radius 1 means 3x3 array
-images_path = 'Z:\\Strontium\\Images\\2024-12-10\\scan154351\\'
+rois_radius = 2  # ROI size. Radius 1 means 3x3 array
+images_path = 'Z:\\Strontium\\Images\\2024-12-11\\scan100229\\'
 file_name_suffix = 'image'  # import files ending with image.tif
 show_plots = True
-log_threshold = 40 # laplacian of gaussian kernel sensitivity
-weight_center_pixel = 3
-column_xvalues = 0 # column with independent variables
+log_threshold = 80 # laplacian of gaussian kernel sensitivity
+weight_center_pixel = 1 # if weighted pixel box is to be used
+crop_images = True
+crop_radius = 15
+crop_y_center = 35
+crop_x_center = 40
 
 MHz = 1e6
 
 # images without cropping ('raw' data)
-image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
-images_list = [image_stack[i] for i in range(image_stack.shape[0])]
+image_stack_raw = CameraImage().import_image_sequence(images_path, file_name_suffix)
+
+# crop images in the 3d np arraqy
+if crop_images:
+    nr_images = np.shape(image_stack_raw)[0]
+    cropped_pixel_dim = 2*crop_radius + 1
+    image_stack = np.zeros((nr_images, cropped_pixel_dim, cropped_pixel_dim), dtype=int)
+    for img in range(nr_images):
+        image_stack[img] = ManipulateImage().crop_array_center(image_stack_raw[img, :, :],
+            crop_y_center, crop_x_center, crop_radius)
+else:
+    image_stack = image_stack_raw
 
 # detect laplacian of gaussian spot locations from avg. over all images
 z_project = np.mean(image_stack, axis=0)
@@ -45,6 +58,10 @@ x_coor = spots_LoG[:, 1]
 fig1, ax1 = plt.subplots()
 ax1.imshow(z_project)
 ax1.scatter(x_coor, y_coor, marker='x', color='r')
+plt.show()
+
+# return list form for function ROI pixel sum calculator
+images_list = [image_stack[i] for i in range(image_stack.shape[0])]
 
 # obtain counts over all ROIs
 ROI = RoiCounts(weight_center_pixel, rois_radius)
@@ -53,29 +70,34 @@ rois_matrix, roi_counts_matrix = ROI.compute_pixel_sum_counts(images_list, y_coo
 # plot average pixel box for ROI 1 to check everything went correctly
 ROI.plot_average_of_roi(rois_matrix[0, :, :, :])
 
-# laod detunings
+# laod x_values
 df = pd.read_csv(images_path + 'log.csv')
-detunings = df.iloc[:, column_xvalues].to_numpy() # select right column, if mulitple averages used 
+x_values = df.iloc[:, 0].to_numpy() # select right column, if mulitple averages used 
 
 # Compute y-values per unique x-value. Average over identical x-values
-detunings_unique = np.unique(detunings)
-nr_avg_datapoint = int(np.shape(detunings)[0]/np.shape(detunings_unique)[0])
+x_values_unique = np.unique(x_values)
+nr_avg = int(np.shape(x_values)[0]/np.shape(x_values_unique)[0])
 nr_rois = np.shape(rois_matrix)[0]
-roi_counts_reshaped = roi_counts_matrix.reshape(nr_rois, len(detunings_unique), nr_avg_datapoint)
+roi_counts_reshaped = roi_counts_matrix.reshape(nr_rois, len(x_values_unique), nr_avg)
 
-roi_counts_avg = np.mean(roi_counts_reshaped, axis=2)
-roi_counts_std = np.std(roi_counts_reshaped, axis=2)
+counts_avg_perroi = np.mean(roi_counts_reshaped, axis=2)
+counts_std_perroi = np.std(roi_counts_reshaped, axis=2)
 
 # Plot number of counts as function of detuning for each ROI
 fig2, axs = plt.subplots(figsize = (10,8), sharex=True, sharey=True,
     ncols=int(np.sqrt(nr_rois)), nrows=int(np.sqrt(nr_rois)))
 axs = axs.ravel()
 for roi_idx in range(nr_rois):
-    axs[roi_idx].errorbar(detunings_unique/MHz, roi_counts_avg[roi_idx], 
-        yerr=roi_counts_std[roi_idx], fmt='o', capsize=4, capthick=1, label='Counts')
+    axs[roi_idx].errorbar(x_values_unique/MHz, counts_avg_perroi[roi_idx], 
+        yerr=counts_std_perroi[roi_idx], fmt='o', capsize=4, capthick=1, label='Counts')
     axs[roi_idx].set_title(f'ROI {roi_idx}')
     fig2.supxlabel('Detuning [MHz]')
     fig2.supylabel('EMCCD Counts')
+
+# Plot average over all ROIs as a function of detuning
+fig3, ax3 = plt.subplots()
+ax3.errorbar(x_values_unique/MHz, np.mean(counts_avg_perroi, axis=0), 
+    yerr=np.std(counts_std_perroi, axis=0), fmt='o', capsize=4, capthick=1, label='Counts')
 
 if show_plots == True:
     plt.show() 
