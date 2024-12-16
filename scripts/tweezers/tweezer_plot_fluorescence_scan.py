@@ -22,12 +22,14 @@ os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
 rois_radius = 1  # ROI size. Radius 1 means 3x3 array
-images_path = 'Z://Strontium/Images//2024-11-27//scan124532//'
+images_path = 'Z:\\Strontium\\Images\\2024-12-10\\scan154351\\'
 file_name_suffix = 'image'  # import files ending with image.tif
 show_plots = True
-log_threshold = 10 # laplacian of gaussian kernel sensitivity
+log_threshold = 40 # laplacian of gaussian kernel sensitivity
 weight_center_pixel = 3
-column_xvalues = 1 # column with independent variables
+column_xvalues = 0 # column with independent variables
+
+MHz = 1e6
 
 # images without cropping ('raw' data)
 image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
@@ -46,35 +48,34 @@ ax1.scatter(x_coor, y_coor, marker='x', color='r')
 
 # obtain counts over all ROIs
 ROI = RoiCounts(weight_center_pixel, rois_radius)
-rois_list, roi_counts_array = ROI.compute_pixel_sum_counts(images_list, y_coor, x_coor)
+rois_matrix, roi_counts_matrix = ROI.compute_pixel_sum_counts(images_list, y_coor, x_coor)
+
+# plot average pixel box for ROI 1 to check everything went correctly
+ROI.plot_average_of_roi(rois_matrix[0, :, :, :])
 
 # laod detunings
-file_name = images_path + 'log.csv'
-df = pd.read_csv('Z://Strontium/Images//2024-11-27//scan124532//log.csv')
+df = pd.read_csv(images_path + 'log.csv')
 detunings = df.iloc[:, column_xvalues].to_numpy() # select right column, if mulitple averages used 
 
-# compute number of averages per data point
+# Compute y-values per unique x-value. Average over identical x-values
 detunings_unique = np.unique(detunings)
-averages_per_xvalue = int(len(detunings)/len(detunings_unique))
+nr_avg_datapoint = int(np.shape(detunings)[0]/np.shape(detunings_unique)[0])
+nr_rois = np.shape(rois_matrix)[0]
+roi_counts_reshaped = roi_counts_matrix.reshape(nr_rois, len(detunings_unique), nr_avg_datapoint)
 
-# Create a dictionary to group y-values by x
-grouped_counts = {}
-for detuning, count in zip(detunings, roi_counts_array):
-    grouped_counts.setdefault(detuning, []).append(count)
+roi_counts_avg = np.mean(roi_counts_reshaped, axis=2)
+roi_counts_std = np.std(roi_counts_reshaped, axis=2)
 
-# Convert dictionary values to lists in the same order as the unique x-values
-unique_detunings = sorted(grouped_counts.keys())
-new_grouped_counts = [grouped_counts[detuning] for detuning in unique_detunings]
-
-# avg and standard dev. 
-avg_counts = np.mean(new_grouped_counts, axis=1)
-std_counts = np.std(new_grouped_counts, axis=1)
-
-fig2, ax2 = plt.subplots()
-ax2.errorbar(unique_detunings, avg_counts, yerr=std_counts, fmt='o', capsize=4, capthick=1, label='Counts')
-
-# plot average over all iterations for for ROI to check it went correctly
-ROI.plot_average_of_roi(rois_list)
+# Plot number of counts as function of detuning for each ROI
+fig2, axs = plt.subplots(figsize = (10,8), sharex=True, sharey=True,
+    ncols=int(np.sqrt(nr_rois)), nrows=int(np.sqrt(nr_rois)))
+axs = axs.ravel()
+for roi_idx in range(nr_rois):
+    axs[roi_idx].errorbar(detunings_unique/MHz, roi_counts_avg[roi_idx], 
+        yerr=roi_counts_std[roi_idx], fmt='o', capsize=4, capthick=1, label='Counts')
+    axs[roi_idx].set_title(f'ROI {roi_idx}')
+    fig2.supxlabel('Detuning [MHz]')
+    fig2.supylabel('EMCCD Counts')
 
 if show_plots == True:
     plt.show() 
