@@ -21,12 +21,12 @@ from image_analysis_class import ManipulateImage, RoiCounts
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-rois_radius = 3  # ROI size. Radius 1 means 3x3 array
-images_path = 'Z:\\Strontium\\Images\\2024-12-11\\scan100229\\'
+rois_radius = 2  # ROI size. Radius 1 means 3x3 array
+images_path = 'Z:\\Strontium\\Images\\2024-12-10\\Scan135027\\'
 file_name_suffix = 'image'  # import files ending with image.tif
 show_plots = True
 log_threshold = 80 # laplacian of gaussian kernel sensitivity
-weight_center_pixel = 3 # if weighted pixel box is to be used
+weight_center_pixel = 1 # if weighted pixel box is to be used
 crop_images = True
 crop_radius = 17
 crop_y_center = 35
@@ -36,6 +36,11 @@ MHz = 1e6
 
 # images without cropping ('raw' data)
 image_stack_raw = CameraImage().import_image_sequence(images_path, file_name_suffix)
+
+if np.shape(image_stack_raw)[0] == 0:
+    raise ValueError("No images loaded, check image path and file name suffix")
+else:
+    print(np.shape(image_stack_raw))
 
 # crop images in the 3d np arraqy
 if crop_images:
@@ -90,21 +95,22 @@ fig2, axs = plt.subplots(figsize = (10,8), sharex=True, sharey=True,
 axs = axs.ravel()
 
 # rescale x axis
-x_axis = x_values_unique*100/160/16*1e3
+x_axis = x_values_unique/MHz
 
 for roi_idx in range(nr_rois):
     axs[roi_idx].errorbar(x_axis, counts_avg_perroi[roi_idx], 
         yerr=counts_std_perroi[roi_idx], fmt='o', capsize=4, capthick=1, label='Counts')
     axs[roi_idx].set_title(f'ROI {roi_idx}')
-    fig2.supxlabel('Tweezer power [mW]')
+    fig2.supxlabel('Detuning [MHz]')
     fig2.supylabel('EMCCD Counts')
 
 # Plot average over all ROIs as a function of detuning
 fig3, ax3 = plt.subplots()
 ax3.errorbar(x_axis, np.mean(counts_avg_perroi, axis=0), 
     yerr=np.std(counts_std_perroi, axis=0), fmt='o', capsize=4, capthick=1, label='Counts')
-ax3.set_xlabel('tweezer power [mW]')
+ax3.set_xlabel('detuning [MHz]')
 ax3.set_ylabel('EMCCD Counts')
 
 if show_plots == True:
     plt.show() 
+
