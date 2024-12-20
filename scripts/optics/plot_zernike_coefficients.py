@@ -18,10 +18,11 @@ coefficients[10:] = 0.01
 
 print(coefficients)
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(4, 2.5))
 ax.grid()
 ax.bar(indices, coefficients)
 ax.set_xlabel(r'Zernike coefficient index $j$')
 ax.set_ylabel(r'Value coefficient')
-
-plt.show()
+fig.tight_layout()
+#plt.show()
+plt.savefig('zernike-coefs.png')
