@@ -4,10 +4,6 @@
 import numpy as np
 import csv
 import os
-import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-from collections import defaultdict
-
 
 # append path with 'modules' dir in parent folder
 import sys
@@ -16,7 +12,7 @@ modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 sys.path.append(modules_dir)
 
 # user defined libraries
-from fitting_functions_class import FittingFunctions
+from data_handling_class import compute_avg_std
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
