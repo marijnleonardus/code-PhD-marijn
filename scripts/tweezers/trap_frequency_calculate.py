@@ -28,8 +28,9 @@ MHz=1e6
 # variables
 lamb=813e-9 # m
 waist_diff_limited=0.8e-6 # m
-diff_stark_measured_J=2.8*MHz*h # J
-beam_power = 90*1e-3/4 # W
+diff_stark_measured_J=0.6*MHz*h # J
+number_traps = 3*3
+beam_power = 200*1e-3/number_traps # W
 
 # polarizatility in SI units
 pol_atomic_units = Conversion().get_atomic_pol_unit()

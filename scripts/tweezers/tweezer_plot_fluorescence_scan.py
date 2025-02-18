@@ -23,16 +23,16 @@ from fitting_functions_class import FittingFunctions
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-rois_radius = 2  # ROI size. Radius 1 means 3x3 array
-images_path = 'Z:\\Strontium\\Images\\2024-12-10\\scan140135\\'
+rois_radius = 1  # ROI size. Radius 1 means 3x3 array
+images_path = 'Z:\\Strontium\\Images\\2025-02-14\\Scan183745\\'
 file_name_suffix = 'image'  # import files ending with image.tif
 show_plots = True
-log_threshold = 80 # laplacian of gaussian kernel sensitivity
+log_threshold = 17 # laplacian of gaussian kernel sensitivity
 weight_center_pixel = 1 # if weighted pixel box is to be used
 crop_images = True
-crop_radius = 17
-crop_y_center = 35
-crop_x_center = 40
+crop_radius = 11
+crop_y_center = 18
+crop_x_center = 22
 
 MHz = 1e6
 
@@ -58,6 +58,7 @@ z_project = np.mean(image_stack, axis=0)
 spots_LoG = blob_log(z_project, max_sigma=3, min_sigma=1, num_sigma=3, threshold=log_threshold)
 y_coor = spots_LoG[:, 0] 
 x_coor = spots_LoG[:, 1]
+print(spots_LoG)
 
 # plot average image and mark detected maximum locations in red, check if LoG was correctly detected
 fig1, ax1 = plt.subplots()
@@ -108,12 +109,12 @@ for roi_idx in range(nr_rois):
     axs[roi_idx].set_title(f'ROI {roi_idx}')
 
     # fit datapoints
-    popt, pcov = curve_fit(FittingFunctions.gaussian_function, x_values, counts_avg_perroi[roi_idx],
+    """ popt, pcov = curve_fit(FittingFunctions.gaussian_function, x_values, counts_avg_perroi[roi_idx],
         p0=initial_guess, sigma=counts_sem_perroi[roi_idx], absolute_sigma=True)
     popt_list.append(popt)
 
     # plot fit result
-    axs[roi_idx].plot(x_axis_fit, FittingFunctions.gaussian_function(x_axis_fit, *popt), color='red')
+    axs[roi_idx].plot(x_axis_fit, FittingFunctions.gaussian_function(x_axis_fit, *popt), color='red')""" 
 fig2.supxlabel('Detuning [Hz]')
 fig2.supylabel('EMCCD Counts')
 
@@ -128,8 +129,8 @@ ax3.set_ylabel('EMCCD Counts')
 if show_plots == True:
     plt.show() 
 
-popt_array = np.array(popt_list)
+""" popt_array = np.array(popt_list)
 stark_shifts = popt_array[:, 2]
 mean_stark_shift = np.mean(stark_shifts)
 error_mean_stark_shift = np.std(stark_shifts)/np.sqrt(len(stark_shifts))
-print("peak location", mean_stark_shift/1e3, "plusminus", error_mean_stark_shift/1e3)
+print("peak location", mean_stark_shift/1e3, "plusminus", error_mean_stark_shift/1e3) """
