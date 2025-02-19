@@ -15,31 +15,21 @@ sys.path.append(modules_dir)
 # import user module
 from image_analysis_class import SpotDetectionFitting
 from camera_image_class import CameraImage
+from atom_class import AbsorptionImaging
 
 # variables
 folder_path = r"Z://Strontium//Images//2024-10-21//442187//"
 image_name = r"0000absorption.tif"
 magnification = 150/250
 pixel_size = 3.45e-6  # [m]
-
-
-def compute_cross_section(wavelength):
-    """compute cross section
-
-    Args:
-        wavelength (float): wavelength in [m]
-
-    Returns:
-        cross_section (float): cross section in [m^2]
-    """
-    cross_section = 3*wavelength**2/(2*np.pi)
-    return cross_section
+imaging_wavelength = 461e-9  # [m]
 
 
 def main(method):
     """
     Main function to compute the number of atoms from an image using two methods: 
     pixel count and Gaussian fit.
+    The image has to use absorption imaging as a method
 
     Args:
         method (str): Method to compute atom number. Options are "pixel_count" 
@@ -61,8 +51,9 @@ def main(method):
 
     # Create image analysis object from class 
     ImageAnalysis = SpotDetectionFitting(sigma=40, threshold_detection=0.0007, image=raw_data)
-   
-    cross_section = compute_cross_section(461e-9)
+    
+    # compute abosrption cross section
+    cross_section = AbsorptionImaging.compute_cross_section(imaging_wavelength)
     
     if method == "pixel_sum":
         # compute atom number from pixel count

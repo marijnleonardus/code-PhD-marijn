@@ -253,7 +253,7 @@ def main(folder, first_datapoint_ms, yguess, plot_gaussian_fits):
 
 
 if __name__ == "__main__":
-    folder_path = r'T:\\KAT1\\Marijn\\redmot\\time of flight\\nov15measurements\\varying detuning\\37801\\'
+    folder_path = r'T:\\KAT1\\Marijn\\redmot\\time of flight\\nov15measurements\\varying detuning\\37815\\'
 
     # first time of flight image time in ms
     first_datapoint = 1  # ms

@@ -2,7 +2,7 @@
 # February 2023
 
 import numpy as np
-from scipy.constants import hbar, Boltzmann
+from scipy.constants import hbar, Boltzmann, pi
 from arc import Strontium88, PairStateInteractions
 
 Sr88 = Strontium88()
@@ -129,3 +129,18 @@ class Polarizability:
         polarizability = 6.3*1e-11*(n-defect)**7
         return polarizability
          
+
+class AbsorptionImaging:
+    @staticmethod
+    def compute_cross_section(wavelength):
+        """compute cross section
+
+        Args:
+            wavelength (float): wavelength in [m]
+
+        Returns:
+            cross_section (float): cross section in [m^2]
+        """
+        cross_section = 3*wavelength**2/(2*pi)
+        return cross_section
+    
