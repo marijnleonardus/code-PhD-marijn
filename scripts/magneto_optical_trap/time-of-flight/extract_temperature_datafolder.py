@@ -1,13 +1,12 @@
 # marijn venderbosch
 # november 2023
-"""Streamlined script for analyzing time-of-flight data."""
+"""script for analyzing time-of-flight data."""
 
 import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-import scipy.constants
 from scipy.constants import proton_mass, Boltzmann
 
 # Append path with 'modules' dir in parent folder
@@ -89,8 +88,8 @@ def analyze_folder(folder_path, first_datapoint_ms, yguess, plot_gaussian_fits=F
         dsigmas_y.append(dsigma_y_m)
 
         print(f"Fitting {fname}")
-        print(f"  sigma_x = {sigma_x_m*1e6:.1f} ± {dsigma_x_m*1e6:.1f} μm")
-        print(f"  sigma_y = {sigma_y_m*1e6:.1f} ± {dsigma_y_m*1e6:.1f} μm")
+        print(f"  sigma_x = {sigma_x_m*1e6:.0f} ± {dsigma_x_m*1e6:.0f} μm")
+        print(f"  sigma_y = {sigma_y_m*1e6:.0f} ± {dsigma_y_m*1e6:.0f} μm")
         print("-" * 50)
 
         if plot_gaussian_fits:
@@ -123,8 +122,9 @@ def compute_temp_tof(tof, sigma, dsigma):
     """
     t2 = tof**2
     sigma2 = sigma**2
+    
     # Propagate error: Δ(sigma^2) ≈ 2*sigma*Δsigma
-    error_bars = 2 * sigma * dsigma
+    error_bars = 2*sigma*dsigma
 
     popt, pcov = curve_fit(FittingFunctions.linear_func, t2, sigma2, sigma=error_bars)
     sigma0 = np.sqrt(popt[0])
@@ -141,10 +141,10 @@ def main(folder, first_datapoint_ms, yguess, plot_gaussian_fits=False):
     popt_x, sigma0_x, temp_x, sigma0_err_x, temp_err_x = compute_temp_tof(tof, sig_x, dsig_x)
     popt_y, sigma0_y, temp_y, sigma0_err_y, temp_err_y = compute_temp_tof(tof, sig_y, dsig_y)
 
-    print(f"Tx = {temp_x*1e6:.2f} ± {temp_err_x*1e6:.2f} μK")
-    print(f"Ty = {temp_y*1e6:.2f} ± {temp_err_y*1e6:.2f} μK")
-    print(f"sigma_x(t=0) = {sigma0_x*1e6:.2f} ± {sigma0_err_x*1e6:.2f} μm")
-    print(f"sigma_y(t=0) = {sigma0_y*1e6:.2f} ± {sigma0_err_y*1e6:.2f} μm")
+    print(f"Tx = {temp_x*1e6:.1f} ± {temp_err_x*1e6:.1f} μK")
+    print(f"Ty = {temp_y*1e6:.1f} ± {temp_err_y*1e6:.1f} μK")
+    print(f"sigma_x(t=0) = {sigma0_x*1e6:.1f} ± {sigma0_err_x*1e6:.1f} μm")
+    print(f"sigma_y(t=0) = {sigma0_y*1e6:.1f} ± {sigma0_err_y*1e6:.1f} μm")
 
     # Plot sigma^2 data and fits.
     fig, ax = plt.subplots()
@@ -153,10 +153,8 @@ def main(folder, first_datapoint_ms, yguess, plot_gaussian_fits=False):
     ax.errorbar(t2, sig_y**2, yerr=2*sig_y*dsig_y, fmt='o', label=r'$\sigma_y^2(t)$')
 
     t2_fit = np.linspace(t2.min(), t2.max(), 100)
-    ax.plot(t2_fit, FittingFunctions.linear_func(t2_fit, *popt_x), 'b-', 
-            label=f'Fit: Tx = {temp_x*1e6:.2f}±{temp_err_x*1e6:.2f} μK')
-    ax.plot(t2_fit, FittingFunctions.linear_func(t2_fit, *popt_y), 'r-', 
-            label=f'Fit: Ty = {temp_y*1e6:.2f}±{temp_err_y*1e6:.2f} μK')
+    ax.plot(t2_fit, FittingFunctions.linear_func(t2_fit, *popt_x), 'b-', label=f'Fit: Tx = {temp_x*1e6:.1f}({temp_err_x*1e6:.1f}) μK')
+    ax.plot(t2_fit, FittingFunctions.linear_func(t2_fit, *popt_y), 'r-', label=f'Fit: Ty = {temp_y*1e6:.1f}({temp_err_y*1e6:.1f}) μK')
 
     ax.set_xlabel(r'$t^2$ [s$^2$]')
     ax.set_ylabel(r'$\sigma^2$ [m$^2$]')
