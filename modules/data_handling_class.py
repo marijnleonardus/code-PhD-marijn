@@ -42,7 +42,6 @@ def read_csv_file(file_path, file_name):
         print(f"An error occurred: {e}")
 
 
-# Function to compute averages and standard deviations from redundant data points
 def compute_avg_std(csv_file):
     """given a csv file, with x data in column 1 and y data in column 2,
     where x is repeated multiple times, this function

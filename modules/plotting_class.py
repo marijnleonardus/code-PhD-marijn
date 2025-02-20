@@ -11,5 +11,5 @@ class Plotting:
             file_name (string): 
         """
         export_location = export_folder + file_name
-        plt.savefig(export_location, dpi=300, pad_inches=0, bbox_inche='tight') 
+        plt.savefig(export_location, dpi=300, pad_inches=0, bbox_inches='tight') 
         plt.show()

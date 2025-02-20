@@ -32,31 +32,18 @@ sys.path.append(modules_dir)
 from camera_image_class import CameraImage
 from fitting_functions_class import FittingFunctions
 from plotting_class import Plotting
+from image_analysis_class import ManipulateImage
 
-# module specific for this script, currently unused
-from specific_modules.number_atoms_class import NumberAtoms
-
-
-# %% Variables
-
-# gridspec setup
-w = 330
-h = 20000
-
-# locations bb red mot
-redmot_bb_folder = r'T:\KAT1\Marijn\redmot\redmot_bb'
-redmot_bb_file_name = r'\0002_crop.tif'
-
-# locations sf red mot
-redmot_sf_folder = r'T:\KAT1\Marijn\redmot\redmot_sf'
-redmot_sf_file_name = r'\sf_lowpower.tif'
-
-# locations bb blue mot
-bluemot_folder = r'T:\KAT1\Marijn\redmot\time of flight\nov15measurements\atom number\1_blue'
-bluemot_filename = r'\0000.tif'
-
-# %% functions
-
+# parameters 
+w = 330 # gridspec
+h = 20000 # grispec
+cam_mag = 0.8    
+color_plot = 'Blues'
+pixel_size = 3.45e-6  # m
+bin_size = 4
+crop_r = 150  # pixels
+folder_name = r'T:\KAT1\Marijn\redmot\time of flight\nov15measurements\atom number\1_blue'
+file_name = r'\0000.tif'
 
 def main(image, color, show_gaussian_fit):
     """Fits Gaussians to image and plots the result
@@ -67,7 +54,7 @@ def main(image, color, show_gaussian_fit):
     - show_gaussian_fit: boolean, do you want to show the gaussian fits or not?"""
     
     # compute histograms by summing over rows and columns
-    hist_rows, hist_cols = CameraImage.compute_histograms_x_y(image)
+    hist_rows, hist_cols = CameraImage.compute_pixel_sums_x_y(image)
 
     # pixel arrays used to number pixels in cropped image
     pixels_x = pixels_z = np.linspace(-crop_r/2, crop_r/2 - 1, crop_r)
@@ -84,8 +71,8 @@ def main(image, color, show_gaussian_fit):
     sigma_z_px = popt_rows[3]
     sigma_x = CameraImage.pixels_to_m(sigma_x_px, cam_mag, pixel_size, bin_size)
     sigma_z = CameraImage.pixels_to_m(sigma_z_px, cam_mag, pixel_size, bin_size)
-    print(str(np.round(sigma_x*1e6)) + ' um')
-    print(str(np.round(sigma_z*1e6)) + ' um')
+    print(str(np.round(sigma_x*1e6)) + ' μm')
+    print(str(np.round(sigma_z*1e6)) + ' μm')
     
     # Initialize gridspec with correct ratios
     fig = plt.figure(figsize=(5.1, 4))
@@ -144,52 +131,13 @@ def main(image, color, show_gaussian_fit):
         ax3.set_xlabel(r'$x$ [mm]')
         ax3.set_yticks([])
 
-    Plotting.savefig(export_folder = 'output/',
-        file_name = 'blue_mot_fluorescence_fit.pdf')
+    Plotting.savefig(export_folder='output/', file_name='blue_mot_fluorescence_fit.pdf')
 
-    """ ATOM NUMBER STUFF
-    # obtain atom number
-    atoms_mot = NumberAtoms.atom_number_from_image(popt_cols, popt_rows, max_nr_pixel_counts,
-        camera_gain, exposure_time, photon_percount, trans_const, gamma_461, lens_distance, lens_radius)
-
-    # obtain atoms per cubic cm
-    atom_density = NumberAtoms.atomic_density_from_atom_number(
-        atoms_mot, popt_cols[3], popt_rows[3])
-
-    print('Number of atoms ~ ' + str(f"{Decimal(atoms_mot):.0E}"))
-    print('Atom density ~ ' + str(f"{Decimal(atom_density):.0E}"))
-    """
-
-
-# %% execute function 
-    
 
 if __name__ == '__main__':
-    # MOT plot params
-    cam_mag = 0.8    
-    color_plot = 'Reds'
-    pixel_size = 3.45e-6  # m
-    bin_size = 4
-    crop_r = 150  # pixels
-
-    # importing data
-    folder = redmot_bb_folder #redmot_sf_folder
-    file_name = redmot_bb_file_name #redmot_sf_file_name
-
     # load image and crop to center
-    image = CameraImage.load_image_from_file(folder, file_name)
-    image_cropped = CameraImage.crop_center(image, crop_r, crop_r)
+    image = CameraImage.load_image_from_file(folder_name, file_name)
+    image = ManipulateImage.crop_center(image, crop_r, crop_r)
 
     # fit image and plot result
-    main(image_cropped, color_plot, show_gaussian_fit = False)
-
-    
-    """# atom nr parameters
-    gamma_461 = 2*pi*32e6  # Hz (32 MHz)
-    lens_radius = 25e-3  # m
-    lens_distance = 20e-2  # m
-    trans_const = 0.6
-    photon_percount = 6e3  
-    camera_gain = 1
-    exposure_time = 10e-3  # s
-   """
+    main(image, color_plot, show_gaussian_fit=False)
