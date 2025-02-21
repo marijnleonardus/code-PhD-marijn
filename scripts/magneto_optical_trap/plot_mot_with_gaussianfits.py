@@ -77,12 +77,15 @@ def main(image, cmap, show_gaussian_fit):
         height_ratios=[1, h, 1, h/4.8],
         width_ratios=[1, w, 1, w/4.28]
     )
+
+    # normalize
+    image = image/np.max(image)
     
     ax_img = plt.subplot(gs[0:3, 0:3])
     img_artist = ax_img.imshow(image, interpolation='nearest', origin='upper', vmin=0., aspect='equal')
     img_artist.set_cmap(cmap)
     ax_img.axis('off')
-    
+
     # Add scalebar (convert a 0.5 mm object to pixel units)
     scalebar_object_size = 0.5e-3  # 0.5 mm in meters
     scalebar_pixels = CameraImage.m_to_pixels(scalebar_object_size, cam_mag, pixel_size, bin_size)
@@ -129,4 +132,4 @@ if __name__ == '__main__':
     image = ManipulateImage.crop_center(image, crop_r, crop_r)
     
     # Fit the image and plot the result (set show_gaussian_fit True or False as needed)
-    main(image, color_plot, show_gaussian_fit=False)
+    main(image, color_plot, show_gaussian_fit=True)
