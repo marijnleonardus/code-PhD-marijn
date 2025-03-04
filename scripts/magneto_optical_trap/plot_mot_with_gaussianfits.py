@@ -127,9 +127,6 @@ def main(image, cmap, show_gaussian_fit):
 if __name__ == '__main__':
     # Load image and crop to the center
     image1 = CameraImage.load_image_from_file(folder_name, file_name)
-    image2 = CameraImage.load_image_from_file(folder_name, '0017fluorescence.tif')
-    image2 = image2*4
-    image = image1 + image2
 
     # needs to be cropped for the nr of pixels for fiting to be correct
     image = ManipulateImage.crop_center(image, crop_r, crop_r)
