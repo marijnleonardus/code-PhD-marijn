@@ -18,9 +18,9 @@ class CameraImage:
         
         # load image and convert to greyscale
         image_file = Image.open(location + name)
-        image_file_grey = image_file.convert("I;16") 
+        #image_file_grey = image_file.convert("I;16") 
         #for 8 bit 
-        #image_file_grey = image_file.convert("L")
+        image_file_grey = image_file.convert("L")
 
         # convert to numpy format
         array = np.array(image_file_grey)

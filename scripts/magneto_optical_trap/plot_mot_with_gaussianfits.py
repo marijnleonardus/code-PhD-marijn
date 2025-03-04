@@ -34,9 +34,9 @@ cam_mag = 0.8       # Camera magnification
 color_plot = 'Blues'
 pixel_size = 3.45e-6  # m
 bin_size = 4
-crop_r = int(412/2)      # Crop size in pixels
-folder_name = r'T:\KAT1\Marijn\thesis_measurements\mot\sf_mot'
-file_name = r'\0000fluorescence.tif'
+crop_r = 160      # Crop size in pixels
+folder_name = r'T:\\KAT1\\Marijn\\thesis_measurements\\mot\\sf_time_of_flight\\second try\\scan091510\\'
+file_name = r'0007fluorescence.tif'
 
 def main(image, cmap, show_gaussian_fit):
     """
@@ -126,10 +126,13 @@ def main(image, cmap, show_gaussian_fit):
 
 if __name__ == '__main__':
     # Load image and crop to the center
-    image = CameraImage.load_image_from_file(folder_name, file_name)
+    image1 = CameraImage.load_image_from_file(folder_name, file_name)
+    image2 = CameraImage.load_image_from_file(folder_name, '0017fluorescence.tif')
+    image2 = image2*4
+    image = image1 + image2
 
     # needs to be cropped for the nr of pixels for fiting to be correct
     image = ManipulateImage.crop_center(image, crop_r, crop_r)
     
     # Fit the image and plot the result (set show_gaussian_fit True or False as needed)
-    main(image, color_plot, show_gaussian_fit=True)
+    main(image, color_plot, show_gaussian_fit=False)

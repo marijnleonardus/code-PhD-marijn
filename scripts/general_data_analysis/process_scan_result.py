@@ -18,13 +18,13 @@ from data_handling_class import compute_avg_std
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-images_path = 'T:\\KAT1\\Marijn\\tweezers\\scan magn field\\'
+images_path = 'T:\\KAT1\\Marijn\\thesis_measurements\\mot\\\sf_time_of_flight\second try\\'
 
 
 # Main block to use the function
 def main():
     # Compute results
-    filename = "bz0"
+    filename = "logresult_sizey"
     results = compute_avg_std(images_path + filename + ".csv")
 
     # Print the results
@@ -36,7 +36,6 @@ def main():
     output_csv = images_path +  filename + "processed.csv"
     with open(output_csv, 'w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(["x", "y", "yerr"])
         writer.writerows(results)
 
     print(f"Results saved to {output_csv}")

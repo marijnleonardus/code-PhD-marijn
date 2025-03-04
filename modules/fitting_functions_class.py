@@ -2,6 +2,7 @@
 # December 2022
 
 import numpy as np
+from scipy.constants import Boltzmann, proton_mass
 
 
 class FittingFunctions:
@@ -89,3 +90,10 @@ class FittingFunctions:
         y = offset + slope*x
         return y
     
+    @staticmethod
+    def fit_tof_data(t, sigma_0, T):
+        """function of the form sqrt(sigma_0^2 + k_b T/m * t^2)"""
+        sr_mass = 88*proton_mass
+        sigma = np.sqrt(sigma_0**2 + Boltzmann*T/sr_mass*t**2)
+        return sigma
+        
