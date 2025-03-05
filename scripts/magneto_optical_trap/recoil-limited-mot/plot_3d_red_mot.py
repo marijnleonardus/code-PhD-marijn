@@ -36,10 +36,10 @@ from modules.laser_beam_class import AngledMOTBeams
 # %% constants
 
 # parameters
-b_gauss = 4.24  # Gauss
-saturation = 80 
-detuning = -50e3  # Hz
-simulation_time = 0.1  # s
+b_gauss = 5.6 # Gauss
+sat_param = 12 
+detuning = -150e3  # Hz
+simulation_time = 0.03  # s
 nr_atoms = 500
 nr_nodes = 4  # nr cores for multithreading
 
@@ -72,11 +72,11 @@ magField = QuadrupoleYMagneticField(alpha)
 
 # laser beams
 # start with 4 diagonal beams
-laserBeams = AngledMOTBeams(delta = det, s = saturation,  beam_type = pylcp.infinitePlaneWaveBeam)
+laserBeams = AngledMOTBeams(delta=det, s=sat_param,  beam_type=pylcp.infinitePlaneWaveBeam)
 
 # add 2 horizontal beams
-HorizontalBeam1 = pylcp.laserBeam(kvec=np.array([0, +1., 0.]), delta = det, pol=+1, s=0.5*saturation)
-HorizontalBeam2 = pylcp.laserBeam(kvec=np.array([0.,-1., 0.]), delta = det, pol=+1, s=0.5*saturation)
+HorizontalBeam1 = pylcp.laserBeam(kvec=np.array([0, +1., 0.]), delta = det, pol=+1, s=0.5*sat_param)
+HorizontalBeam2 = pylcp.laserBeam(kvec=np.array([0.,-1., 0.]), delta = det, pol=+1, s=0.5*sat_param)
 laserBeams.add_laser(HorizontalBeam1)
 laserBeams.add_laser(HorizontalBeam2)
 
@@ -122,7 +122,7 @@ def generate_random_solution(args):
     eqn.set_initial_velocity(initial_velocity)
 
     eqn.evolve_motion([0, tmax], t_eval=np.linspace(0, tmax, 10001),
-        random_recoil=True, progress_bar=False, max_step=1.)
+        random_recoil=True, progress_bar=True, max_step=1.)
     return eqn.sol
 
 

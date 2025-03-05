@@ -58,6 +58,6 @@ ax.legend()
 Plotting.savefig(folder_name, "temperature_tof.pdf")
 plt.show()
 
-print("temperature x: ", popt_x[1]/uK, " uK") 
-print("temperature y: ", popt_y[1]/uK, " uK")
+print("temperature x: ", popt_x[1]/uK, "pm", np.sqrt(pcov_x[1,1])/uK, " uK") 
+print("temperature y: ", popt_y[1]/uK, " uK", np.sqrt(pcov_y[1,1])/uK, " uK")
 

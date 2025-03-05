@@ -41,10 +41,10 @@ class AngledMOTBeams(laserBeams):
 
         rot_mat = Rotation.from_euler(rotation_spec, rotation_angles).as_matrix()
 
-        angle_deg = 30
-        angle_rad = 30/180*pi
-        kvecs = [np.array([.5*np.sqrt(3), 0., -.5]), np.array([-0.5*np.sqrt(3), 0., +.5]),
-                 np.array([.5*np.sqrt(3), 0., +.5]), np.array([-0.5*np.sqrt(3), 0., -.5])]
+        angle_deg = 25
+        angle_rad = angle_deg/180*pi
+        kvecs = [np.array([np.cos(angle_rad), 0., -np.sin(angle_rad)]), np.array([-np.cos(angle_rad), 0., +np.sin(angle_rad)]),
+                 np.array([np.cos(angle_rad), 0., +np.sin(angle_rad)]), np.array([-np.cos(angle_rad), 0., -np.sin(angle_rad)])]
         pols = [-pol, -pol, -pol, -pol]
 
         for kvec, pol in zip(kvecs, pols):

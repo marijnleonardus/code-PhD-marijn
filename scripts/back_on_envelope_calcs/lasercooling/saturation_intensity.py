@@ -35,7 +35,7 @@ print('linewidth: ' + str(power_broadened_linewidth))
 
 
 # compute sat. param. red MOT
-beam_power_red_mot = 30e-6  # W
+beam_power_red_mot = 3e-6  # W
 beam_waist_red_mot = 3.2e-3  # m
 RedMOTLaser = GaussianBeam(beam_power_red_mot, beam_waist_red_mot)
 redmot_intensity = RedMOTLaser.get_intensity()
