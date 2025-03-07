@@ -57,21 +57,18 @@ class ManipulateImage:
         return center_roi
     
     @staticmethod
-    def crop_to_region_of_interest(image_file, roi_size):
-        """crops image file to region of interest, used for MOT images"""
+    def crop_to_region_of_interest(image_file, row, column, roi_size):
+        """crops image file to region of interest defined by (column, row), used for MOT images"""
     
-        # Finding center MOT
-        location_maximum = image_file.argmax()
-        indices = unravel_index(location_maximum, image_file.shape)
+        # cropping indices
+        left_column = int(column - roi_size/2)
+        right_column = int(column + roi_size/2)
+        bottom_row = int(row - roi_size/2)
+        top_row = int(row + roi_size/2)
     
         # Crop image                                                     
-        region_of_interest = image_file[indices[0] - roi_size:indices[0] + roi_size,
-            indices[1] - roi_size:indices[1] + roi_size]
-    
-        # Normalize but keep max. number of counts to be used in atom number formula
-        max_counts = np.max(region_of_interest)
-        roi_normalized = region_of_interest/max_counts
-        return roi_normalized, max_counts
+        region_of_interest = image_file[left_column:right_column, top_row:bottom_row]
+        return region_of_interest
     
     @staticmethod
     def crop_center(img, cropx, cropy):
