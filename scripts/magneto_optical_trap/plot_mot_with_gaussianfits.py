@@ -25,18 +25,18 @@ sys.path.append(modules_dir)
 from camera_image_class import CameraImage
 from fitting_functions_class import FittingFunctions
 from plotting_class import Plotting
-from image_analysis_class import ManipulateImage
+from image_analysis_class import ManipulateImage, AbsorptionImage
 
 # Parameters
+image_type = 'absorption'
 w = 330             # GridSpec width ratio
 h = 20000           # GridSpec height ratio
-cam_mag = 0.8       # Camera magnification
-color_plot = 'Blues'
+cam_mag = 0.6       # Camera magnification
 pixel_size = 3.45e-6  # m
-bin_size = 4
-crop_r = 160      # Crop size in pixels
-folder_name = r'T:\\KAT1\\Marijn\\thesis_measurements\\mot\\sf_time_of_flight\\second try\\scan091510\\'
-file_name = r'0007fluorescence.tif'
+bin_size = 1
+crop_r = 140      # Crop size in pixels
+folder_name = r'T:\\KAT1\\Marijn\\thesis_measurements\\mot\\sf_mot\\absorption\\442187\\'
+file_name = r'0000absorption.tif'
 
 def main(image, cmap, show_gaussian_fit):
     """
@@ -78,19 +78,29 @@ def main(image, cmap, show_gaussian_fit):
         width_ratios=[1, w, 1, w/4.28]
     )
 
-    # normalize
-    image = image/np.max(image)
+    # manipulate image
+    if image_type == 'fluorescence':
+        # normalize
+        image = image/np.max(image)
+    elif image_type == 'absorption':
+        # compute OD essentially reversing the operation to avoid zero
+        image = AbsorptionImage.compute_od(image)
+    else:
+        raise ValueError(f"Unknown image type: {image_type}")
     
     ax_img = plt.subplot(gs[0:3, 0:3])
     img_artist = ax_img.imshow(image, interpolation='nearest', origin='upper', vmin=0., aspect='equal')
     img_artist.set_cmap(cmap)
     ax_img.axis('off')
 
+    # add colorbar
+    fig.colorbar(img_artist, ax=ax_img)
+
     # Add scalebar (convert a 0.5 mm object to pixel units)
-    scalebar_object_size = 0.5e-3  # 0.5 mm in meters
+    scalebar_object_size = 0.2e-3  # 0.5 mm in meters
     scalebar_pixels = CameraImage.m_to_pixels(scalebar_object_size, cam_mag, pixel_size, bin_size)
-    scale_bar = AnchoredSizeBar(ax_img.transData, scalebar_pixels, r'0.5 mm',
-        'upper left', pad=0.5, color='black', frameon=False, size_vertical=2.5)
+    scale_bar = AnchoredSizeBar(ax_img.transData, scalebar_pixels, r'0.2 mm',
+        'upper left', pad=0.5, color='white', frameon=False, size_vertical=2.5)
     ax_img.add_artist(scale_bar)
     
     # --- 3. Optionally overlay Gaussian fits ---
@@ -120,16 +130,16 @@ def main(image, cmap, show_gaussian_fit):
         ax_fit_cols.set_xlabel(r'$x$ [mm]')
         ax_fit_cols.set_yticks([])
     
-    # --- 4. Save the figure ---
-    Plotting.savefig(export_folder=folder_name, file_name='\mot_fluorescence_plot.pdf')
-
 
 if __name__ == '__main__':
     # Load image and crop to the center
-    image1 = CameraImage.load_image_from_file(folder_name, file_name)
+    image = CameraImage.load_image_from_file(folder_name, file_name)
 
-    # needs to be cropped for the nr of pixels for fiting to be correct
-    image = ManipulateImage.crop_center(image, crop_r, crop_r)
-    
+    # needs to be cropped 
+    # also for the gaussian fit the nr of pixels needs to be correct
+    image = ManipulateImage.crop_to_region_of_interest(image, 470, 140, crop_r)
+
     # Fit the image and plot the result (set show_gaussian_fit True or False as needed)
-    main(image, color_plot, show_gaussian_fit=False)
+    main(image, cmap='magma', show_gaussian_fit=False)
+
+    Plotting.savefig(export_folder=folder_name, file_name='\mot_' + image_type + '_plot.pdf')

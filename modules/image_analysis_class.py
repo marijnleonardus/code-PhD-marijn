@@ -67,7 +67,7 @@ class ManipulateImage:
         top_row = int(row + roi_size/2)
     
         # Crop image                                                     
-        region_of_interest = image_file[left_column:right_column, top_row:bottom_row]
+        region_of_interest = image_file[bottom_row:top_row, left_column:right_column]
         return region_of_interest
     
     @staticmethod
@@ -276,4 +276,18 @@ class SpotDetectionFitting():
         cols = np.shape(array_cropped)[1]
         total_pixel_count = np.sum(array_cropped) - rows*cols*offset
         return total_pixel_count
+
+
+class AbsorptionImage:
+    @staticmethod
+    def compute_od(image):
+        # need to do this to avoid underflow (below zero) in the image
+        image = image.astype(np.int16)
+
+        # revert operation in artiq image module
+        optical_density = (image - 200)/1000
+
+        # avoid negative number
+        optical_density = np.maximum(optical_density, 0)
+        return optical_density
     

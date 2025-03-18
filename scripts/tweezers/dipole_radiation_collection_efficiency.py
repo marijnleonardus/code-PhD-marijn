@@ -13,6 +13,7 @@ from scipy.constants import pi
 
 theta = phi = np.linspace(0, 2*pi, 1000)
 
+
 # %% functions
 
 
@@ -24,24 +25,23 @@ class DipoleRadiationPattern:
         self.angle = theta
     
     def radiation_pattern_linear(self):
-        return 3 / 8 / pi * np.sin(self.angle)**2
+        return 3/8/pi*np.sin(self.angle)**2
     
     def radiation_pattern_sigma(self):
-        return 3 / 16 / pi * (1 + np.cos(self.angle)**2)
+        return 3/16/pi*(1 + np.cos(self.angle)**2)
 
 
 def main():
     dipole_radiation = DipoleRadiationPattern(theta)
     
+    # 2D plot
     fig = plt.figure(figsize=(5, 4))
     ax = fig.add_subplot(projection='polar')
-
-    ax.plot(theta, dipole_radiation.radiation_pattern_linear(),
-            label=r"$m_e=0$")
-    ax.plot(theta, dipole_radiation.radiation_pattern_sigma(),
-            label=r"$m_e=\pm1$")
-
+    ax.plot(theta, dipole_radiation.radiation_pattern_linear(), label=r"$\frac{3}{8\pi}\sin^2\theta$")
+    #ax.plot(theta, dipole_radiation.radiation_pattern_sigma(),  label=r"$m_e=\pm1$")
     fig.legend()
+
+    # D plot
     plt.show()
 
 
