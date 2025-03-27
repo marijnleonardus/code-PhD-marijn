@@ -1,6 +1,7 @@
 # author: Marijn Venderbosch
 # December 2024
 
+ # %% 
 import numpy as np
 import pandas as pd
 import os
@@ -24,34 +25,21 @@ os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
 rois_radius = 1  # ROI size. Radius 1 means 3x3 array
-images_path = 'Z:\\Strontium\\Images\\2025-02-14\\Scan183745\\'
+images_path = 'Z:\\Strontium\\Images\\2025-03-27\\scan095139\\'
 file_name_suffix = 'image'  # import files ending with image.tif
 show_plots = True
 log_threshold = 17 # laplacian of gaussian kernel sensitivity
-weight_center_pixel = 1 # if weighted pixel box is to be used
-crop_images = True
-crop_radius = 11
-crop_y_center = 18
-crop_x_center = 22
+weight_center_pixel = 3 # if weighted pixel box is to be used
+crop_images = False
 
 MHz = 1e6
 
-# images without cropping ('raw' data)
-image_stack_raw = CameraImage().import_image_sequence(images_path, file_name_suffix)
+# %% 
+# import image sequence
+image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
 
-if np.shape(image_stack_raw)[0] == 0:
+if np.shape(image_stack)[0] == 0:
     raise ValueError("No images loaded, check image path and file name suffix")
-
-# crop images in the 3d np arraqy
-if crop_images:
-    nr_images = np.shape(image_stack_raw)[0]
-    cropped_pixel_dim = 2*crop_radius + 1
-    image_stack = np.zeros((nr_images, cropped_pixel_dim, cropped_pixel_dim), dtype=int)
-    for img in range(nr_images):
-        image_stack[img] = ManipulateImage().crop_array_center(image_stack_raw[img, :, :],
-            crop_y_center, crop_x_center, crop_radius)
-else:
-    image_stack = image_stack_raw
 
 # detect laplacian of gaussian spot locations from avg. over all images
 z_project = np.mean(image_stack, axis=0)
@@ -69,6 +57,7 @@ plt.show()
 # return list form for function ROI pixel sum calculator
 images_list = [image_stack[i] for i in range(image_stack.shape[0])]
 
+# %% 
 # obtain counts over all ROIs
 ROI = RoiCounts(weight_center_pixel, rois_radius)
 rois_matrix, roi_counts_matrix = ROI.compute_pixel_sum_counts(images_list, y_coor, x_coor)
@@ -80,26 +69,36 @@ ROI.plot_average_of_roi(rois_matrix[0, :, :, :])
 df = pd.read_csv(images_path + 'log.csv')
 x_values_duplicates = df.iloc[:, 0].to_numpy() 
 
-# remove x duplicates. Compute y-values per unique x-value. Average over identical x-values
-x_values = np.unique(x_values_duplicates)
-nr_avg = int(np.shape(x_values_duplicates)[0]/np.shape(x_values)[0])
-nr_rois = np.shape(rois_matrix)[0]
-roi_counts_reshaped = roi_counts_matrix.reshape(nr_rois, len(x_values), nr_avg)
+# Get sorting indices for x_values_duplicates
+sort_idx = np.argsort(x_values_duplicates)
+sorted_x = x_values_duplicates[sort_idx]
+sorted_roi_counts_matrix = roi_counts_matrix[:, sort_idx]
 
-# calculate average and standard error mean (SEM)
+# Now get unique sorted x values
+x_values = np.unique(sorted_x)
+nr_avg = int(len(sorted_x) / len(x_values))
+nr_rois = np.shape(rois_matrix)[0]
+
+# Reshape now that duplicates are consecutive
+roi_counts_reshaped = sorted_roi_counts_matrix.reshape(nr_rois, len(x_values), nr_avg)
 counts_avg_perroi = np.mean(roi_counts_reshaped, axis=2)
-counts_sem_perroi = np.std(roi_counts_reshaped, axis=2)/np.sqrt(nr_avg)
+counts_sem_perroi = np.std(roi_counts_reshaped, axis=2) / np.sqrt(nr_avg)
 
 # Plot number of counts as function of detuning for each ROI
 fig2, axs = plt.subplots(figsize = (10,8), sharex=True, sharey=True,
     ncols=int(np.sqrt(nr_rois)), nrows=int(np.sqrt(nr_rois)))
 
+# %%
 # needs to be 1d to iterate
 axs = axs.ravel()
 
-# fitting guess for gaussian fits. And empty array for saving fitting results. X axis with more values for fit plot
-initial_guess = [14000, 5000, -2e6, 0.5e6]
+# fitting guess for gaussian fits. . 
+initial_guess = [8e3, 6e3, -2.1e6, 200e3] #  offset, amplitude, middle, width
+
+# And empty array for saving fitting results
 popt_list = []
+
+# X axis with more values for fit plot
 x_axis_fit = np.linspace(x_values[0], x_values[-1], 100)
 
 # plot data points
@@ -109,15 +108,18 @@ for roi_idx in range(nr_rois):
     axs[roi_idx].set_title(f'ROI {roi_idx}')
 
     # fit datapoints
-    """ popt, pcov = curve_fit(FittingFunctions.gaussian_function, x_values, counts_avg_perroi[roi_idx],
-        p0=initial_guess, sigma=counts_sem_perroi[roi_idx], absolute_sigma=True)
+    popt, pcov = curve_fit(FittingFunctions.gaussian_function, x_values, counts_avg_perroi[roi_idx],
+        p0=initial_guess)
+        #, sigma=counts_sem_perroi[roi_idx], absolute_sigma=True)
     popt_list.append(popt)
 
     # plot fit result
-    axs[roi_idx].plot(x_axis_fit, FittingFunctions.gaussian_function(x_axis_fit, *popt), color='red')""" 
+    axs[roi_idx].plot(x_axis_fit, FittingFunctions.gaussian_function(x_axis_fit, *popt), color='red')
+
 fig2.supxlabel('Detuning [Hz]')
 fig2.supylabel('EMCCD Counts')
 
+# %%
 # Plot average over all ROIs as a function of detuning
 avg_all_roi = np.mean(counts_avg_perroi, axis=0)
 fig3, ax3 = plt.subplots()
@@ -129,8 +131,11 @@ ax3.set_ylabel('EMCCD Counts')
 if show_plots == True:
     plt.show() 
 
-""" popt_array = np.array(popt_list)
+popt_array = np.array(popt_list)
 stark_shifts = popt_array[:, 2]
 mean_stark_shift = np.mean(stark_shifts)
 error_mean_stark_shift = np.std(stark_shifts)/np.sqrt(len(stark_shifts))
-print("peak location", mean_stark_shift/1e3, "plusminus", error_mean_stark_shift/1e3) """
+print("peak location", mean_stark_shift/1e3, "plusminus", error_mean_stark_shift/1e3) 
+
+
+# %%
