@@ -22,7 +22,7 @@ os.system('cls' if os.name == 'nt' else 'clear')
 # variables
 rois_radius = 1  # ROI size. Radius 1 means 3x3 array
 nr_bins_histogram = 20
-images_path = 'Z:\\Strontium\\Images\\2025-03-06\\scan065218\\'
+images_path = 'T:\\KAT1\\Marijn\scan174612\\selection'
 file_name_suffix = 'image'  # import files ending with image.tif
 show_plots = True
 log_threshold = 10 # laplacian of gaussian kernel sensitivity

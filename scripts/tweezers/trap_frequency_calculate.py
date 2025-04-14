@@ -20,17 +20,17 @@ from atoms_tweezer_class import AtomicCalculations
 # constants
 h=hbar*2*pi
 polarizability_ground_au=286 # atomic units
-polarizability_3p1_au=349 # atomic units
+polarizability_3p1_au=195 # atomic units
 mass=88*proton_mass
 kHz=1e3
 MHz=1e6
 
 # variables
 lamb=813e-9 # m
-waist_diff_limited=1e-6 # m
-diff_stark_measured_J=2.5*MHz*h # J
-number_traps = 2*2
-beam_power = 200*1e-3/number_traps # W
+waist_diff_limited=0.8e-6 # m
+diff_stark_measured_J=-3.4*MHz*h # J
+number_traps = 5*5
+beam_power = 340*1e-3*0.95/number_traps # W
 
 # polarizatility in SI units
 pol_atomic_units = Conversion().get_atomic_pol_unit()
