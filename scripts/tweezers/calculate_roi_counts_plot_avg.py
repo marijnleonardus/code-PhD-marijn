@@ -14,19 +14,17 @@ sys.path.append(modules_dir)
 
 # user defined libraries
 from camera_image_class import CameraImage
-from image_analysis_class import ManipulateImage, RoiCounts
+from image_analysis_class import RoiCounts
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-rois_radius = 1  # ROI size. Radius 1 means 3x3 array
-nr_bins_histogram = 20
+rois_radius = 2  # ROI size. Radius 1 means 3x3 array
 images_path = 'T:\\KAT1\\Marijn\scan174612\\selection'
 file_name_suffix = 'image'  # import files ending with image.tif
-show_plots = True
 log_threshold = 10 # laplacian of gaussian kernel sensitivity
-weight_center_pixel = 5
+weight_center_pixel = 3
 
 # images without cropping ('raw' data)
 image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
@@ -39,9 +37,6 @@ else:
 
 # detect laplacian of gaussian spot locations from avg. over all images
 z_project = np.mean(image_stack, axis=0)
-#plt.imshow(z_project)
-#plt.show()
-
 spots_LoG = blob_log(z_project, max_sigma=3, min_sigma=1, num_sigma=3, threshold=log_threshold)
 y_coor = spots_LoG[:, 0] 
 x_coor = spots_LoG[:, 1]
@@ -55,20 +50,14 @@ ax1.scatter(x_coor, y_coor, marker='x', color='r')
 fig1.show()
 ax1.set_title('Average image and LoG detected spots')
 
+# compute nr of counts in each ROI 
 ROI = RoiCounts(weight_center_pixel, rois_radius)
 rois_matrix, roi_counts_matrix = ROI.compute_pixel_sum_counts(images_list, y_coor, x_coor)
 
 # plot average pixel box for ROI 1 to check everythign went correctly
 ROI.plot_average_of_roi(rois_matrix[0, :, :, :])
 
-# Plot histograms for each ROI
-nr_rois = np.shape(rois_matrix)[0]
-fig2, axs = plt.subplots(ncols=int(np.sqrt(nr_rois)), nrows=int(np.sqrt(nr_rois)), sharex=True, sharey=True)
-axs = axs.ravel()
-for roi_idx in range(nr_rois):
-    axs[roi_idx].hist(roi_counts_matrix[roi_idx, :], bins=nr_bins_histogram, edgecolor='black')
-    axs[roi_idx].set_xlabel('Counts')
-    axs[roi_idx].set_ylabel('Occurunces')
+# save ROIs couns in 2d np array (nr_rois, nr_images)
+np.save(os.path.join(images_path, 'roi_counts_matrix.npy'), roi_counts_matrix)
 
-if show_plots == True:
-    plt.show() 
+plt.show()
