@@ -21,7 +21,7 @@ os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
 rois_radius = 2  # ROI size. Radius 1 means 3x3 array
-images_path = 'T:\\KAT1\\Marijn\scan174612\\selection'
+images_path = 'T:\\KAT1\\Marijn\scan174612'
 file_name_suffix = 'image'  # import files ending with image.tif
 log_threshold = 10 # laplacian of gaussian kernel sensitivity
 weight_center_pixel = 3
@@ -54,7 +54,7 @@ ax1.set_title('Average image and LoG detected spots')
 ROI = RoiCounts(weight_center_pixel, rois_radius)
 rois_matrix, roi_counts_matrix = ROI.compute_pixel_sum_counts(images_list, y_coor, x_coor)
 
-# plot average pixel box for ROI 1 to check everythign went correctly
+# plot average pixel box for ROI 1 to check everything went correctly
 ROI.plot_average_of_roi(rois_matrix[0, :, :, :])
 
 # save ROIs couns in 2d np array (nr_rois, nr_images)

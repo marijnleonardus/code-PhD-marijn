@@ -74,6 +74,27 @@ class FittingFunctions:
         exponent = (x - xo)**2/(2*sigma_x**2) + (y - yo)**2/(2*sigma_y**2)
         gaussian2d = ampl*np.exp(-1*exponent) + offset
         return gaussian2d
+   
+    @staticmethod
+    def double_gaussian(x, amplitude1, mu1, sigma1, amplitude2, mu2, sigma2):
+        """double gaussian function, for histogram fit for example
+        
+        arguments:
+        - x (np.array): input data
+        - amplitude1 (float): amplitude of first gaussian    
+        - mu1 (float): mean of first gaussian                  
+        - sigma1 (float): standard deviation of first gaussian
+        - amplitude2 (float): amplitude of second gaussian
+        - mu2 (float): mean of second gaussian
+        - sigma2 (float): standard deviation of second gaussian
+
+        returns:
+        - sum_gauss (np.array): double gaussian function
+        """
+        gauss1 = amplitude1*np.exp(-0.5*((x - mu1) /sigma1)**2)
+        gauss2 = amplitude2*np.exp(-0.5*((x - mu2) /sigma2)**2)
+        sum_gauss = gauss1 + gauss2
+        return sum_gauss
     
     @staticmethod
     def linear_func(x, offset, slope):
