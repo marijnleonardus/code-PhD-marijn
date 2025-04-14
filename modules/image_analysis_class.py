@@ -14,7 +14,10 @@ import os
 script_dir = os.path.dirname(os.path.abspath(__file__))
 modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 sys.path.append(modules_dir)
+
+# user defined modules
 from fitting_functions_class import FittingFunctions
+from math_class import Math
 
 
 class ManipulateImage:
@@ -165,6 +168,24 @@ class RoiCounts:
         ax.set_axis_off()
         ax.imshow(average_image)
         ax.set_title('Average pixel box for ROI 0')
+
+
+class Histograms:
+    def calculate_detection_threshold(ampl0: float, mu0: float, sigma0: float, ampl1: float, mu1: float, sigma1: float):
+        """calculate detection threshold for double gaussian fit
+        found by settings g1(x) = g2(x) and solving for x (ABC formula)"""
+
+        A = 1/(2*sigma0**2)-1/(2*sigma1**2)
+        B = mu1/sigma1**2 - mu0/sigma0**2
+        C = mu0**2/(2*sigma0**2) - mu1**2/(2*sigma1**2) + np.log(ampl1*sigma0/ampl0/sigma0)
+
+        sols = Math.solve_quadratic_equation(A, B, C)
+        # print("solutions", sols)
+        
+        # take solution between mu0 and mu1
+        valid_sol = [x for x in [sols[0], sols[1]] if mu0 <= x <= mu1]
+        valid_sol = np.round(valid_sol, 0)
+        return valid_sol
 
 
 class SpotDetectionFitting():
