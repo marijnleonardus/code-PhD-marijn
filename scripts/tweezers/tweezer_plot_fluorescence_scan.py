@@ -1,6 +1,10 @@
 # author: Marijn Venderbosch
 # December 2024
 
+"""plots fluorescence as a function of detuning for each ROI and average over all ROIs
+first run `calculate_roi_counts_plot_avg.py` to get the roi_counts_matrix.npy file	
+"""
+
  # %% 
 import numpy as np
 import pandas as pd
@@ -22,14 +26,8 @@ from fitting_functions_class import FittingFunctions
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-rois_radius = 1  # ROI size. Radius 1 means 3x3 array
 images_path = 'Z:\\Strontium\\Images\\2025-03-27\\scan095139\\'
-file_name_suffix = 'image'  # import files ending with image.tif
 show_plots = True
-log_threshold = 17 # laplacian of gaussian kernel sensitivity
-weight_center_pixel = 3 # if weighted pixel box is to be used
-crop_images = False
-
 MHz = 1e6
 
 # %% load data
@@ -102,6 +100,7 @@ ax3.set_ylabel('EMCCD Counts')
 if show_plots == True:
     plt.show() 
 
+# calculate and print average and error of the peak location
 popt_array = np.array(popt_list)
 stark_shifts = popt_array[:, 2]
 mean_stark_shift = np.mean(stark_shifts)
