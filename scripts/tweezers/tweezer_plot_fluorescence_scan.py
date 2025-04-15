@@ -16,8 +16,6 @@ modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 sys.path.append(modules_dir)
 
 # user defined libraries
-from camera_image_class import CameraImage
-from image_analysis_class import ManipulateImage, RoiCounts
 from fitting_functions_class import FittingFunctions
 
 # clear terminal
@@ -34,36 +32,12 @@ crop_images = False
 
 MHz = 1e6
 
-# %% 
-# import image sequence
-image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
+# %% load data
 
-if np.shape(image_stack)[0] == 0:
-    raise ValueError("No images loaded, check image path and file name suffix")
-
-# detect laplacian of gaussian spot locations from avg. over all images
-z_project = np.mean(image_stack, axis=0)
-spots_LoG = blob_log(z_project, max_sigma=3, min_sigma=1, num_sigma=3, threshold=log_threshold)
-y_coor = spots_LoG[:, 0] 
-x_coor = spots_LoG[:, 1]
-print(spots_LoG)
-
-# plot average image and mark detected maximum locations in red, check if LoG was correctly detected
-fig1, ax1 = plt.subplots()
-ax1.imshow(z_project)
-ax1.scatter(x_coor, y_coor, marker='x', color='r')
-plt.show()
-
-# return list form for function ROI pixel sum calculator
-images_list = [image_stack[i] for i in range(image_stack.shape[0])]
-
-# %% 
-# obtain counts over all ROIs
-ROI = RoiCounts(weight_center_pixel, rois_radius)
-rois_matrix, roi_counts_matrix = ROI.compute_pixel_sum_counts(images_list, y_coor, x_coor)
-
-# plot average pixel box for ROI 1 to check everything went correctly
-ROI.plot_average_of_roi(rois_matrix[0, :, :, :])
+# load ROI counts from npy
+# (nr ROIs, nr images)
+roi_counts_matrix = np.load(os.path.join(images_path, 'roi_counts_matrix.npy'))
+print("nr ROIs, nr images: ", np.shape(roi_counts_matrix))
 
 # laod x_values. If multiple averages used x values contains duplicates
 df = pd.read_csv(images_path + 'log.csv')
@@ -77,25 +51,22 @@ sorted_roi_counts_matrix = roi_counts_matrix[:, sort_idx]
 # Now get unique sorted x values
 x_values = np.unique(sorted_x)
 nr_avg = int(len(sorted_x) / len(x_values))
-nr_rois = np.shape(rois_matrix)[0]
+nr_rois = np.shape(roi_counts_matrix)[0]
 
 # Reshape now that duplicates are consecutive
 roi_counts_reshaped = sorted_roi_counts_matrix.reshape(nr_rois, len(x_values), nr_avg)
 counts_avg_perroi = np.mean(roi_counts_reshaped, axis=2)
-counts_sem_perroi = np.std(roi_counts_reshaped, axis=2) / np.sqrt(nr_avg)
+counts_sem_perroi = np.std(roi_counts_reshaped, axis=2)/np.sqrt(nr_avg)
+
+# %% plotting
 
 # Plot number of counts as function of detuning for each ROI
 fig2, axs = plt.subplots(figsize = (10,8), sharex=True, sharey=True,
     ncols=int(np.sqrt(nr_rois)), nrows=int(np.sqrt(nr_rois)))
 
-# %%
-# needs to be 1d to iterate
+# needs to be 1d to iterate. prep intial guess for fitting
 axs = axs.ravel()
-
-# fitting guess for gaussian fits. . 
 initial_guess = [8e3, 6e3, -2.1e6, 200e3] #  offset, amplitude, middle, width
-
-# And empty array for saving fitting results
 popt_list = []
 
 # X axis with more values for fit plot
@@ -136,6 +107,5 @@ stark_shifts = popt_array[:, 2]
 mean_stark_shift = np.mean(stark_shifts)
 error_mean_stark_shift = np.std(stark_shifts)/np.sqrt(len(stark_shifts))
 print("peak location", mean_stark_shift/1e3, "plusminus", error_mean_stark_shift/1e3) 
-
 
 # %%
