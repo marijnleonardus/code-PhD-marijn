@@ -76,6 +76,25 @@ def compute_avg_std(csv_file):
     return results
 
 
+def reshape_roi_matrix(df_x_values, counts_matrix):
+    """Reshape the roi_counts_matrix based on the x_values from the log.csv file.
+    """
+
+    x_values_duplicates = df_x_values.iloc[:, 0].to_numpy() 
+    sort_idx = np.argsort(x_values_duplicates)
+    sorted_counts_matrix = counts_matrix[:, sort_idx]
+
+    # Now get unique sorted x values
+    sorted_x = x_values_duplicates[sort_idx]
+    x_values = np.unique(sorted_x)
+
+    # Reshape now that duplicates are consecutive
+    nr_avg = int(len(sorted_x)/len(x_values))
+    nr_rois = np.shape(counts_matrix)[0]
+    counts_matrix_reshaped = sorted_counts_matrix.reshape(nr_rois, len(x_values), nr_avg)
+    return x_values, counts_matrix_reshaped
+
+
 def main():
     file_path = r"\\physstor\cqt-t\KAT1\Comb_measurements"
     file_name = r"AU06792-log_reprate_beat.csv"

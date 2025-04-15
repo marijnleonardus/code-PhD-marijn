@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
-from skimage.feature import blob_log
 from scipy.optimize import curve_fit
 
 # append path with 'modules' dir in parent folder
@@ -21,6 +20,7 @@ sys.path.append(modules_dir)
 
 # user defined libraries
 from fitting_functions_class import FittingFunctions
+from data_handling_class import reshape_roi_matrix
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
@@ -30,29 +30,22 @@ images_path = 'Z:\\Strontium\\Images\\2025-03-27\\scan095139\\'
 show_plots = True
 MHz = 1e6
 
-# %% load data
+# %% load and sort data
 
 # load ROI counts from npy
 # (nr ROIs, nr images)
 roi_counts_matrix = np.load(os.path.join(images_path, 'roi_counts_matrix.npy'))
 print("nr ROIs, nr images: ", np.shape(roi_counts_matrix))
 
+# reshape roi_counts_matrix depending on the number of averages
 # laod x_values. If multiple averages used x values contains duplicates
 df = pd.read_csv(images_path + 'log.csv')
-x_values_duplicates = df.iloc[:, 0].to_numpy() 
 
-# Get sorting indices for x_values_duplicates
-sort_idx = np.argsort(x_values_duplicates)
-sorted_x = x_values_duplicates[sort_idx]
-sorted_roi_counts_matrix = roi_counts_matrix[:, sort_idx]
+x_values, roi_counts_reshaped = reshape_roi_matrix(df, roi_counts_matrix)
+nr_rois = roi_counts_reshaped.shape[0]
+nr_avg = roi_counts_reshaped.shape[2]
 
-# Now get unique sorted x values
-x_values = np.unique(sorted_x)
-nr_avg = int(len(sorted_x) / len(x_values))
-nr_rois = np.shape(roi_counts_matrix)[0]
-
-# Reshape now that duplicates are consecutive
-roi_counts_reshaped = sorted_roi_counts_matrix.reshape(nr_rois, len(x_values), nr_avg)
+# compute average by summing over repeated values 
 counts_avg_perroi = np.mean(roi_counts_reshaped, axis=2)
 counts_sem_perroi = np.std(roi_counts_reshaped, axis=2)/np.sqrt(nr_avg)
 
