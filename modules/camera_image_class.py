@@ -7,10 +7,34 @@ import os
 import glob
 from PIL import Image
 import matplotlib.pyplot as plt
+from concurrent.futures import ThreadPoolExecutor
 
 
 class CameraImage:
     """Collection of functions to do with loading and processing camera images"""
+
+    def _load_image(self, filename):
+        with Image.open(filename) as img:
+            return np.array(img)
+        
+    def import_image_sequence(self, image_path, file_name_suffix):
+        """Imports a sequence of images from a given path and file name suffix
+        make faster using executor.map
+
+        Args:
+            image_path (str): The path to the directory containing the images.
+            file_name_suffix (str): The suffix that should be present in each image file name.
+
+        Returns:
+            numpy.ndarray: A 3D array representing the stack of images.
+        """
+
+        image_filenames = glob.glob(os.path.join(image_path, f"*{file_name_suffix}.tif"))
+
+        # Use multithreading for faster image loading
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            image_stack = list(executor.map(self._load_image, image_filenames))
+        return np.array(image_stack)
     
     @staticmethod
     def load_image_from_file(location, name):
@@ -25,27 +49,6 @@ class CameraImage:
         # convert to numpy format
         array = np.array(image_file_grey)
         return array
-
-    def import_image_sequence(self, image_path, file_name_suffix):
-        """Imports a sequence of images from a given path and file name suffix.
-
-        Args:
-            image_path (str): The path to the directory containing the images.
-            file_name_suffix (str): The suffix that should be present in each image file name.
-
-        Returns:
-            numpy.ndarray: A 3D array representing the stack of images.
-        """
-        image_filenames = glob.glob(os.path.join(image_path, f"*{file_name_suffix}.tif"))
-
-        image_stack = []
-        for filename in image_filenames:
-            with Image.open(filename) as img:
-                image_array = np.array(img)
-                image_stack.append(image_array)
-
-        return np.array(image_stack)
-
     @staticmethod
     def compute_pixel_sums_x_y(image_file):
         """computes pixel sums over rows (y) and columns (x) of given image"""

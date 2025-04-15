@@ -1,6 +1,7 @@
 # author: Marijn Venderbosch
 # july 2024
 
+# %% 
 import numpy as np
 import os
 import matplotlib.pyplot as plt
@@ -19,12 +20,15 @@ from image_analysis_class import RoiCounts
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
 
-# variables
+# %% variables
+
 rois_radius = 2  # ROI size. Radius 1 means 3x3 array
 images_path = 'T:\\KAT1\\Marijn\scan174612'
 file_name_suffix = 'image'  # import files ending with image.tif
 log_threshold = 10 # laplacian of gaussian kernel sensitivity
 weight_center_pixel = 3
+
+#%% import images 
 
 # images without cropping ('raw' data)
 image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
@@ -35,6 +39,7 @@ if np.shape(image_stack)[0] == 0:
 else:
     print("nr images, pixels, pixels", np.shape(image_stack))
 
+# %% 
 # detect laplacian of gaussian spot locations from avg. over all images
 z_project = np.mean(image_stack, axis=0)
 spots_LoG = blob_log(z_project, max_sigma=3, min_sigma=1, num_sigma=3, threshold=log_threshold)

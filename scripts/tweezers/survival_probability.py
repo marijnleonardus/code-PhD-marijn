@@ -1,9 +1,10 @@
 # author: Marijn Venderbosch
 # April 2025
-
+# %% 
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # append path with 'modules' dir in parent folder
 import sys
@@ -12,14 +13,16 @@ modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 sys.path.append(modules_dir)
 
 # user defined libraries
-
+from data_handling_class import reshape_roi_matrix
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-images_path = 'T:\\KAT1\\Marijn\scan174612\\selection'
+images_path = 'T:\\KAT1\\Marijn\scan174612'
 binary_threshold = 15200
+
+# %% load data 
 
 # load ROI counts from npy
 # (nr ROIs, nr images)
@@ -58,6 +61,16 @@ for im_idx in range(num_pairs):
 # Optional: save survival matrix
 # np.save(os.path.join(images_path, 'survival_matrix.npy'), survival_matrix)
 
+# reshape roi_counts_matrix depending on the number of averages
+# laod x_values. If multiple averages used x values contains duplicates
+df = pd.read_csv(images_path + 'log.csv')
+
+x_values, roi_counts_reshaped = reshape_roi_matrix(df, roi_counts_matrix)
+nr_rois = roi_counts_reshaped.shape[0]
+nr_avg = roi_counts_reshaped.shape[2]
+
+
 print(np.shape(global_survival_matrix))
 plt.plot(global_survival_matrix, 'o-')
 plt.show()
+# %%
