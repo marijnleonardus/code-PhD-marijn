@@ -19,7 +19,7 @@ from data_handling_class import reshape_roi_matrix
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-images_path = 'T:\\KAT1\\Marijn\scan174612'
+images_path = 'T:\\KAT1\\Marijn\scan174612\\'
 binary_threshold = 15200
 
 # %% load data 
@@ -31,9 +31,6 @@ print("nr ROIs, nr images: ", np.shape(roi_counts_matrix))
 
 # Perform binary thresholding: entries above threshold become 1, others become 0
 binary_matrix = (roi_counts_matrix > binary_threshold).astype(int)
-
-print(binary_matrix[:,2])
-print(binary_matrix[:,3])
 
 # Number of image pairs: floor divide by 2
 num_pairs = binary_matrix.shape[1] // 2
@@ -53,10 +50,6 @@ for im_idx in range(num_pairs):
     
     # For ROIs where there was an atom, 1 = atom survived, 0 = atom disappeared
     survival_matrix[mask, im_idx] = final[mask]
-    
-    # calculate avg over all ROIs (global)
-    global_survival = np.nanmean(survival_matrix[:, im_idx])
-    global_survival_matrix[im_idx] = global_survival
 
 # Optional: save survival matrix
 # np.save(os.path.join(images_path, 'survival_matrix.npy'), survival_matrix)
@@ -65,12 +58,13 @@ for im_idx in range(num_pairs):
 # laod x_values. If multiple averages used x values contains duplicates
 df = pd.read_csv(images_path + 'log.csv')
 
-x_values, roi_counts_reshaped = reshape_roi_matrix(df, roi_counts_matrix)
-nr_rois = roi_counts_reshaped.shape[0]
-nr_avg = roi_counts_reshaped.shape[2]
+x_values, survival_matrix_reshaped = reshape_roi_matrix(df, survival_matrix)
+print(len(x_values))
 
+print("nr ROIs, nr_avg, nr_x_values: ", np.shape(survival_matrix_reshaped))
+nr_rois = survival_matrix_reshaped.shape[0]
+nr_avg = survival_matrix_reshaped.shape[2]
 
-print(np.shape(global_survival_matrix))
-plt.plot(global_survival_matrix, 'o-')
+plt.plot(survival_matrix_reshaped[0, :, 0], label='ROI 1')
 plt.show()
 # %%
