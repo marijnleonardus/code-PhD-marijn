@@ -15,20 +15,20 @@ sys.path.append(modules_dir)
 
 # user defined libraries
 from fitting_functions_class import FittingFunctions
-from image_analysis_class import Histograms
+from single_atoms_class import SingleAtoms
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-images_path = 'T:\\KAT1\\Marijn\scan174612\\selection'
+images_path = 'T:\\KAT1\\Marijn\scan174612'
 nr_bins_hist_roi = 15
 nr_bins_hist_avg = 50
 
 # load ROI counts from npy
 # (nr ROIs, nr images)
 roi_counts_matrix = np.load(os.path.join(images_path, 'roi_counts_matrix.npy'))
-print("nr ROIs, nr images: ", np.shape(roi_counts_matrix))
+print("raw data: nr ROIs, nr images: ", np.shape(roi_counts_matrix))
 
 # Plot histograms for each ROI
 nr_rois = np.shape(roi_counts_matrix)[0]
@@ -58,7 +58,7 @@ y_fit = FittingFunctions.double_gaussian(x_fit, *popt)
 # calculate detection threshold
 ampl_0, mu_0, sigma_0 = popt[0], popt[1], popt[2]
 ampl_1, mu_1, sigma_1 = popt[3], popt[4], popt[5]
-detection_threshold = Histograms.calculate_detection_threshold(ampl_0, mu_0, sigma_0, ampl_1, mu_1, sigma_1)
+detection_threshold = SingleAtoms.calculate_histogram_detection_threshold(ampl_0, mu_0, sigma_0, ampl_1, mu_1, sigma_1)
 print("detection threshold", np.round(detection_threshold, 2))
 
 # calculate area of 0 and 1 peaks

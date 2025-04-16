@@ -12,6 +12,7 @@ sys.path.append(modules_dir)
 # user defined libraries
 from fitting_functions_class import FittingFunctions
 from image_analysis_class import ImageStats
+from single_atoms_class import SingleAtoms
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
@@ -19,11 +20,11 @@ os.system('cls' if os.name == 'nt' else 'clear')
 # variables
 images_path = 'T:\\KAT1\\Marijn\scan174612\\'
 MHz = 1e6
+binary_threshold = 15200
 
-# survival probability from npy file as well as x_values
-x_values = np.load(os.path.join(images_path, 'x_values.npy'))
-survival_probability = np.load(os.path.join(images_path, 'survival_probability.npy'))
-print("nr ROIs, nr x_values: ", np.shape(survival_probability))
+# load x values and survival probability 
+x_values, survival_probability = SingleAtoms.calculate_survival_probability(images_path, binary_threshold)
+print("sorted data: nr ROIs, nr x_values: ", np.shape(survival_probability))
 
 nr_rois = survival_probability.shape[0]
 
