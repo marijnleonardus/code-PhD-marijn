@@ -311,4 +311,20 @@ class AbsorptionImage:
         # avoid negative number
         optical_density = np.maximum(optical_density, 0)
         return optical_density
+
+
+class ImageStats():
+    @staticmethod
+    def calculate_uniformity(input_vector):
+        """calculate uniformity in intensities for example
+        from https://doi.org/10.1364/OE.15.001913
+
+        Args:
+            input_vector (np array): 1d array of pixel values
+        Returns:
+            uniformity (float): uniformity value between 0 and 1. 1 = perfect uniformity
+        """    
+
+        uniformity = 1 - (max(input_vector) - min(input_vector))/(max(input_vector) + min(input_vector))
+        return uniformity
     
