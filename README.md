@@ -7,4 +7,4 @@ The working directory should be set to the parent folder `code-PhD-marijn` for t
 
 Plots will be saved under `output` folder. 
 
-`Modules` folder contains functions/classes that are imported in the functional scripts under `plotting_scripts` and `calculation_scripts`. 
+`Modules` folder contains functions/classes that are imported in the individual `scripts`
