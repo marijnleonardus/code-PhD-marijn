@@ -1,7 +1,8 @@
 # author: Marijn Venderbosch
-# july 2024
+# july 2024 - April 2025
 
-# %% 
+#%% imports
+
 import numpy as np
 import os
 import matplotlib.pyplot as plt
@@ -15,20 +16,19 @@ sys.path.append(modules_dir)
 
 # user defined libraries
 from camera_image_class import CameraImage
-from image_analysis_class import RoiCounts
+from single_atoms_class import ROIs
+
+#%% load data
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
 
-# %% variables
-
+# variables
 rois_radius = 2  # ROI size. Radius 1 means 3x3 array
-images_path = 'T:\\KAT1\\Marijn\scan174612'
+images_path = 'Z:\\Strontium\\Images\\2025-04-17\\scan131340\\'  # path to images
 file_name_suffix = 'image'  # import files ending with image.tif
 log_threshold = 10 # laplacian of gaussian kernel sensitivity
-weight_center_pixel = 3
-
-#%% import images 
+weight_center_pixel = 1
 
 # images without cropping ('raw' data)
 image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
@@ -39,7 +39,8 @@ if np.shape(image_stack)[0] == 0:
 else:
     print("nr images, pixels, pixels", np.shape(image_stack))
 
-# %% 
+# %% detect spots and compute ROI counts
+
 # detect laplacian of gaussian spot locations from avg. over all images
 z_project = np.mean(image_stack, axis=0)
 spots_LoG = blob_log(z_project, max_sigma=3, min_sigma=1, num_sigma=3, threshold=log_threshold)
@@ -56,13 +57,18 @@ fig1.show()
 ax1.set_title('Average image and LoG detected spots')
 
 # compute nr of counts in each ROI 
-ROI = RoiCounts(weight_center_pixel, rois_radius)
-rois_matrix, roi_counts_matrix = ROI.compute_pixel_sum_counts(images_list, y_coor, x_coor)
+ROIcounts = ROIs(rois_radius, weight_center_pixel)
+rois_matrix, roi_counts_matrix = ROIcounts.compute_pixel_sum_counts(images_list, y_coor, x_coor)
 
 # plot average pixel box for ROI 1 to check everything went correctly
-ROI.plot_average_of_roi(rois_matrix[0, :, :, :])
+ROIcounts.plot_average_of_roi(rois_matrix[0, :, :, :])
 
 # save ROIs couns in 2d np array (nr_rois, nr_images)
 np.save(os.path.join(images_path, 'roi_counts_matrix.npy'), roi_counts_matrix)
 
+# %% reshape roi_counts_matrix to average over multiple images with identical settings
+
+
 plt.show()
+
+# %%

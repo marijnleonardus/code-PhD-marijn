@@ -220,4 +220,4 @@ class ImageStats():
 
         uniformity = 1 - (max(input_vector) - min(input_vector))/(max(input_vector) + min(input_vector))
         return uniformity
-    
+

@@ -20,7 +20,8 @@ sys.path.append(modules_dir)
 
 # user defined libraries
 from fitting_functions_class import FittingFunctions
-from data_handling_class import reshape_roi_matrix
+from single_atoms_class import SingleAtoms
+from data_handling_class import sort_raw_measurements
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
@@ -35,15 +36,19 @@ MHz = 1e6
 # load ROI counts from npy
 # (nr ROIs, nr images)
 roi_counts_matrix = np.load(os.path.join(images_path, 'roi_counts_matrix.npy'))
-print("nr ROIs, nr images: ", np.shape(roi_counts_matrix))
+print("raw data: (nr ROIs, nr images): ", np.shape(roi_counts_matrix))
 
 # reshape roi_counts_matrix depending on the number of averages
 # laod x_values. If multiple averages used x values contains duplicates
 df = pd.read_csv(images_path + 'log.csv')
 
-x_values, roi_counts_reshaped = reshape_roi_matrix(df, roi_counts_matrix)
-nr_rois = roi_counts_reshaped.shape[0]
-nr_avg = roi_counts_reshaped.shape[2]
+# sort raw measurement data based on x values
+nr_avg, x_values, roi_counts_sorted = sort_raw_measurements(df, roi_counts_matrix)
+
+# reshape sorted data from 2D to 3D array
+nr_rois = int(np.shape(roi_counts_sorted)[0])
+roi_counts_reshaped = np.reshape(roi_counts_sorted, (nr_rois, len(x_values), nr_avg))
+print("reshaped data: (nr ROIs, nr x values, nr images): ", np.shape(roi_counts_reshaped))
 
 # compute average by summing over repeated values 
 counts_avg_perroi = np.mean(roi_counts_reshaped, axis=2)

@@ -12,15 +12,15 @@ sys.path.append(modules_dir)
 # user defined modules
 from image_analysis_class import ManipulateImage
 from math_class import Math
-from data_handling_class import reshape_roi_matrix
+from data_handling_class import sort_raw_measurements
 
 
-class RoiCounts:
-    def __init__(self, center_weight, roi_radius):
-        self.center_weight = center_weight
-        self.roi_radius = roi_radius
+class ROIs:
+    def __init__(self, roi_radius, center_weight):
+        self.center_weight = center_weight  
+        self.roi_radius = roi_radius  # ROI size. Radius 1 means 3x3 array
 
-    def weighted_count_roi(self, pixel_box):
+    def weighted_count_roi(self, pixel_box: np.ndarray):
         """compute weighted sum of counts in a pixel box using element wise multiplication 
 
         Args:
@@ -101,11 +101,18 @@ class RoiCounts:
         ax.imshow(average_image)
         ax.set_title('Average pixel box for ROI 0')
 
-
-class SingleAtoms:
-    def calculate_histogram_detection_threshold(ampl0: float, mu0: float, sigma0: float, ampl1: float, mu1: float, sigma1: float):
+    @staticmethod
+    def calculate_histogram_detection_threshold(fit_params: np.ndarray):
         """calculate detection threshold for double gaussian fit
         found by settings g1(x) = g2(x) and solving for x (ABC formula)"""
+
+        # obtain fit parameters
+        ampl0 = fit_params[0]
+        mu0 = fit_params[1]
+        sigma0 = fit_params[2]
+        ampl1 = fit_params[3]
+        mu1 = fit_params[4]
+        sigma1 = fit_params[5]
 
         A = 1/(2*sigma0**2)-1/(2*sigma1**2)
         B = mu1/sigma1**2 - mu0/sigma0**2
@@ -119,7 +126,13 @@ class SingleAtoms:
         valid_sol = np.round(valid_sol, 0)
         return valid_sol
     
-    def calculate_survival_probability(images_path, binary_threshold):
+
+class SingleAtoms():
+    def __init__(self, binary_threshold, images_path):
+        self.images_path = images_path
+        self.binary_threshold = binary_threshold
+    
+    def calculate_survival_probability_binary(self):
         """
         Calculate the survival probability of atoms in ROIs based on ROI counts matrix and binary threshold.
         Images 0, 3, 5, etc. are initial images, and images 1, 2, 4, etc. are final images.
@@ -130,20 +143,22 @@ class SingleAtoms:
         - binary_threshold (int): Threshold for binary classification of ROI counts.
         
         Returns:
-        - survival_probability (numpy.ndarray): Survival matrix indicating survival status of atoms in ROIs.
+        - survival_matrix_binary (numpy.ndarray): 
+            Survival matrix indicating survival status of atoms in ROIs as 0 or 1
         """
-        roi_counts_matrix = np.load(os.path.join(images_path, 'roi_counts_matrix.npy'))
+        print(self.images_path)
+        roi_counts_matrix = np.load(os.path.join(self.images_path, 'roi_counts_matrix.npy'))
         print("raw data: nr ROIs, nr images: ", np.shape(roi_counts_matrix))
 
         # Perform binary thresholding: entries above threshold become 1, others become 0
-        binary_matrix = (roi_counts_matrix > binary_threshold).astype(int)
+        binary_matrix = (roi_counts_matrix > self.binary_threshold).astype(int)
 
         # Number of image pairs: floor divide by 2
-        num_pairs = binary_matrix.shape[1] // 2
+        num_pairs = binary_matrix.shape[1]//2
 
         # Initialize survival matrix with NaNs (undefined by default)
         # Using a floating-point array allows us to use np.nan
-        survival_matrix = np.full((binary_matrix.shape[0], num_pairs), np.nan, dtype=float)
+        survival_matrix_binary = np.full((binary_matrix.shape[0], num_pairs), np.nan, dtype=float)
 
         # Process each pair of images
         for im_idx in range(num_pairs):
@@ -153,14 +168,22 @@ class SingleAtoms:
             # Create a mask for ROIs that had an atom initially
             # For ROIs where there was an atom, 1 = atom survived, 0 = atom disappeared
             mask = (initial == 1)
-            survival_matrix[mask, im_idx] = final[mask]
-
-        # reshape roi_counts_matrix depending on the number of averages
-        # laod x_values. If multiple averages used x values contains duplicates
-        df = pd.read_csv(images_path + 'log.csv')
-        x_values, survival_matrix_sorted = reshape_roi_matrix(df, survival_matrix)
+            survival_matrix_binary[mask, im_idx] = final[mask]
+        return survival_matrix_binary
+    
+    def calculate_avg_survival(self, df):
+        # sort the binary matrix based on x values
+        survival_matrix_binary = self.calculate_survival_probability_binary()
+        nr_avg, x_values, survival_matrix_sorted = sort_raw_measurements(df, survival_matrix_binary)
+    
+        # Reshape now that duplicates are consecutive
+        nr_rois = np.shape(survival_matrix_binary)[0]
+        survival_matrix = survival_matrix_sorted.reshape(nr_rois, len(x_values), nr_avg)
 
         # compute average by summing over repeated values
-        survival_probability = np.nanmean(survival_matrix_sorted, axis=2)
+        survival_probability = np.nanmean(survival_matrix, axis=2)
         return x_values, survival_probability
     
+
+if __name__ == "__main__":
+    TestInstance = ROIs(2, 3)

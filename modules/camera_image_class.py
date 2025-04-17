@@ -78,6 +78,26 @@ class CameraImage:
         return nr_pixels
 
 
+class EMCCD:
+    @staticmethod
+    def counts_to_photons(emccd_counts, background_counts):
+        """convert EMCCD counts to photons using the relation from EMCCD manual
+
+        Args:
+            emccd_counts (float): EMCCD counts
+
+        Returns:
+            photons (float): number of photons
+        """
+        
+        sensitivity = 3.78 # electrons per A/D count for pre-amp setting 2
+        em_gain = 300 
+        quantum_efficiency = 0.8
+
+        nr_photons = (emccd_counts - background_counts)*sensitivity/(em_gain*quantum_efficiency)
+        return nr_photons
+
+
 def main():
     "for debugging the load_image_from_file function"
     folder_path = r"Z://Strontium//Images//2024-10-21//442187//"

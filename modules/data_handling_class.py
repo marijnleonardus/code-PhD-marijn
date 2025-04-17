@@ -76,23 +76,29 @@ def compute_avg_std(csv_file):
     return results
 
 
-def reshape_roi_matrix(df_x_values, counts_matrix):
-    """Reshape the roi_counts_matrix based on the x_values from the log.csv file.
+def sort_raw_measurements(df, input_matrix):
+    """given the df which contains the ordering of x values, sort the input matrix accordingly
+
+    Args:
+        input_matrix (np.ndarray): matrix to be sorted (e.g. y values corresponding to x values)
+
+    Returns:
+        nr_avg (int): nr of identical measurements per unique x
+        x_values_unique: number of unique x 
+        matrix_sorted: sorted the input matrix based on x values
     """
-
-    x_values_duplicates = df_x_values.iloc[:, 0].to_numpy() 
+    # sort based on x values and get unique x values 
+    x_values_duplicates = df.iloc[:, 0].to_numpy() 
     sort_idx = np.argsort(x_values_duplicates)
-    sorted_counts_matrix = counts_matrix[:, sort_idx]
-
-    # Now get unique sorted x values
     sorted_x = x_values_duplicates[sort_idx]
-    x_values = np.unique(sorted_x)
+    x_values_unique = np.unique(sorted_x)
 
-    # Reshape now that duplicates are consecutive
-    nr_avg = int(len(sorted_x)/len(x_values))
-    nr_rois = np.shape(counts_matrix)[0]
-    counts_matrix_reshaped = sorted_counts_matrix.reshape(nr_rois, len(x_values), nr_avg)
-    return x_values, counts_matrix_reshaped
+    # compute nr of identical x values
+    nr_avg = int(len(sorted_x)/len(x_values_unique))
+
+    # sort the matrix based on x values
+    matrix_sorted = input_matrix[:, sort_idx]
+    return nr_avg, x_values_unique, matrix_sorted
 
 
 def main():

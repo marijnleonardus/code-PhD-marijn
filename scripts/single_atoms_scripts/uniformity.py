@@ -2,6 +2,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+import pandas as pd
 
 # append path with 'modules' dir in parent folder
 import sys
@@ -13,7 +14,6 @@ sys.path.append(modules_dir)
 from fitting_functions_class import FittingFunctions
 from image_analysis_class import ImageStats
 from single_atoms_class import SingleAtoms
-
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -21,9 +21,15 @@ os.system('cls' if os.name == 'nt' else 'clear')
 images_path = 'T:\\KAT1\\Marijn\scan174612\\'
 MHz = 1e6
 binary_threshold = 15200
+roi_radius = 1
+center_weight = 3
 
-# load x values and survival probability 
-x_values, survival_probability = SingleAtoms.calculate_survival_probability(images_path, binary_threshold)
+# load x values 
+df = pd.read_csv(images_path + 'log.csv')
+
+# calculate survival probability from x values, threshold and images list
+SingleAtomsStats = SingleAtoms(binary_threshold, images_path)
+x_values, survival_probability = SingleAtomsStats.calculate_avg_survival(df)
 print("sorted data: nr ROIs, nr x_values: ", np.shape(survival_probability))
 
 nr_rois = survival_probability.shape[0]
@@ -51,7 +57,7 @@ for roi_idx in range(nr_rois):
 
 fig1.supxlabel('Detuning [MHz]')
 fig1.supylabel('Survival probabiility')
-#plt.show()
+plt.show()
 
 detunings = np.array([arr[2] for arr in popt_list])
 avg_detuning = np.mean(detunings)
