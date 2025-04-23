@@ -28,7 +28,7 @@ MHz=1e6
 # variables
 lamb=813e-9 # m
 waist_diff_limited=0.8e-6 # m
-diff_stark_measured_J=-3.4*MHz*h # J
+diff_stark_measured_J=-3.37*MHz*h # J
 number_traps = 5*5
 beam_power = 340*1e-3*0.95/number_traps # W
 
@@ -40,7 +40,7 @@ polarizability_ground_si = polarizability_ground_au*pol_atomic_units
 U0_measured_g_J = diff_stark_measured_J/(polarizability_3p1_au/polarizability_ground_au - 1)
 
 # print trap depth in mK. 
-print("measured U0 ground state: ", round(U0_measured_g_J/Boltzmann*1e3, 1), "mK or ",
+print("measured U0 ground state: ", round(U0_measured_g_J/Boltzmann*1e3, 2), "mK or ",
     round(U0_measured_g_J/h/1e6, 1), "MHz")
 
 # calculate theory stark shift
@@ -49,7 +49,7 @@ intensity_diff_limited = DiffractionLimitedTweezer.get_intensity()
 
 AtomCalc = AtomicCalculations(pol_atomic_units)
 U0_theory_g_J = AtomCalc.ac_stark_shift(polarizability_ground_au, intensity_diff_limited)
-print("diffraction limited U0 ground state: ", round(U0_theory_g_J/Boltzmann*1e3, 1),
+print("diffraction limited U0 ground state: ", round(U0_theory_g_J/Boltzmann*1e3, 2),
     "mK or ", round(U0_theory_g_J/h/1e6, 1), "MHz")
 
 # calculate waist from diff. limited vs measured trap depth

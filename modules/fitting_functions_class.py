@@ -118,3 +118,19 @@ class FittingFunctions:
         sigma = np.sqrt(sigma_0**2 + Boltzmann*T/sr_mass*t**2)
         return sigma
         
+    @staticmethod
+    def lorentzian(x, offset, amplitude, middle, width):
+        """returns lorentzian function with standard parameters
+
+        arguments:
+        - x (np.array): input data
+        - offset (float): offset from y=0
+        - amplitude(float): the amplitude of the lorentzian
+        - middle (float): x0
+        - width (float): gamma
+        
+        returns: 
+        - lorentzian1d (np.array): lorentzian function
+        """
+        lorentzian1d = offset + amplitude*width**2/((x - middle)**2 + width**2)
+        return lorentzian1d
