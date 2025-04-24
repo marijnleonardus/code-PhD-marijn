@@ -134,3 +134,4 @@ class FittingFunctions:
         """
         lorentzian1d = offset + amplitude*width**2/((x - middle)**2 + width**2)
         return lorentzian1d
+    

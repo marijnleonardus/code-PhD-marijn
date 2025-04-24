@@ -26,7 +26,7 @@ os.system('cls' if os.name == 'nt' else 'clear')
 # %% 
 
 # variables
-images_path = 'Z:\\Strontium\\Images\\2025-04-17\\scan131340\\'
+images_path = 'Z:\\Strontium\\Images\\2025-04-01\\scan104728\\'
 nr_bins_hist_roi = 25
 nr_bins_hist_avg = 50
 
@@ -53,11 +53,13 @@ counts_matrix = roi_counts_matrix.ravel()
 # fit histogram with gaussian function
 hist_vals, bin_edges = np.histogram(counts_matrix, bins=nr_bins_hist_avg)
 bin_centers = (bin_edges[:-1] + bin_edges[1:])/2 
-initial_guess = [max(hist_vals), np.mean(counts_matrix)*0.8, np.std(counts_matrix)*0.5, max(hist_vals)/2, np.mean(counts_matrix)*1.2, np.std(counts_matrix)*0.5]
-popt, _ = curve_fit(FittingFunctions.double_gaussian, bin_centers, hist_vals, p0=initial_guess)
+initial_guess = [max(hist_vals), np.mean(counts_matrix)*0.8, np.std(counts_matrix)*0.5, max(hist_vals)/4, np.mean(counts_matrix)*1.2, np.std(counts_matrix)]
+fit_boundaries = (0, [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
+popt, _ = curve_fit(FittingFunctions.double_gaussian, bin_centers, hist_vals, p0=initial_guess, bounds=fit_boundaries)
 
 ampl_0, mu_0, sigma_0 = popt[0], popt[1], popt[2]
 ampl_1, mu_1, sigma_1 = popt[3], popt[4], popt[5]
+print(popt)
 
 # %% 
 
@@ -73,7 +75,7 @@ print("detection threshold", np.round(detection_treshold_counts, 2))
 area_0 = np.sqrt(2*pi)*ampl_0*sigma_0
 area_1 = np.sqrt(2*pi)*ampl_1*sigma_1
 area_1_ratio = area_1/(area_0 + area_1)
-print("area of peak 1 atom", np.round(area_1_ratio, 3)*100, "%")
+print("area of peak 1 atom", 100*np.round(area_1_ratio, 3), "%")
 
 # plot avg histogram using EMCCD counts as x axis
 fig2, ax2 = plt.subplots()
