@@ -17,15 +17,13 @@ sys.path.append(modules_dir)
 from fitting_functions_class import FittingFunctions
 from single_atoms_class import ROIs
 from camera_image_class import EMCCD
-from calculate_roi_counts_plot_avg import calculate_roi_counts
+from single_atoms_class import calculate_roi_counts
 
-# clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
 images_path = 'Z:\\Strontium\\Images\\2025-04-01\\scan104728\\'
 file_name_suffix = 'image'  # import files ending with image.tif
-
 nr_bins_hist_roi = 25
 nr_bins_hist_avg = 50
 

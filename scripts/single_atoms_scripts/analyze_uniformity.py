@@ -19,6 +19,7 @@ sys.path.append(modules_dir)
 from fitting_functions_class import FittingFunctions
 from image_analysis_class import ImageStats
 from single_atoms_class import SingleAtoms
+
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
 

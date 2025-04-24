@@ -18,6 +18,7 @@ sys.path.append(modules_dir)
 from fitting_functions_class import FittingFunctions
 
 
+
 class ManipulateImage:
     """to do; need to merge some of these cropping functions that are similar
     crop_array_edge and crop_array_center can be static methods i think"""
@@ -220,4 +221,3 @@ class ImageStats():
 
         uniformity = 1 - (max(input_vector) - min(input_vector))/(max(input_vector) + min(input_vector))
         return uniformity
-
