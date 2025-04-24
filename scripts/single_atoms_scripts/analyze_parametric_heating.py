@@ -1,3 +1,8 @@
+# author marijn Venderbosch
+# April 2025
+
+"""first run histogram_and_threshold.py """
+
 import numpy as np
 import os
 import matplotlib.pyplot as plt
@@ -19,6 +24,8 @@ os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
 images_path = 'Z:\\Strontium\\Images\\2025-04-11\\scan154316\\'
+file_name_suffix = 'image'  # import files ending with image.tif
+
 kHz = 1e3
 binary_threshold = 13200
 roi_radius = 1

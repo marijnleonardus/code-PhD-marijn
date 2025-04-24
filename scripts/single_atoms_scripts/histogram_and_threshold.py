@@ -1,8 +1,6 @@
 # author: Marijn Venderbosch
 # April 2025
 
-# %%
-
 import numpy as np
 import os
 import matplotlib.pyplot as plt
@@ -19,20 +17,20 @@ sys.path.append(modules_dir)
 from fitting_functions_class import FittingFunctions
 from single_atoms_class import ROIs
 from camera_image_class import EMCCD
+from calculate_roi_counts_plot_avg import calculate_roi_counts
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
 
-# %% 
-
 # variables
 images_path = 'Z:\\Strontium\\Images\\2025-04-01\\scan104728\\'
+file_name_suffix = 'image'  # import files ending with image.tif
+
 nr_bins_hist_roi = 25
 nr_bins_hist_avg = 50
 
-# load ROI counts from npy
-# (nr ROIs, nr images)
-roi_counts_matrix = np.load(os.path.join(images_path, 'roi_counts_matrix.npy'))
+# load ROI counts matrix using dedicated function
+roi_counts_matrix = calculate_roi_counts(images_path, file_name_suffix)
 print("raw data: (nr ROIs, nr images): ", np.shape(roi_counts_matrix))
 
 # Plot histograms for each ROI
@@ -61,8 +59,6 @@ ampl_0, mu_0, sigma_0 = popt[0], popt[1], popt[2]
 ampl_1, mu_1, sigma_1 = popt[3], popt[4], popt[5]
 print(popt)
 
-# %% 
-
 # x values for plotting the fitted curve
 x_fit_counts = np.linspace(bin_centers[0], bin_centers[-1], 1000)
 y_fit_counts = FittingFunctions.double_gaussian(x_fit_counts, *popt)
@@ -90,8 +86,6 @@ ax2.axvline(detection_treshold_counts, color='grey', linestyle='--', label='Dete
 plt.legend()
 plt.tight_layout()
 
-# %%
-
 # same histogram but rescaled in terms of photon number 
 photons_matrix = EMCCD.counts_to_photons(counts_matrix, mu_0)
 detection_threshold_photons = EMCCD.counts_to_photons(detection_treshold_counts, mu_0)
@@ -111,4 +105,3 @@ plt.legend()
 plt.tight_layout()
 
 plt.show()
-# %%
