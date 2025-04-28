@@ -32,6 +32,8 @@ um = 1e-6 # m
 #%%
 
 z_project = np.mean(image_stack, axis=0)
+random_image = image_stack[36]
+
 pixels_x = z_project.shape[0]
 roi_size_x = CameraImage.pixels_to_m(pixels_x, magnification, pixel_size,bin_factor)
 
@@ -40,11 +42,18 @@ roi_size_y = CameraImage.pixels_to_m(pixels_y, magnification, pixel_size, bin_fa
 
 # %% plotting'
 
-fig1, ax1 = plt.subplots()
-ax1.imshow(z_project, cmap='gist_yarg', extent=[0, roi_size_x/um, 0, roi_size_y/um])
+fig1, (ax1, ax2) = plt.subplots(1, 2)
+fig1.subplots_adjust(wspace=0.5)  # Adjust horizontal space between subplots
+
+ax1.imshow(random_image, cmap='gist_yarg', extent=[0, roi_size_x/um, 0, roi_size_y/um])
 ax1.set_xlabel('x (um)')
 ax1.set_ylabel('y (um)')
 ax1.tick_params(axis='both', direction='in')  
+
+ax2.imshow(z_project, cmap='gist_yarg', extent=[0, roi_size_x/um, 0, roi_size_y/um])
+ax2.set_xlabel('x (um)')
+ax2.set_ylabel('y (um)')
+ax2.tick_params(axis='both', direction='in')  
 
 Plotting().savefig('output', 'tweezers_avg_image.png')
 # %%
