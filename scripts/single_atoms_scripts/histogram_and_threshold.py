@@ -17,18 +17,20 @@ sys.path.append(modules_dir)
 from fitting_functions_class import FittingFunctions
 from single_atoms_class import ROIs
 from camera_image_class import EMCCD
-from single_atoms_class import calculate_roi_counts
 
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
 images_path = 'Z:\\Strontium\\Images\\2025-04-01\\scan104728\\'
 file_name_suffix = 'image'  # import files ending with image.tif
-nr_bins_hist_roi = 25
+nr_bins_hist_roi = 30
 nr_bins_hist_avg = 50
+roi_radius = 1
+center_weight = 3
 
 # load ROI counts matrix using dedicated function
-roi_counts_matrix = calculate_roi_counts(images_path, file_name_suffix)
+ROIsObject = ROIs(roi_radius, center_weight)
+roi_counts_matrix = ROIsObject.calculate_roi_counts(images_path, file_name_suffix)
 print("raw data: (nr ROIs, nr images): ", np.shape(roi_counts_matrix))
 
 # Plot histograms for each ROI
