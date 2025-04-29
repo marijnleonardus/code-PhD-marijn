@@ -101,6 +101,21 @@ def sort_raw_measurements(df, input_matrix):
     return nr_avg, x_values_unique, matrix_sorted
 
 
+def compute_error_bernouilli(nr_avg, population):
+    """compute the error of a Bernouilli distribution
+
+    Args:
+        nr_avg (int): number of identical measurements per unique x value
+        population (np.ndarray): population of y values
+
+    Returns:
+        error (np.ndarray): error of the Bernouilli distribution
+    """
+    # compute the error of the Bernouilli distribution
+    error = np.sqrt(population*(1-population)/nr_avg)
+    return error
+
+
 def main():
     file_path = r"\\physstor\cqt-t\KAT1\Comb_measurements"
     file_name = r"AU06792-log_reprate_beat.csv"

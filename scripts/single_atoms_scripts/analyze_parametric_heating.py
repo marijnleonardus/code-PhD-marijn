@@ -36,28 +36,30 @@ df = pd.read_csv(images_path + 'log.csv')
 
 # calculate survival probability from x values, threshold and images list
 SingleAtomsStats = SingleAtoms(binary_threshold, images_path)
-x_values, survival_probability = SingleAtomsStats.calculate_avg_survival(df)
-print("sorted data: nr ROIs, nr x_values: ", np.shape(survival_probability))
+x_values, surv_prob, error_surv_prob = SingleAtomsStats.calculate_avg_sem_survival(df)
+print("sorted data: nr ROIs, nr x_values: ", np.shape(surv_prob))
 
 # average over all ROIs
-global_survival_probability = np.nanmean(survival_probability, axis=0)
+nr_rois = np.shape(surv_prob)[0]
+global_surv_prob = np.nanmean(surv_prob, axis=0)
+error_global_surv_prob = np.nanmean(error_surv_prob, axis=0)/np.sqrt(nr_rois)
+print(error_global_surv_prob)
 
 fig1, ax1 = plt.subplots()
-ax1.scatter(x_values/kHz, global_survival_probability)
+ax1.errorbar(x_values/kHz, global_surv_prob, yerr=error_global_surv_prob, fmt='o', color='blue', label='survival probability')
 
 # fit surv. probability and plot
 initial_guess = [0.95, 0.5, 90e3, 1e3] #  offset, amplitude, middle, width
-popt, pcov = curve_fit(FittingFunctions.lorentzian, x_values, global_survival_probability, p0=initial_guess)
+popt, pcov = curve_fit(FittingFunctions.lorentzian, x_values, global_surv_prob, p0=initial_guess)
 x_axis_fit = np.linspace(x_values[0], x_values[-1], 500)
 ax1.plot(x_axis_fit/kHz, FittingFunctions.lorentzian(x_axis_fit, *popt), color='red')
 
 ax1.set_xlabel('Modulation Freq.  [kHz]')
 ax1.set_ylabel('Survival probabiility')
-plt.show()
 
 fit_center = popt[2]
 estimate_trap_freq = popt[2]/1.8 # factor 1.8 instead of 2 for anharmonicity of trap
 print("fit result:" , np.round(fit_center/kHz,2), "kHz")
 print("estimate trap frequency: ", np.round(estimate_trap_freq/kHz, 2), "kHz")
 
-Plotting().savefig('output//','survival_probability_fit.png')
+Plotting().savefig('output//','surv_prob_fit.png')

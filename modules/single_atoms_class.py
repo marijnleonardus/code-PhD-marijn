@@ -10,9 +10,8 @@ modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 sys.path.append(modules_dir)
 
 # user defined modules
-from image_analysis_class import ManipulateImage
 from math_class import Math
-from data_handling_class import sort_raw_measurements
+from data_handling_class import sort_raw_measurements, compute_error_bernouilli
 from typing import Union
 from camera_image_class import CameraImage
 from skimage.feature import blob_log
@@ -189,7 +188,10 @@ class SingleAtoms():
             survival_matrix_binary[mask, im_idx] = final[mask]
         return survival_matrix_binary
     
-    def calculate_avg_survival(self, df):
+    def calculate_avg_sem_survival(self, df):
+        """calculate avg and error of survival probability for each x value
+        based on the binary survival matrix
+        """
         # sort the binary matrix based on x values
         survival_matrix_binary = self.calculate_survival_probability_binary()
         nr_avg, x_values, survival_matrix_sorted = sort_raw_measurements(df, survival_matrix_binary)
@@ -199,9 +201,12 @@ class SingleAtoms():
         survival_matrix = survival_matrix_sorted.reshape(nr_rois, len(x_values), nr_avg)
 
         # compute average by summing over repeated values
-        survival_probability = np.nanmean(survival_matrix, axis=2)
-        return x_values, survival_probability
-    
+        surv_prob = np.nanmean(survival_matrix, axis=2)
+
+        # compute error
+        sem_surv_prob = compute_error_bernouilli(nr_avg, surv_prob)
+        return x_values, surv_prob, sem_surv_prob
+
 
 def main():
     # variables

@@ -33,16 +33,17 @@ df = pd.read_csv(images_path + 'log.csv')
 
 # calculate survival probability from x values, threshold and images list
 SingleAtomsStats = SingleAtoms(binary_threshold, images_path)
-x_values, survival_probability = SingleAtomsStats.calculate_avg_survival(df)
+x_values, survival_probability, err_survival_probability = SingleAtomsStats.calculate_avg_sem_survival(df)
 print("sorted data: nr ROIs, nr x_values: ", np.shape(survival_probability))
-print(survival_probability)
+
 # average over all ROIs
 global_survival_probability = np.nanmean(survival_probability, axis=0)
+nr_rois = np.shape(survival_probability)[0]
+global_err_survival_probability = np.nanmean(err_survival_probability, axis=0)/np.sqrt(nr_rois)
 
 fig1, ax1 = plt.subplots()
-ax1.scatter(x_values/us, global_survival_probability)
+ax1.errorbar(x_values/us, global_survival_probability, yerr=global_err_survival_probability, fmt='o', color='blue', label='survival probability')
 ax1.set_xlabel(r'Release time [$\mu$s]')
 ax1.set_ylabel('Survival probabiility')
-plt.show()
 
-#Plotting().savefig('output//','survival_probability_fit.png') 
+Plotting().savefig('output//','release_recapture_fit.png') 
