@@ -19,6 +19,7 @@ sys.path.append(modules_dir)
 from fitting_functions_class import FittingFunctions
 from image_analysis_class import ImageStats
 from single_atoms_class import SingleAtoms
+from plotting_class import Plotting
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
@@ -35,10 +36,10 @@ df = pd.read_csv(images_path + 'log.csv')
 
 # calculate survival probability from x values, threshold and images list
 SingleAtomsStats = SingleAtoms(binary_threshold, images_path)
-x_values, survival_probability = SingleAtomsStats.calculate_avg_survival(df)
-print("sorted data: nr ROIs, nr x_values: ", np.shape(survival_probability))
+x_values, surv_prob, sem_surv_prob, _ = SingleAtomsStats.calculate_avg_sem_survival(df)
+print("sorted data: nr ROIs, nr x_values: ", np.shape(surv_prob))
 
-nr_rois = survival_probability.shape[0]
+nr_rois = surv_prob.shape[0]
 
 # plot for each ROI the survival plobability as function of detuning and fit with Gaussian
 fig1, axs = plt.subplots(figsize = (10, 8), sharex=True, sharey=True,
@@ -53,22 +54,26 @@ popt_list = []
 x_axis_fit = np.linspace(x_values[0], x_values[-1], 500)
 
 for roi_idx in range(nr_rois):
-    axs[roi_idx].scatter(x_values/MHz, survival_probability[roi_idx, :])
+    axs[roi_idx].errorbar(x_values/MHz, surv_prob[roi_idx, :], sem_surv_prob[roi_idx, :],
+        fmt='o', capsize=1, capthick=1)
     axs[roi_idx].set_title(f'ROI {roi_idx}')
 
     # fit datapoints and plot result
-    popt, pcov = curve_fit(FittingFunctions.gaussian_function, x_values, survival_probability[roi_idx, :], p0=initial_guess)
+    popt, pcov = curve_fit(FittingFunctions.gaussian_function, x_values, surv_prob[roi_idx, :], p0=initial_guess)
     popt_list.append(popt)
     axs[roi_idx].plot(x_axis_fit/MHz, FittingFunctions.gaussian_function(x_axis_fit, *popt), color='red')
 
 fig1.supxlabel('Detuning [MHz]')
 fig1.supylabel('Survival probabiility')
-plt.show()
 
+# calculate uniformity
 detunings = np.array([arr[2] for arr in popt_list])
 avg_detuning = np.mean(detunings)
 std_deviation_detuning = np.std(detunings)
 uniformity = ImageStats.calculate_uniformity(detunings)
+
 print("Fit position:  ", np.round(avg_detuning/MHz, 2), "p/m ", np.round(std_deviation_detuning/MHz, 2), "MHz")
 print("Standard deviation: ", 100*np.round(std_deviation_detuning/avg_detuning, 3), "%")
 print("uniformity: ", np.round(uniformity, 3))
+
+Plotting.savefig('output//','uniformity_plot.png')

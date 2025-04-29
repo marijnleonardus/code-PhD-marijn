@@ -135,3 +135,21 @@ class FittingFunctions:
         lorentzian1d = offset + amplitude*width**2/((x - middle)**2 + width**2)
         return lorentzian1d
     
+    @staticmethod
+    def damped_sin_wave(t, A, gamma, f, phase, offset):
+        """damped sin for trap freq. measurement
+
+        Args:
+            t (np.ndarray): time array
+            A (float): 
+            gamma (float): 
+            f (float): 
+            phase (float): 
+            offset (float): 
+
+        Returns:
+            damp_sin: 
+        """
+        damp_sin = offset + A*np.exp(-gamma*t)*np.sin(2*np.pi*f*t + phase) 
+        return damp_sin
+    

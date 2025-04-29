@@ -15,7 +15,6 @@ from data_handling_class import sort_raw_measurements, compute_error_bernouilli
 from typing import Union
 from camera_image_class import CameraImage
 from skimage.feature import blob_log
- 
 
 
 class ROIs:
@@ -163,8 +162,7 @@ class SingleAtoms():
         - survival_matrix_binary (numpy.ndarray): 
             Survival matrix indicating survival status of atoms in ROIs as 0 or 1
         """
-        print(self.images_path)
-        roi_counts_matrix = np.load(os.path.join(self.images_path, 'roi_counts_matrix.npy'))
+        roi_counts_matrix = np.load(self.images_path + 'roi_counts_matrix.npy')
         print("raw data: nr ROIs, nr images: ", np.shape(roi_counts_matrix))
 
         # Perform binary thresholding: entries above threshold become 1, others become 0
@@ -191,6 +189,15 @@ class SingleAtoms():
     def calculate_avg_sem_survival(self, df):
         """calculate avg and error of survival probability for each x value
         based on the binary survival matrix
+
+        Parameters:
+        - df (pd dataframe): matrix containing raw measurements 
+        
+        Returns:
+        - x_values (np.ndarray): unique x values from the dataframe
+        - surv_prob (np.ndarray): survival probability for each x value
+        - sem_surv_prob (np.ndarray): standard error of the mean for survival probability
+        - sem_global_surv_prob (np.ndarray): global standard error of the mean for survival probability
         """
         # sort the binary matrix based on x values
         survival_matrix_binary = self.calculate_survival_probability_binary()
@@ -205,7 +212,8 @@ class SingleAtoms():
 
         # compute error
         sem_surv_prob = compute_error_bernouilli(nr_avg, surv_prob)
-        return x_values, surv_prob, sem_surv_prob
+        sem_global_surv_prob = np.nanmean(sem_surv_prob, axis=0)/np.sqrt(nr_rois)
+        return x_values, surv_prob, sem_surv_prob, sem_global_surv_prob
 
 
 def main():
