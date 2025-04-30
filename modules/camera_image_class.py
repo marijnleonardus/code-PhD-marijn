@@ -80,8 +80,18 @@ class CameraImage:
 
 
 class EMCCD:
-    @staticmethod
-    def counts_to_photons(emccd_counts, background_counts):
+    def __init__(self):
+        """Initialize the EMCCD with counts and background counts.
+
+        Args:
+            emccd_counts (float): EMCCD counts.
+            background_counts (float): Background counts.
+        """
+        self.em_gain = 300
+        self.quantum_eff = 0.8
+        self.sensitivity = 3.68
+
+    def counts_to_photons(self, emccd_counts, background_counts):
         """convert EMCCD counts to photons using the relation from EMCCD manual
 
         Args:
@@ -90,12 +100,7 @@ class EMCCD:
         Returns:
             photons (float): number of photons
         """
-        
-        sensitivity = 3.78 # electrons per A/D count for pre-amp setting 2
-        em_gain = 300 
-        quantum_efficiency = 0.8
-
-        nr_photons = (emccd_counts - background_counts)*sensitivity/(em_gain*quantum_efficiency)
+        nr_photons = (emccd_counts - background_counts)*self.sensitivity/(self.em_gain*self.quantum_eff)
         return nr_photons
 
 

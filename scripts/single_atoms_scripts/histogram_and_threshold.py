@@ -92,16 +92,17 @@ ax2.axvline(detection_treshold_counts, color='grey', linestyle='--', label='Dete
 fig2.legend()
 
 # same histogram but rescaled in terms of photon number 
-center_0_peak = popt[1]
-photons_matrix = EMCCD.counts_to_photons(counts, center_0_peak)
-detection_threshold_photons = EMCCD.counts_to_photons(detection_treshold_counts, center_0_peak)
-x_fit_photons = EMCCD.counts_to_photons(x_fit_counts, center_0_peak)
+background_counts = popt[1]
+iXon888 = EMCCD()
+photons_matrix = iXon888.counts_to_photons(counts, background_counts)
+detection_threshold_photons = iXon888.counts_to_photons(detection_treshold_counts, background_counts)
+x_fit_photons = iXon888.counts_to_photons(x_fit_counts, background_counts)
 
 # plot scaled histogram
 fig3, ax3 = plt.subplots()
 ax3.set_xlabel('Number of photons')
 ax3.set_ylabel('Occurences')
-ax3.hist(photons_matrix, bins=nr_bins_hist_avg, edgecolor='black') # don't know why i need minus here
+ax3.hist(photons_matrix, bins=nr_bins_hist_avg, edgecolor='black') 
 ax3.grid(True)
 ax3.plot(x_fit_photons, y_fit_counts, 'r-', label='Double Gaussian fit')
 ax3.axvline(detection_threshold_photons, color='grey', linestyle='--', label='Detection threshold')
