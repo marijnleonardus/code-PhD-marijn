@@ -24,7 +24,10 @@ image_stack = CameraImage().import_image_sequence(raw_data_path, raw_data_suffix
 
 #%% variables
 
-magnification = 1.25*50/4
+f_obj = 4e-3 # m
+f_emccd = 50e-3 # m
+M_telescope = 1.25 # magnification of the telescope
+magnification = M_telescope*f_emccd/f_obj # 1.25 is the magnification of the objective lens
 pixel_size = 13e-6
 bin_factor = 1
 um = 1e-6 # m
@@ -46,13 +49,13 @@ fig1, (ax1, ax2) = plt.subplots(1, 2)
 fig1.subplots_adjust(wspace=0.5)  # Adjust horizontal space between subplots
 
 ax1.imshow(random_image, cmap='gist_yarg', extent=[0, roi_size_x/um, 0, roi_size_y/um])
-ax1.set_xlabel('x (um)')
-ax1.set_ylabel('y (um)')
+ax1.set_xlabel(r'x ($\mu$m)')
+ax1.set_ylabel(r'y ($\mu$m)') 
 ax1.tick_params(axis='both', direction='in')  
 
 ax2.imshow(z_project, cmap='gist_yarg', extent=[0, roi_size_x/um, 0, roi_size_y/um])
-ax2.set_xlabel('x (um)')
-ax2.set_ylabel('y (um)')
+ax2.set_xlabel(r'x ($\mu$m)')
+ax2.set_ylabel(r'y ($\mu$m)')
 ax2.tick_params(axis='both', direction='in')  
 
 Plotting().savefig('output', 'tweezers_avg_image.png')
