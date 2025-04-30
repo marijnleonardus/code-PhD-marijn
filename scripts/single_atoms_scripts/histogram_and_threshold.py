@@ -101,10 +101,11 @@ x_fit_photons = iXon888.counts_to_photons(x_fit_counts, background_counts)
 # plot scaled histogram
 fig3, ax3 = plt.subplots()
 ax3.set_xlabel('Number of photons')
-ax3.set_ylabel('Occurences')
-ax3.hist(photons_matrix, bins=nr_bins_hist_avg, edgecolor='black') 
-ax3.grid(True)
-ax3.plot(x_fit_photons, y_fit_counts, 'r-', label='Double Gaussian fit')
+ax3.set_ylabel('Probability')
+ax3.grid()
+ax3.hist(photons_matrix, bins=nr_bins_hist_avg, edgecolor='black', density=True) 
+# at the moment the fit is not rescaled, but it should be
+# ax3.plot(x_fit_photons, y_fit_counts, 'r-', label='Double Gaussian fit')
 ax3.axvline(detection_threshold_photons, color='grey', linestyle='--', label='Detection threshold')
 fig3.legend()
 

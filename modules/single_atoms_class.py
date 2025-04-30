@@ -12,7 +12,7 @@ sys.path.append(modules_dir)
 # user defined modules
 from math_class import Math
 from data_handling_class import sort_raw_measurements, compute_error_bernouilli
-from typing import Union
+from plotting_class import Plotting
 from camera_image_class import CameraImage
 from skimage.feature import blob_log
 
@@ -43,6 +43,14 @@ class ROIs:
 
         return rois
 
+    def plot_single_roi(self, avg_patches):
+        """(optional) quick sanity plot for single ROI, e.g. ROI #0"""
+        fig, ax = plt.subplots()
+        im = ax.imshow(avg_patches[1], cmap='viridis')
+        ax.set_title("Average patch used as filter for ROI #1")
+        fig.colorbar(im, ax=ax)
+        ax.axis('off')
+
     def calculate_roi_counts(self, images_path, file_name_suffix):
         """calculate ROI counts for each image in the stack
 
@@ -56,7 +64,7 @@ class ROIs:
         Returns:
             roi_counts: ROI counts for each image in the stack, per ROI
         """
-        # 1) load your image stack
+        # 1) load your images
         image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
         if image_stack.size == 0:
             raise ValueError("No images loaded, check path/suffix")
@@ -77,21 +85,15 @@ class ROIs:
 
         # 5) normalize each avg_patch so sum(weights) = p*p
         p = self.patch_size
-        sums = avg_patches.sum(axis=(1,2), keepdims=True)          # (n_rois,1,1)
+        sums = avg_patches.sum(axis=(1,2), keepdims=True)        # (n_rois,1,1)
         norm_factor = (p*p)/sums                                 # (n_rois,1,1)
         templates = avg_patches*norm_factor                      # (n_rois, p, p)
+
+        self.plot_single_roi(templates)
 
         # 6) apply matched‐filter on each patch
         #    counts[i,j] = ∑_{m,n} rois_mat[i,j,m,n] * templates[i,m,n]
         roi_counts = np.einsum('ijnm,inm->ij', rois_mat, templates)
-
-        # (optional) quick sanity plot for ROI #0
-        fig, ax = plt.subplots()
-        ax.imshow(avg_patches[0], cmap='gist_yarg')
-        ax.set_title("Average patch for ROI 0 → used as filter")
-        ax.axis('off')
-        plt.show()
-
         return roi_counts
 
     @staticmethod
@@ -197,10 +199,10 @@ def main():
     # variables
     images_path = 'Z:\\Strontium\\Images\\2025-04-17\\scan131340\\'  # path to images
     file_name_suffix = 'image'  # import files ending with image.tif
-    weight_center_pixel = 3
-    roi_radius = 1  # ROI size. Radius 1 means 3x3 array
-    ROIobject = ROIs(roi_radius, weight_center_pixel)
+    roi_radius = 2  # ROI size. Radius 1 means 3x3 array
+    ROIobject = ROIs(roi_radius)
     ROIobject.calculate_roi_counts(images_path, file_name_suffix)
+    Plotting.savefig("output", "average_patch.png")
 
 
 if __name__ == "__main__":
