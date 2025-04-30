@@ -27,7 +27,7 @@ os.system('cls' if os.name == 'nt' else 'clear')
 # variables
 images_path = 'T:\\KAT1\\Marijn\scan174612\\'
 MHz = 1e6
-binary_threshold = 15200
+binary_threshold = np.load(images_path + 'detection_threshold.npy')
 roi_radius = 1
 center_weight = 3
 

@@ -18,104 +18,81 @@ from skimage.feature import blob_log
 
 
 class ROIs:
-    def __init__(self, roi_radius, center_weight):
+    def __init__(self, roi_radius):
         self.roi_radius = roi_radius
-        size = 2*roi_radius + 1
-        w = np.ones((size, size), dtype=np.float32)
-        w[roi_radius, roi_radius] = center_weight
-        self.weight_matrix = w
+        self.patch_size = 2*roi_radius + 1
 
-    def compute_pixel_sum_counts(self, images: Union[list[np.ndarray], np.ndarray], y_coords: np.ndarray, x_coords: np.ndarray) -> tuple: 
+    def extract_rois(self, images: np.ndarray, y_coords: np.ndarray, x_coords: np.ndarray):
         """
-        Compute weighted ROI counts, vectorized over images.
-        apply padding to avoid out of index errors
-
-        Args:
-            images: list of 2D arrays or a 3D array of shape (n_images, H, W).
-            y_coords, x_coords: float arrays of length n_rois.
+        Slice out p×p patches around each (y,x) from every image.
+        Returns:
+            rois_matrix: shape (n_rois, n_images, p, p)
         """
-        # stack into array
-        image_stack = np.asarray(images)
-        n_images, H, W = image_stack.shape
+        r = self.roi_radius
+        padded = np.pad(images, ((0,0), (r, r), (r, r)), mode='constant', constant_values=0)
+        n_rois = len(y_coords)
+        n_images = images.shape[0]
+        p = self.patch_size
 
-        # round float coords to ints
+        rois = np.empty((n_rois, n_images, p, p), dtype=images.dtype)
         y_idx = np.rint(y_coords).astype(int)
         x_idx = np.rint(x_coords).astype(int)
 
-        r = self.roi_radius
-        p = 2*r + 1
-
-        # single pad for all images
-        padded = np.pad(image_stack, ((0,0), (r, r), (r, r)), mode='constant', constant_values=0)
-
-        n_rois = len(y_idx)
-        rois_matrix = np.empty((n_rois, n_images, p, p), dtype=image_stack.dtype)
-        counts = np.empty((n_rois, n_images), dtype=np.float32)
-
         for i, (y, x) in enumerate(zip(y_idx, x_idx)):
-            patch_cube = padded[:, y : y+p, x : x+p]
-            rois_matrix[i] = patch_cube
-            counts[i] = (patch_cube * self.weight_matrix).sum(axis = (1, 2))
-        return rois_matrix, counts
-    
-    def plot_average_of_roi(self, rois_list):
-        """given a list of ROI pixel boxes, plot the average to check everything went correctly
+            rois[i] = padded[:, y:y+p, x:x+p]
 
-        Args:
-            rois_list (np array): list of ROIs
-        """
-        rois_array_3d = np.stack(rois_list, axis=0)
-        average_image = np.mean(rois_array_3d, axis=0)
-        fig, ax = plt.subplots()
-        ax.set_axis_off()
-        ax.imshow(average_image)
-        ax.set_title('Average pixel box for ROI 0')
+        return rois
 
     def calculate_roi_counts(self, images_path, file_name_suffix):
-        """calculate ROI counts for all images in a directory
-        and return the result"""
+        """calculate ROI counts for each image in the stack
 
-        # variables
-        rois_radius = 1  # ROI size. Radius 1 means 3x3 array
-        log_threshold = 10 # laplacian of gaussian kernel sensitivity
-        weight_center_pixel = 1
+        Args:
+            images_path (str): 
+            file_name_suffix (str): 
 
-        # images without cropping ('raw' data)
+        Raises:
+            ValueError: if no images are loaded
+
+        Returns:
+            roi_counts: ROI counts for each image in the stack, per ROI
+        """
+        # 1) load your image stack
         image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
-        images_list = [image_stack[i] for i in range(image_stack.shape[0])]
+        if image_stack.size == 0:
+            raise ValueError("No images loaded, check path/suffix")
+        print("loaded images:", image_stack.shape)
 
-        if np.shape(image_stack)[0] == 0:
-            raise ValueError("No images loaded, check image path and file name suffix")
-        else:
-            print("nr images, pixels, pixels", np.shape(image_stack))
+        # 2) find your spot centers via LoG on the mean image
+        mean_img = image_stack.mean(axis=0)
+        spots = blob_log(mean_img, max_sigma=3, min_sigma=1, num_sigma=3, threshold=10)
+        y_coor, x_coor = spots[:,0], spots[:,1]
+        print(f"Detected {len(spots)} spots")
 
-        # detect laplacian of gaussian spot locations from avg. over all images
-        z_project = np.mean(image_stack, axis=0)
-        spots_LoG = blob_log(z_project, max_sigma=3, min_sigma=1, num_sigma=3, threshold=log_threshold)
-        y_coor = spots_LoG[:, 0] 
-        x_coor = spots_LoG[:, 1]
-        print(spots_LoG)
-        print("nr spots detected", np.shape(spots_LoG)[0])
+        # 3) extract all patches into a 4D array
+        rois_mat = self.extract_rois(image_stack, y_coor, x_coor)
+        # rois_mat.shape == (n_rois, n_images, p, p)
 
-        # plot average image and mark detected maximum locations in red, check if LoG was correctly detected
-        fig1, ax1 = plt.subplots()
-        ax1.imshow(z_project, cmap='gist_yarg')
-        ax1.scatter(x_coor, y_coor, marker='x', color='r')
-        fig1.show()
-        ax1.set_title('Average image and LoG detected spots')
+        # 4) compute, for each ROI, its *average* patch → this is your per-ROI weight matrix
+        avg_patches = rois_mat.mean(axis=1)      # shape (n_rois, p, p)
 
-        # compute nr of counts in each ROI 
-        ROIcounts = ROIs(rois_radius, weight_center_pixel)
-        image_stack = np.stack(images_list, axis=0)    # shape: (n_images, H, W)
-        rois_matrix, roi_counts_matrix = self.compute_pixel_sum_counts(
-            image_stack, y_coor, x_coor
-        )
-        # plot average pixel box for ROI 1 to check everything went correctly
-        ROIcounts.plot_average_of_roi(rois_matrix[0, :, :, :])
+        # 5) normalize each avg_patch so sum(weights) = p*p
+        p = self.patch_size
+        sums = avg_patches.sum(axis=(1,2), keepdims=True)          # (n_rois,1,1)
+        norm_factor = (p*p)/sums                                 # (n_rois,1,1)
+        templates = avg_patches*norm_factor                      # (n_rois, p, p)
+
+        # 6) apply matched‐filter on each patch
+        #    counts[i,j] = ∑_{m,n} rois_mat[i,j,m,n] * templates[i,m,n]
+        roi_counts = np.einsum('ijnm,inm->ij', rois_mat, templates)
+
+        # (optional) quick sanity plot for ROI #0
+        fig, ax = plt.subplots()
+        ax.imshow(avg_patches[0], cmap='gist_yarg')
+        ax.set_title("Average patch for ROI 0 → used as filter")
+        ax.axis('off')
         plt.show()
 
-        # (nr_rois, nr_images)
-        return roi_counts_matrix
+        return roi_counts
 
     @staticmethod
     def calculate_histogram_detection_threshold(fit_params: np.ndarray):
