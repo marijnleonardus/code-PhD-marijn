@@ -2,7 +2,7 @@
 # December 2022
 
 import numpy as np
-from scipy.constants import Boltzmann, proton_mass
+from scipy.constants import Boltzmann, proton_mass, pi
 
 
 class FittingFunctions:
@@ -136,9 +136,8 @@ class FittingFunctions:
         return lorentzian1d
     
     @staticmethod
-    def damped_sin_wave(t, A, gamma, f, phase, offset):
-        """damped sin for trap freq. measurement
-
+    def damped_sin_wave(t, A, damping_time, f, phase, offset):
+        """damped sin for trap freq. measurement from thesis Labuhn p. 55
         Args:
             t (np.ndarray): time array
             A (float): 
@@ -150,6 +149,7 @@ class FittingFunctions:
         Returns:
             damp_sin: 
         """
-        damp_sin = offset + A*np.exp(-gamma*t)*np.sin(2*np.pi*f*t + phase) 
+        omega_trap = 2*pi*f
+        damp_sin = offset + A*np.exp(-t/damping_time)*np.sin(2*omega_trap*t + phase) 
         return damp_sin
     

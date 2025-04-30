@@ -50,19 +50,25 @@ if truncate_x_values > 0:
     error_global_surv_prob = error_global_surv_prob[:truncate_x_values]
 
 # fit data with damped sin
-initial_guess = [0.15, 0.01/us, 60*kHz, 3*pi/2, 0.35]
-bounds = (0, [0.2, 1/us, 100*kHz, 2*pi, 0.5])
+initial_guess = [0.15, 10*us, 30*kHz, 3*pi/2, 0.35]
+bounds = (0, [0.2, 100*us, 100*kHz, 2*pi, 0.5])
 popt, pcov = curve_fit(FittingFunctions.damped_sin_wave, x_values, global_surv_prob, 
     p0=initial_guess, bounds=bounds)    
 print(popt)
-x_values_fit = np.linspace(0, np.max(x_values), 100)
 
+# plot result
 fig1, ax1 = plt.subplots()
 ax1.errorbar(x_values/us, global_surv_prob, yerr=error_global_surv_prob,
     fmt='o', color='blue', label='survival probability')
 ax1.set_xlabel(r'Release time [$\mu$s]')
-ax1.set_ylabel('Survival probabiility')
-
+ax1.set_ylabel('Survival probability')
+x_values_fit = np.linspace(0, np.max(x_values), 100)
 ax1.plot(x_values_fit/us, FittingFunctions.damped_sin_wave(x_values_fit, *popt), color='red')
 
 Plotting().savefig('output//','release_recapture_fit.png') 
+
+# print trap freq. 
+trap_freq = popt[2]
+perr = np.sqrt(np.diag(pcov))
+err_trap_freq = perr[2]
+print(f"trap frequency: {trap_freq/kHz:.1f} p/m {err_trap_freq/kHz:.1f} kHz")
