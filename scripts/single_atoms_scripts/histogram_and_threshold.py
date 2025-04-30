@@ -76,7 +76,11 @@ detection_treshold_counts = ROIs.calculate_histogram_detection_threshold(popt)
 print(detection_treshold_counts)
 np.save(images_path + 'detection_threshold.npy', detection_treshold_counts)
 
-""" # plot avg histogram using EMCCD counts as x axis
+# calculate area 1 peak
+filling_fraction = np.sum(counts > detection_treshold_counts)/len(counts)
+print(f"Filling fraction: {filling_fraction:.3f}")
+
+# plot avg histogram using EMCCD counts as x axis
 fig2, ax2 = plt.subplots()
 ax2.set_xlabel('EMCCD Counts')
 ax2.set_ylabel('Occurences')
@@ -85,7 +89,7 @@ ax2.hist(counts, bins=nr_bins_hist_avg, edgecolor='black')
 plt.grid(True)
 ax2.plot(x_fit_counts, y_fit_counts, 'r-', label='Double Gaussian fit')
 ax2.axvline(detection_treshold_counts, color='grey', linestyle='--', label='Detection threshold')
-fig2.legend() """
+fig2.legend()
 
 # same histogram but rescaled in terms of photon number 
 center_0_peak = popt[1]
