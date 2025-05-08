@@ -175,3 +175,6 @@ Plots/Knife edge method/data.csv
 
 # data files for binary red mot data
 calculation_scripts/mot/recoil-limited-mot/data
+
+# raw data
+*.csv

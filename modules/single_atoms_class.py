@@ -15,6 +15,8 @@ from data_handling_class import sort_raw_measurements, compute_error_bernouilli
 from plotting_class import Plotting
 from camera_image_class import CameraImage
 from skimage.feature import blob_log
+from scipy.stats import sem
+
 
 
 class ROIs:
@@ -165,34 +167,57 @@ class SingleAtoms():
             survival_matrix_binary[mask, im_idx] = final[mask]
         return survival_matrix_binary
     
-    def calculate_avg_sem_survival(self, df):
-        """calculate avg and error of survival probability for each x value
-        based on the binary survival matrix
+    def reshape_survival_matrix(self, df):
+        """reshape survival matrix into shape (nr_rois, nr_x_values, nr_avgerages)
 
         Parameters:
         - df (pd dataframe): matrix containing raw measurements 
         
         Returns:
-        - x_values (np.ndarray): unique x values from the dataframe
-        - surv_prob (np.ndarray): survival probability for each x value
-        - sem_surv_prob (np.ndarray): standard error of the mean for survival probability
-        - sem_global_surv_prob (np.ndarray): global standard error of the mean for survival probability
+        - x_grid (np.ndarray): unique x values from the dataframe
+        - survival_matrix (np.ndarray): survival probability (nr_rois, nr_x_values, nr_averages)
         """
+
         # sort the binary matrix based on x values
         survival_matrix_binary = self.calculate_survival_probability_binary()
-        nr_avg, x_values, survival_matrix_sorted = sort_raw_measurements(df, survival_matrix_binary)
+        nr_avg, x_grid, survival_matrix_sorted = sort_raw_measurements(df, survival_matrix_binary)
     
         # Reshape now that duplicates are consecutive
         nr_rois = np.shape(survival_matrix_binary)[0]
-        survival_matrix = survival_matrix_sorted.reshape(nr_rois, len(x_values), nr_avg)
+        survival_matrix = survival_matrix_sorted.reshape(nr_rois, len(x_grid), nr_avg)
+        return x_grid, np.array(survival_matrix)
+    
+    def calculate_survival_statistics(self, df):
+        """from the survival probabilty matrix in form (nr_rois, nr_x_values, nr_averages)
+        compute mean and standard error both per ROI and globally
 
-        # compute average by summing over repeated values
-        surv_prob = np.nanmean(survival_matrix, axis=2)
+        Returns:
+            surv_prob_per_roi (np.ndarray): 
+            surv_prob_global (np.ndarray):
+            surv_prob_per_roi_sem (np.ndarray):
+            surv_prob_global_sem (np.ndarray):
+        """
 
-        # compute error
-        sem_surv_prob = compute_error_bernouilli(nr_avg, surv_prob)
-        sem_global_surv_prob = np.nanmean(sem_surv_prob, axis=0)/np.sqrt(nr_rois)
-        return x_values, surv_prob, sem_surv_prob, sem_global_surv_prob
+        _, survival_matrix = self.reshape_survival_matrix(df)
+
+        # calculate avg survival per ROI
+        surv_prob_per_roi = np.nanmean(survival_matrix, axis=2)
+        sem_per_roi = sem(survival_matrix, axis=2, nan_policy='omit')
+
+        # calculate global surv prob.
+        surv_prob_global = np.nanmean(surv_prob_per_roi, axis=0)
+
+        # calculate sem globally
+        # To calculate the global standard error correctly, we should first
+        # calculate the average survival for each 'nr_x_value' across all ROIs for each run.
+        # Then, calculate the SEM of these run averages.
+        surv_prob_global_per_run = np.nanmean(survival_matrix, axis=0) # shape (nr_x_values, nr_avg)
+
+        # Calculate the SEM along the 'nr_avg' axis (axis=1 for the new matrix)
+        global_sem = sem(surv_prob_global_per_run, axis=1) # Shape: (nr_x_values,)
+
+        stats_matrix = surv_prob_per_roi, surv_prob_global, sem_per_roi, global_sem
+        return stats_matrix
 
 
 def main():

@@ -15,7 +15,6 @@ modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 sys.path.append(modules_dir)
 
 # user defined libraries
-from fitting_functions_class import FittingFunctions
 from single_atoms_class import SingleAtoms
 from plotting_class import Plotting
 
@@ -33,14 +32,26 @@ df = pd.read_csv(images_path + 'log.csv')
 
 # calculate survival probability from x values, threshold and images list
 SingleAtomsStats = SingleAtoms(binary_threshold, images_path)
-x_values, surv_prob,_ , error_global_surv_prob = SingleAtomsStats.calculate_avg_sem_survival(df)
-global_surv_prob = np.nanmean(surv_prob, axis=0)
-print("sorted data: nr ROIs, nr x_values: ", np.shape(surv_prob))
+x_grid, surv_matrix = SingleAtomsStats.reshape_survival_matrix(df)
+print("sorted data: nr ROIs, nr x_values: ", np.shape(surv_matrix))
+
+# calculate mean and standard error per ROI and globally
+statistics_matrix = SingleAtomsStats.calculate_survival_statistics(df) 
+surv_prob_glob = statistics_matrix[1]
+surv_prob_glob_sem = statistics_matrix[3]
 
 fig1, ax1 = plt.subplots()
-ax1.errorbar(x_values/us, global_surv_prob, yerr=error_global_surv_prob,
-    fmt='o', color='blue', label='survival probability')
+ax1.errorbar(x_grid/us, surv_prob_glob, yerr=surv_prob_glob_sem,
+    fmt='o', color='blue', ms=2, label='survival probability')
 ax1.set_xlabel(r'Release time [$\mu$s]')
 ax1.set_ylabel('Survival probabiility')
 
 Plotting().savefig('output//','release_recapture_fit.png') 
+
+# export data
+df_survival = pd.DataFrame({
+    'x_values': x_grid,
+    'survival_prob': surv_prob_glob,
+    'error_survival_prob': surv_prob_glob_sem
+})
+df_survival.to_csv('output//release_recap_raw_data.csv', index=False)

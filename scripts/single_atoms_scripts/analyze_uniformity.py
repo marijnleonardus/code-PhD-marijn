@@ -36,12 +36,16 @@ df = pd.read_csv(images_path + 'log.csv')
 
 # calculate survival probability from x values, threshold and images list
 SingleAtomsStats = SingleAtoms(binary_threshold, images_path)
-x_values, surv_prob, sem_surv_prob, _ = SingleAtomsStats.calculate_avg_sem_survival(df)
-print("sorted data: nr ROIs, nr x_values: ", np.shape(surv_prob))
+x_grid, surv_matrix = SingleAtomsStats.reshape_survival_matrix(df)
+print("sorted data: nr ROIs, nr x_values: ", np.shape(surv_matrix))
 
-nr_rois = surv_prob.shape[0]
+# calculate mean and standard error per ROI and globally
+statistics_matrix = SingleAtomsStats.calculate_survival_statistics(df) 
+surv_prob = statistics_matrix[0]
+sem_surv_prob = statistics_matrix[2]
 
 # plot for each ROI the survival plobability as function of detuning and fit with Gaussian
+nr_rois = np.shape(surv_matrix)[0]
 fig1, axs = plt.subplots(figsize = (10, 8), sharex=True, sharey=True,
     ncols=int(np.sqrt(nr_rois)), nrows=int(np.sqrt(nr_rois)))
 
@@ -51,15 +55,15 @@ initial_guess = [1, -0.5, 3.5e6, 200e3] #  offset, amplitude, middle, width
 popt_list = []
 
 # x axis with more values for fit plot
-x_axis_fit = np.linspace(x_values[0], x_values[-1], 500)
+x_axis_fit = np.linspace(x_grid[0], x_grid[-1], 500)
 
 for roi_idx in range(nr_rois):
-    axs[roi_idx].errorbar(x_values/MHz, surv_prob[roi_idx, :], sem_surv_prob[roi_idx, :],
+    axs[roi_idx].errorbar(x_grid/MHz, surv_prob[roi_idx, :], sem_surv_prob[roi_idx, :],
         fmt='o', capsize=1, capthick=1)
     axs[roi_idx].set_title(f'ROI {roi_idx}')
 
     # fit datapoints and plot result
-    popt, pcov = curve_fit(FittingFunctions.gaussian_function, x_values, surv_prob[roi_idx, :], p0=initial_guess)
+    popt, pcov = curve_fit(FittingFunctions.gaussian_function, x_grid, surv_prob[roi_idx, :], p0=initial_guess)
     popt_list.append(popt)
     axs[roi_idx].plot(x_axis_fit/MHz, FittingFunctions.gaussian_function(x_axis_fit, *popt), color='red')
 

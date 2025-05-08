@@ -24,12 +24,11 @@ from fitting_functions_class import FittingFunctions
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-images_path = 'Z:\\Strontium\\Images\\2025-04-28\\scan203308\\'
+images_path = 'Z:\\Strontium\\Images\\2025-04-29\\scan215932\\'
 us = 1e-6 # microseconds
 kHz = 1e3 # kilohertz
 roi_radius = 1
-center_weight = 3
-truncate_x_values = 13
+truncate_x_values = 15
 
 # load binary threshold from histrogram script
 binary_threshold = np.load(images_path + 'detection_threshold.npy')
@@ -39,7 +38,7 @@ df = pd.read_csv(images_path + 'log.csv')
 
 # calculate survival probability from x values, threshold and images list
 SingleAtomsStats = SingleAtoms(binary_threshold, images_path)
-x_values, surv_prob,_ , error_global_surv_prob = SingleAtomsStats.calculate_avg_sem_survival(df)
+x_values, surv_prob, _ , error_global_surv_prob = SingleAtomsStats.calculate_avg_sem_survival(df)
 global_surv_prob = np.nanmean(surv_prob, axis=0)
 print("sorted data: nr ROIs, nr x_values: ", np.shape(surv_prob))
 
@@ -50,11 +49,10 @@ if truncate_x_values > 0:
     error_global_surv_prob = error_global_surv_prob[:truncate_x_values]
 
 # fit data with damped sin
-initial_guess = [0.15, 10*us, 30*kHz, 3*pi/2, 0.35]
-bounds = (0, [0.2, 100*us, 100*kHz, 2*pi, 0.5])
+initial_guess = [0.11, 7*us, 14*kHz, 0, 0.55]
+bounds = (0, [0.5, 200*us, 150*kHz, 2*pi, 0.9])
 popt, pcov = curve_fit(FittingFunctions.damped_sin_wave, x_values, global_surv_prob, 
     p0=initial_guess, bounds=bounds)    
-print(popt)
 
 # plot result
 fig1, ax1 = plt.subplots()
