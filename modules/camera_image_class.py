@@ -6,7 +6,6 @@ from PIL import Image
 import os
 import glob
 from PIL import Image
-import matplotlib.pyplot as plt
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -102,20 +101,3 @@ class EMCCD:
         """
         nr_photons = (emccd_counts - background_counts)*self.sensitivity/(self.em_gain*self.quantum_eff)
         return nr_photons
-
-
-def main():
-    "for debugging the load_image_from_file function"
-    folder_path = r"Z://Strontium//Images//2024-10-21//442187//"
-    image_name = r"0000absorption.tif"
-
-    image = CameraImage.load_image_from_file(folder_path, image_name)
-
-    fig, ax1 = plt.subplots()
-    plot = ax1.imshow(image, cmap='jet')
-    fig.colorbar(plot, ax=ax1)
-    plt.show()
-
-
-if __name__ == "__main__":
-    main()

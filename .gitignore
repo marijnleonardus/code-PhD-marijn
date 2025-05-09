@@ -139,27 +139,12 @@ dmypy.json
 .png
 
 # data files typically images
-
 *.dat
-.dat
-
-.bmp
 *.bmp
-
-.jpg
 *.jpg
-
-.mat
 *.mat
-
-.tif
 *.tif
-
 *.pdf
-.pdf
-
-.npy
-*.npy
 
 # setings
 .ini
@@ -169,7 +154,6 @@ dmypy.json
 *.sifx
 .sif
 *.sif
-Plots/Knife edge method/data.csv
 .vscode/launch.json
 .vscode/settings.json
 
@@ -178,3 +162,4 @@ calculation_scripts/mot/recoil-limited-mot/data
 
 # raw data
 *.csv
+*.npy

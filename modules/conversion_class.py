@@ -132,19 +132,13 @@ class Conversion:
         """
         computes Rabi frequency given RDME (radial dipole matrix element)
 
-        Parameters
-        ----------
-        rdme : float
-            radial dipole matrix elment in [atomic units].
-        intensity : float
-            laser intensity in [W/m^2].
-        j_e : integer
-            quantum number J for rydberg state.
+        Args
+            rdme (float): radial dipole matrix elment in [atomic units].
+            intensity (float) laser intensity in [W/m^2].
+            j_e (integer): quantum number J for rydberg state.
 
-        Returns
-        -------
-        rabi : float
-            rabi freq. in [Hz].
+        Returns:
+            rabi (float): rabi freq. in [Hz].
 
         """
     

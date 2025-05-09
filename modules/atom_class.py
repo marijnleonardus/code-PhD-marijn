@@ -5,6 +5,14 @@ import numpy as np
 from scipy.constants import hbar, Boltzmann, pi
 from arc import Strontium88, PairStateInteractions
 
+import sys
+import os
+script_dir = os.path.dirname(os.path.abspath(__file__))
+modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
+sys.path.append(modules_dir)
+
+from units import GHz, h
+
 Sr88 = Strontium88()
 
 
@@ -62,38 +70,24 @@ class AtomicMotion:
 
 
 class VanDerWaals:
-    
+    @staticmethod
     def calculate_c6_coefficients(n, l, j, mj):
         """calculate C6 coefficients using ARC library
         Assumes the quantum numbers are identical for the 2 atoms
         
-        parameters
-        -------------
-        n: integer
-            principal quantum number 
-        l: integer:
-            angular momentum quantum number
-        j: integer: 
-            total angular momentum quantum number
-        mj: integer:
-            secondary total angular momentum quantum number
+        Args
+            n: (int) principal quantum number 
+            l: (int)): angular momentum quantum number
+            j: (int): total angular momentum quantum number
+            mj: (int)): secondary total angular momentum quantum number
         
         returns
-        ----------------
-        c6: float
-            van der waals interaction coefficient in [h GHz mum^6]
+            c6: (flaot) Van der waals interaction coefficient in [h GHz mum^6]
             
-        example
-        -------------
-        So for (61s5s) 3P0 mj=0 state of Sr88:
-        - 61, 0, 1, 0, 1
+        So for example for (61s5s) 3P0 mj=0 state of Sr88: 61, 0, 1, 0, 1
         """
         
-        calc = PairStateInteractions(Strontium88(),
-                                     n, l, j,
-                                     n, l, j,
-                                     mj, mj,
-                                     s=1)
+        calc = PairStateInteractions(Strontium88(), n, l, j, n, l, j, mj, mj, s=1)
         theta = 0
         phi = 0
         deltaN = 6
@@ -101,30 +95,51 @@ class VanDerWaals:
         
         # getC6perturbatively returns the C6 coefficients
         # expressed in units of h GHz mum^6.
-        c6, eigenvectors = calc.getC6perturbatively(theta, phi, 
-                                                    deltaN, deltaE,
-                                                    degeneratePerturbation=True)
+        c6, eigenvectors = calc.getC6perturbatively(theta, phi, deltaN, deltaE, degeneratePerturbation=True)
         c6=c6[0]
         return c6
     
+    def calculate_rydberg_blockade_radius(self, omega):
+        """calculate R_b
+
+        Args:
+            omega (float): angular rabi freq, 2pi times rabi freq. 
+
+        Returns:
+            blockade_radius (float): radius in [um]
+        """
+
+        C6_Ghz = self.calculate_c6_coefficients(61, 0, 1, 0)
+        C6_Hz = C6_Ghz*GHz
+        blockade_radius = (abs(h*C6_Hz)/(hbar*omega))**(1/6)
+        return blockade_radius
+    
+    def calculate_interaction_strength(self, R):
+        """calculate V_DD(R)
+
+        Args:
+            R (float): interatomic distance in [m]
+
+        Returns:
+            interaction_strength_Hz: V_DD in [Hz]
+        """
+
+        C6_Ghz = self.calculate_c6_coefficients(61, 0, 1, 0)
+        C6_Hz = C6_Ghz*GHz
+        interaction_strength_Hz = -C6_Hz/R**6
+        return interaction_strength_Hz
     
 class Polarizability:
-    
+    @staticmethod
     def sr88_3s1(n):
-        """
-        compute Sr88 polarizability in MHz*cm^2/V^2 for 3S1 state, see Mohan 2022 paper
+        """compute Sr88 polarizability in MHz*cm^2/V^2 for 3S1 state, see Mohan 2022 paper
 
-        Parameters
-        ----------
-        n : integer
-            principal quantum number.
+        Args:
+            n (int): principal quantum number.
 
-        Returns
-        -------
-        polarizability : float
-            polarizability in [MHz cm^2 V^-2].
-
-        """
+        Returns:
+            polarizability (float): polarizability in [MHz cm^2 V^-2]."""
+        
         defect = Sr88.getQuantumDefect(n, 0, 1, s=1)
         polarizability = 6.3*1e-11*(n-defect)**7
         return polarizability

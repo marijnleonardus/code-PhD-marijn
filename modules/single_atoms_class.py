@@ -11,7 +11,7 @@ sys.path.append(modules_dir)
 
 # user defined modules
 from math_class import Math
-from data_handling_class import sort_raw_measurements, compute_error_bernouilli
+from data_handling_class import sort_raw_measurements
 from plotting_class import Plotting
 from camera_image_class import CameraImage
 from skimage.feature import blob_log
@@ -74,7 +74,7 @@ class ROIs:
 
         # 2) find your spot centers via LoG on the mean image
         mean_img = image_stack.mean(axis=0)
-        spots = blob_log(mean_img, max_sigma=3, min_sigma=1, num_sigma=3, threshold=10)
+        spots = blob_log(mean_img, max_sigma=3, min_sigma=1, num_sigma=5, threshold=15)
         y_coor, x_coor = spots[:,0], spots[:,1]
         print(f"Detected {len(spots)} spots")
 

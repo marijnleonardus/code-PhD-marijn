@@ -33,7 +33,7 @@ from plotting_class import Plotting
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-images_path = 'Z:\\Strontium\\Images\\2025-04-01\\scan104728\\'
+images_path = 'Z:\\Strontium\\Images\\2025-03-26\\scan095909\\'
 file_name_suffix = 'image'  # import files ending with image.tif
 nr_bins_hist_roi = 30
 nr_bins_hist_avg = 50
@@ -58,6 +58,7 @@ for roi_idx in range(nr_rois):
     axs[roi_idx].hist(roi_counts_matrix[roi_idx, :], bins=nr_bins_hist_roi, edgecolor='black')
 fig1.supxlabel('EMCCD Counts')
 fig1.supylabel('Occurences')
+plt.show()
 
 # change to 1D matrix for histogram computation averaged over all ROIs
 counts = roi_counts_matrix.ravel()
