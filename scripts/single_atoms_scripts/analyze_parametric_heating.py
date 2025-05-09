@@ -19,13 +19,13 @@ sys.path.append(modules_dir)
 from fitting_functions_class import FittingFunctions
 from single_atoms_class import SingleAtoms
 from plotting_class import Plotting
+from units import kHz
 
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
 images_path = 'Z:\\Strontium\\Images\\2025-04-11\\scan173216\\'
 file_name_suffix = 'image'  # import files ending with image.tif
-kHz = 1e3
 binary_threshold = np.load(images_path + 'detection_threshold.npy')
 
 # load x values 

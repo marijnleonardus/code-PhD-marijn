@@ -2,7 +2,19 @@
 # August 2024
 
 import numpy as np
+from scipy.constants import pi, hbar, c, epsilon_0, elementary_charge
+import scipy.constants
 import allantools
+
+import sys
+import os
+script_dir = os.path.dirname(os.path.abspath(__file__))
+modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
+sys.path.append(modules_dir)
+
+from units import MHz, um, mW
+from optics_class import GaussianBeam
+from atom_class import Sr
 
 
 class AllanDevFromDataset:
@@ -76,3 +88,63 @@ class AllanDevFromDataset:
         # compute allen deviation from allen variance
         allan_variance = np.array(allan_variance)
         return (m_list, allan_variance)
+
+
+class AtomLightInteraction:
+    @staticmethod
+    def calc_rydberg_rabi_freq(n, intensity, j_e):
+        """computes Rabi frequency to the rydberg state
+        given RDME (radial dipole matrix element)
+
+        Args
+            rdme (float): radial dipole matrix elment in [atomic units].
+            intensity (float) laser intensity in [W/m^2].
+            j_e (integer): quantum number J for rydberg state.
+
+        Returns:
+            rabi (float): rabi freq. in [Hz]."""
+        e0 = elementary_charge # C
+        a0 = scipy.constants.physical_constants['Bohr radius'][0] # m
+        rdme = Sr.get_rdme(n)
+        rydberg_rabi = (rdme*e0*a0)/hbar*np.sqrt(2*intensity/(epsilon_0*c*(2*j_e + 1)))
+        return rydberg_rabi
+    
+    @staticmethod
+    def calc_dc_stark_shift(polarizability, electric_field):
+        """see paper Mohan 2022 for Sr88 data
+
+        Args:
+            polarizability (float): in units of [MHz cm^2 V^-2].
+            electric_field (float): in units of [V/cm].
+
+        Returns
+            dc_stark_shift (float): DC Stark shift in Hz"""
+        dc_stark_MHz = 1/2*polarizability*electric_field**2
+        dc_stark_Hz = dc_stark_MHz*MHz
+        return dc_stark_Hz    
+    
+    @staticmethod
+    def saturation_intensity(lifetime, wavelength):
+        """calculate saturation intensity
+
+        Args:
+            excited state lifetime tau in s
+            wavelength in m
+
+        Returns:
+            saturation intensity in [W/m^2]
+        """
+        saturation_intensity = pi*(hbar*2*pi)*c/(3*lifetime*wavelength**3)
+        return saturation_intensity
+
+
+def main():
+    beam_power = 30*mW 
+    beam_waist = 18*um
+    uv_intensity = GaussianBeam(beam_power, beam_waist).get_intensity()
+    rabi_freq = AtomLightInteraction.calc_rydberg_rabi_freq(61, uv_intensity, j_e=1)
+    print(rabi_freq/(2*pi*MHz), " MHz")
+
+
+if __name__ == "__main__":
+    main()

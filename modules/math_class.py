@@ -4,27 +4,21 @@ import numpy as np
 class Math:
     @staticmethod
     def solve_quadratic_equation(a: float, b: float, c: float) -> tuple:
-        """
-        Solves a quadratic equation using the ABC formula.
+        """Solves a quadratic equation using the ABC formula.
     
-        Parameters:
-        - a: float
-        - b: float
-        - c: float
+        Args:
+            a: float
+            b: float
+            c: float
     
         Returns:
-        - tuple:
-            A tuple containing the two solutions (x1, x2) rounded to one decimal place.
+            x1, x2 (tuple): containing the two solutions (x1, x2) rounded to one decimal place.
     
         Raises:
-        - ValueError:
-            Raises an error if the discriminant is negative, indicating no real solutions.
-        """
+            ValueError: Raises an error if the discriminant is negative, indicating no real solutions."""
     
         # Calculate the discriminant (D) using the formula: D = b^2 - 4ac
         discriminant = b**2 - 4*a*c
-    
-        # Check if the discriminant is negative, indicating no real solutions
         if discriminant < 0:
             raise ValueError("No real solutions exist for the given quadratic equation.")
     
@@ -35,7 +29,6 @@ class Math:
         # Round the solutions to one decimal place
         x1 = round(x1, 2)
         x2 = round(x2, 2)
-    
         return x1, x2
     
 

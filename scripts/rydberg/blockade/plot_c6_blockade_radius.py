@@ -7,7 +7,7 @@ of Rabi frequencies obtainable as a function of n"""
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-from scipy.constants import pi, hbar
+from scipy.constants import pi
 
 # append path with 'modules' dir in parent folder
 import sys
@@ -35,7 +35,7 @@ rdmes = LightAtomInteraction.sr88_rdme_value_au(n_array)
 RydbergBeam = GaussianBeam(beam_power, beam_waist)
 intensity = RydbergBeam.get_intensity()
 rabi_frequencies = Conversion.rdme_to_rabi(rdmes, intensity, 1)
-print(rabi_frequencies)
+rabi_frequencies_enhanced = np.sqrt(2)*rabi_frequencies
 
 # interaction energy
 R = 3e-6  # [m]
@@ -57,7 +57,7 @@ matplotlib.style.use('default')
 # plot rabi frequencies
 fig0, ax0 = plt.subplots()
 ax0.grid()
-ax0.scatter(n_array, rabi_frequencies/(2*pi*MHz))
+ax0.scatter(n_array, rabi_frequencies_enhanced/(2*pi*MHz))
 ax0.set_xlabel(r'$n$')
 ax0.set_ylabel(r'$\Omega_2/2\pi$ [MHz]')
 

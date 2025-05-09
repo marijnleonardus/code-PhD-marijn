@@ -17,12 +17,12 @@ sys.path.append(modules_dir)
 # user defined libraries
 from single_atoms_class import SingleAtoms
 from plotting_class import Plotting
+from units import us
 
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
 images_path = 'Z:\\Strontium\\Images\\2025-04-01\\scan104728\\'
-us = 1e-6 # microseconds
 binary_threshold = 13680
 roi_radius = 1
 center_weight = 3

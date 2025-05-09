@@ -20,13 +20,13 @@ from fitting_functions_class import FittingFunctions
 from image_analysis_class import ImageStats
 from single_atoms_class import SingleAtoms
 from plotting_class import Plotting
+from units import MHz
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
 images_path = 'T:\\KAT1\\Marijn\scan174612\\'
-MHz = 1e6
 binary_threshold = np.load(images_path + 'detection_threshold.npy')
 roi_radius = 1
 center_weight = 3

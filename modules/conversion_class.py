@@ -6,14 +6,20 @@ from scipy.constants import electron_mass, c, hbar, alpha, pi
 from scipy.constants import epsilon_0 as eps0
 from scipy.constants import elementary_charge as e0
 import scipy.constants
+import os
+import sys
 
-# %% variables
+# Update sys.path to include the 'modules' directory
+script_dir = os.path.dirname(os.path.abspath(__file__))
+modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
+sys.path.append(modules_dir)
+
+from units import MHz
+
 
 a0 = scipy.constants.physical_constants['Bohr radius'][0] # m
 hartree_energy = electron_mass*c**2*alpha**2 # J
 t = c**2*alpha**2
-
-# %% functions
 
 
 class Conversion:
@@ -96,7 +102,7 @@ class Conversion:
         returns:
         - electric field strength [V/m]
         """
-        electric_field_square = 2 * intensity / (c * eps0)
+        electric_field_square = 2*intensity/(c*eps0)
         electric_field = np.sqrt(electric_field_square)
         return electric_field
 
@@ -116,77 +122,17 @@ class Conversion:
     @staticmethod
     def energy_to_wavelength(transition_energy):
         """
-        inputs:
-        - transition energy [J]
-        - wavelength [m]
+        
+        Args:
+            transition_energy (float) [J]
+            wavelength (float) [m]
         
         returns:
-        - transition wavelength
-        """
+            wavelength (float): transition wavelength"""
         
         wavelength = 2*pi*hbar*c/transition_energy
         return wavelength
 
-    @staticmethod
-    def rdme_to_rabi(rdme, intensity, j_e):
-        """
-        computes Rabi frequency given RDME (radial dipole matrix element)
-
-        Args
-            rdme (float): radial dipole matrix elment in [atomic units].
-            intensity (float) laser intensity in [W/m^2].
-            j_e (integer): quantum number J for rydberg state.
-
-        Returns:
-            rabi (float): rabi freq. in [Hz].
-
-        """
-    
-        rabi = (rdme*e0*a0)/hbar*np.sqrt(2*intensity/(eps0*c*(2*j_e+1)))
-        return rabi
-
-    @staticmethod
-    def gaussian_beam_intensity(beam_waist, power):
-        """
-        inputs:
-        - beam_waist [m]
-        - power [W]
-            
-        returns:
-        - I0 (max intensity) [W/m^2]
-        """
-        
-        I0 = 2*power/(pi*beam_waist**2)
-        return I0
-
-    @staticmethod
-    def cylindrical_gaussian_beam(waist_x, waist_y, power):
-        """
-        gaussian beam but waist in x and y are not the same (cylindrical)
-        
-        inputs:
-        - beam_waist in x and y directoins [m]
-        - power [W]
-            
-        returns:
-        - I0 (max intensity) [W/m^2]
-        """
-            
-        I0 = 2*power/(pi*waist_x*waist_y)
-        return I0
-
-    @staticmethod
-    def saturation_intensity(lifetime, wavelength):
-        """
-        inputs:
-        - excited state lifetime tau in s
-        - wavelength in m
-
-        returns:
-        - saturation intensity
-        """
-        saturation_intensity = pi*(hbar*2*pi)*c/(3*lifetime*wavelength**3)
-        return saturation_intensity
 
     @staticmethod
     def compute_rabi_freq(rdme, electric_field):
@@ -204,49 +150,9 @@ class Conversion:
         # compute rabi frequency
         omega = electric_field/hbar*rdme_se
         return omega
+
+    @staticmethod
+    def wavenr_from_wavelength(wavelength):
+        return 2*pi/wavelength
     
-    @staticmethod
-    def compute_ac_stark_shift(rabi_freq, detuning):
-        """
-        inputs:
-        - rabi frequency in [Hz]
-        - detuning in [Hz]
-        
-        returns:
-        - AC Stark shift in [Hz]
-        """
-        stark_shift = rabi_freq**2/(4*detuning)
-        return stark_shift
-    
-    @staticmethod
-    def dc_stark_shift(polarizability, electric_field):
-        """
-        see paper Mohan 2022 for Sr88 datda
-
-        Parameters
-        ----------
-        polarizability : float
-            in units of [MHz cm^2 V^-2].
-        electric_field : float
-            in units of [V/cm].
-
-        Returns
-        -------
-        None.
-
-        """
-        dc_stark = 1/2*polarizability*electric_field**2
-        return dc_stark
-
-    @staticmethod
-    def get_atomic_pol_unit():
-        """
-        inputs:
-            - bohr radius [m]
-            - hatree energy unit [J]
-        returns:
-            -atomic polarizability unit
-        """
-        
-        au = e0**2*a0**2/hartree_energy
-        return au
+   
