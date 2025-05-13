@@ -33,17 +33,18 @@ from plotting_class import Plotting
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-images_path = 'Z:\\Strontium\\Images\\2025-03-26\\scan095909\\'
-file_name_suffix = 'image'  # import files ending with image.tif
+images_path = 'Z:\\Strontium\\Images\\2025-05-12\\scan154334\\'
+file_name_suffix = 'image'  # import files ending with image.tiff
 nr_bins_hist_roi = 30
 nr_bins_hist_avg = 50
 roi_radius = 2
+use_weighted_count = True
 
 # %% 
 
 # Calculate counts in each ROI and save to npy array for other functions to use
 ROIsObject = ROIs(roi_radius)
-roi_counts_matrix = ROIsObject.calculate_roi_counts(images_path, file_name_suffix)
+roi_counts_matrix = ROIsObject.calculate_roi_counts(images_path, file_name_suffix, use_weighted_count)
 print("raw data: (nr ROIs, nr images): ", np.shape(roi_counts_matrix))
 np.save(images_path + 'roi_counts_matrix.npy', roi_counts_matrix)
 
@@ -63,13 +64,18 @@ plt.show()
 # change to 1D matrix for histogram computation averaged over all ROIs
 counts = roi_counts_matrix.ravel()
 
-# fit histogram with gaussian function
+# make histogram
 hist_vals, bin_edges = np.histogram(counts, bins=nr_bins_hist_avg)
 bin_centers = (bin_edges[:-1] + bin_edges[1:])/2 
-initial_guess = [max(hist_vals), np.mean(counts)*0.8, np.std(counts)*0.5, max(hist_vals)/4, np.mean(counts)*1.2, np.std(counts)]
+
+# fit double gaussian to histogram
+print('mean, stddev in counts are ', np.round(np.mean(counts)), np.round(np.std(counts)))
+initial_guess = [max(hist_vals), np.mean(counts)*0.9, np.std(counts)*0.5, max(hist_vals)/4, np.mean(counts)*1.1, np.std(counts)]
 fit_boundaries = (0, [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
 popt, _ = curve_fit(FittingFunctions.double_gaussian, bin_centers, hist_vals, p0=initial_guess, bounds=fit_boundaries)
-x_fit_counts = np.linspace(bin_centers[0], bin_centers[-1], 1000)
+
+# produce data with finer grid for plottint double gaussian
+x_fit_counts = np.linspace(bin_centers[0], bin_centers[-1], 200)
 y_fit_counts = FittingFunctions.double_gaussian(x_fit_counts, *popt)
 
 # calculate detection threshold

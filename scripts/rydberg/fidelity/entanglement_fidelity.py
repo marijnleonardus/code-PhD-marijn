@@ -51,7 +51,7 @@ rydberg_intensity = RydbergBeam.get_intensity()
 rabi_freqs = AtomLightInteraction.calc_rydberg_rabi_freq(n_array, rydberg_intensity, j_e=1)
 
 
-def calc_infedility_intensity_shotshot(sigma):
+def calc_intensity_infidelity_shotshot(sigma):
     """calculate infidelity as a result of intensity noise for shot to shot only
 
     Args:
@@ -84,7 +84,7 @@ blockade_errors = (hbar*rabi_freqs)**2/(2*abs(h*interaction_strenghts_Hz)**2)
 
 ## intensity noise
 intensity_errors = np.array(
-    [calc_infedility_intensity_shotshot(stddev_intensity) for rabi in rabi_freqs]
+    [calc_intensity_infidelity_shotshot(stddev_intensity) for rabi in rabi_freqs]
 )
 
 ## finite rydberg state lifetime
@@ -95,14 +95,16 @@ loss_errors = 1 - np.exp(-time_spent_rydberg/lifetimes)
 
 ## stray electric fields
 polarizabilities = Sr.calc_polarizability_3s1(n_array)
-dc_stark_errors_list = [
+
+dc_stark_2d_array = np.zeros(len(rabi_freqs), len(stray_electric_fields))
+
+dc_stark_errors_list = np.array([
     AtomLightInteraction.calc_dc_stark_shift(polarizabilities, e_field)**2/(np.sqrt(2)*rabi_freqs)**2
     for e_field in stray_electric_fields
-]
+])
 
 ## plot all noise contributions invididually and the total error
 # pick one electric field value
-dc_stark_errors = dc_stark_errors_list[2]
 total_errors = motion_errors + blockade_errors + loss_errors + intensity_errors + dc_stark_errors
 
 fig, ax = plt.subplots(figsize=(4.5, 3.5))

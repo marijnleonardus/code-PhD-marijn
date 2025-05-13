@@ -53,7 +53,7 @@ class ROIs:
         fig.colorbar(im, ax=ax)
         ax.axis('off')
 
-    def calculate_roi_counts(self, images_path, file_name_suffix):
+    def calculate_roi_counts(self, images_path, file_name_suffix, use_weighted_count):
         """calculate ROI counts for each image in the stack
 
         Args:
@@ -66,6 +66,8 @@ class ROIs:
         Returns:
             roi_counts: ROI counts for each image in the stack, per ROI
         """
+        background_px_count = 500
+
         # 1) load your images
         image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
         if image_stack.size == 0:
@@ -74,28 +76,39 @@ class ROIs:
 
         # 2) find your spot centers via LoG on the mean image
         mean_img = image_stack.mean(axis=0)
-        spots = blob_log(mean_img, max_sigma=3, min_sigma=1, num_sigma=5, threshold=15)
+        spots = blob_log(mean_img, max_sigma=3, min_sigma=1, num_sigma=5, threshold=12)
         y_coor, x_coor = spots[:,0], spots[:,1]
         print(f"Detected {len(spots)} spots")
 
-        # 3) extract all patches into a 4D array
+        # 3) extract all patches into a 4D array of shape (n_rois, n_images, p, p)
         rois_mat = self.extract_rois(image_stack, y_coor, x_coor)
-        # rois_mat.shape == (n_rois, n_images, p, p)
 
-        # 4) compute, for each ROI, its *average* patch → this is your per-ROI weight matrix
-        avg_patches = rois_mat.mean(axis=1)      # shape (n_rois, p, p)
+        if use_weighted_count:
+            # 4) per-ROI average patch, background subtracted
+            avg_patches = rois_mat.mean(axis=1)                 # (n_rois, p, p)
+            #avg_patches = avg_patches - background_px_count
 
-        # 5) normalize each avg_patch so sum(weights) = p*p
-        p = self.patch_size
-        sums = avg_patches.sum(axis=(1,2), keepdims=True)        # (n_rois,1,1)
-        norm_factor = (p*p)/sums                                 # (n_rois,1,1)
-        templates = avg_patches*norm_factor                      # (n_rois, p, p)
+            # Optional: clip negatives if you want purely positive templates
+            avg_patches = avg_patches - avg_patches.min(axis=(1,2), keepdims=True)
 
+            # 5) normalize so ∑_{m,n} templates[i,m,n] == 1
+            sums        = avg_patches.sum(axis=(1,2), keepdims=True)
+            templates   = avg_patches / sums                    # (n_rois, p, p)
+        else:
+            # plain average (= uniform) template also sums to 1 now
+            templates = np.ones((rois_mat.shape[0], *rois_mat.shape[2:]))
+            templates = templates / templates.sum(axis=(1,2), keepdims=True)
+
+        # plot single ROI to check it went correctly
         self.plot_single_roi(templates)
 
         # 6) apply matched‐filter on each patch
         #    counts[i,j] = ∑_{m,n} rois_mat[i,j,m,n] * templates[i,m,n]
         roi_counts = np.einsum('ijnm,inm->ij', rois_mat, templates)
+
+        # at the end multiply by nr of pixels, to get the number of counts in total ROI
+        roi_counts *= (self.patch_size**2)
+
         return roi_counts
 
     @staticmethod
