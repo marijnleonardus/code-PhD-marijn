@@ -48,7 +48,7 @@ class ROIs:
     def plot_single_roi(self, avg_patches):
         """(optional) quick sanity plot for single ROI, e.g. ROI #0"""
         fig, ax = plt.subplots()
-        im = ax.imshow(avg_patches[1], cmap='viridis')
+        im = ax.imshow(avg_patches[3], cmap='viridis')
         ax.set_title("Average patch used as filter for ROI #1")
         fig.colorbar(im, ax=ax)
         ax.axis('off')

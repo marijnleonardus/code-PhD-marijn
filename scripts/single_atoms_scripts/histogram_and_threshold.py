@@ -38,13 +38,12 @@ file_name_suffix = 'image'  # import files ending with image.tiff
 nr_bins_hist_roi = 30
 nr_bins_hist_avg = 50
 roi_radius = 2
-use_weighted_count = True
 
 # %% 
 
-# Calculate counts in each ROI and save to npy array for other functions to use
+# Calculate counts in each ROI using weighted pixel boxes and save to npy array for other functions to use
 ROIsObject = ROIs(roi_radius)
-roi_counts_matrix = ROIsObject.calculate_roi_counts(images_path, file_name_suffix, use_weighted_count)
+roi_counts_matrix = ROIsObject.calculate_roi_counts(images_path, file_name_suffix, use_weighted_count=True)
 print("raw data: (nr ROIs, nr images): ", np.shape(roi_counts_matrix))
 np.save(images_path + 'roi_counts_matrix.npy', roi_counts_matrix)
 
@@ -69,10 +68,11 @@ hist_vals, bin_edges = np.histogram(counts, bins=nr_bins_hist_avg)
 bin_centers = (bin_edges[:-1] + bin_edges[1:])/2 
 
 # fit double gaussian to histogram
-print('mean, stddev in counts are ', np.round(np.mean(counts)), np.round(np.std(counts)))
-initial_guess = [max(hist_vals), np.mean(counts)*0.9, np.std(counts)*0.5, max(hist_vals)/4, np.mean(counts)*1.1, np.std(counts)]
-fit_boundaries = (0, [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
-popt, _ = curve_fit(FittingFunctions.double_gaussian, bin_centers, hist_vals, p0=initial_guess, bounds=fit_boundaries)
+#print('mean, stddev in counts are ', np.round(np.mean(counts)), np.round(np.std(counts)))
+init_guess = [max(hist_vals), np.mean(counts)*0.9, np.std(counts)*0.5,
+    max(hist_vals)/4, np.mean(counts)*1.1, np.std(counts)]
+fit_limits = (0, [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
+popt, _ = curve_fit(FittingFunctions.double_gaussian, bin_centers, hist_vals, p0=init_guess, bounds=fit_limits)
 
 # produce data with finer grid for plottint double gaussian
 x_fit_counts = np.linspace(bin_centers[0], bin_centers[-1], 200)
@@ -80,7 +80,7 @@ y_fit_counts = FittingFunctions.double_gaussian(x_fit_counts, *popt)
 
 # calculate detection threshold
 detection_treshold_counts = ROIs.calculate_histogram_detection_threshold(popt)
-print(detection_treshold_counts)
+print('detection threshold: ', detection_treshold_counts)
 np.save(images_path + 'detection_threshold.npy', detection_treshold_counts)
 
 # calculate area 1 peak
@@ -99,21 +99,26 @@ ax2.axvline(detection_treshold_counts, color='grey', linestyle='--', label='Dete
 fig2.legend()
 
 # same histogram but rescaled in terms of photon number 
-background_counts = popt[1]
+# convert photon number from Ixon conversion formula using background count nr
+backgr_counts = popt[1]
 iXon888 = EMCCD()
-photons_matrix = iXon888.counts_to_photons(counts, background_counts)
-detection_threshold_photons = iXon888.counts_to_photons(detection_treshold_counts, background_counts)
-x_fit_photons = iXon888.counts_to_photons(x_fit_counts, background_counts)
+photons_matrix = iXon888.counts_to_photons(counts, backgr_counts)
+detection_threshold_photons = iXon888.counts_to_photons(detection_treshold_counts, backgr_counts)
+x_fit_photons = iXon888.counts_to_photons(x_fit_counts, backgr_counts)
 
-# plot scaled histogram
+# we need to apply a scaling factor to correct for the weighted pixel count
+# this will disturb the absolute photon number. 
+# Rescale by computing the non-weighted pixel count
+roi_counts_matrix_non_weighted = ROIsObject.calculate_roi_counts(images_path, file_name_suffix, use_weighted_count=False)
+photons_matrix_non_weighted = iXon888.counts_to_photons(roi_counts_matrix_non_weighted.ravel(), backgr_counts)
+rescale_factor = photons_matrix_non_weighted.mean()/photons_matrix.mean()
+
 fig3, ax3 = plt.subplots()
 ax3.set_xlabel('Number of photons')
 ax3.set_ylabel('Probability')
 ax3.grid()
-ax3.hist(photons_matrix, bins=nr_bins_hist_avg, edgecolor='black', density=True) 
-# at the moment the fit is not rescaled, but it should be
-# ax3.plot(x_fit_photons, y_fit_counts, 'r-', label='Double Gaussian fit')
-ax3.axvline(detection_threshold_photons, color='grey', linestyle='--', label='Detection threshold')
+ax3.hist(photons_matrix*rescale_factor, bins=nr_bins_hist_avg, edgecolor='black', density=True) 
+ax3.axvline(detection_threshold_photons*rescale_factor, color='grey', linestyle='--', label='Detection threshold')
 fig3.legend()
 
 # %%
