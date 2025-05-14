@@ -33,23 +33,27 @@ from plotting_class import Plotting
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-images_path = 'Z:\\Strontium\\Images\\2025-05-12\\scan154334\\'
+images_path = 'Z:\\Strontium\\Images\\2025-05-12\\scan171709\\'
 file_name_suffix = 'image'  # import files ending with image.tiff
 nr_bins_hist_roi = 30
-nr_bins_hist_avg = 50
+nr_bins_hist_avg = 40
 roi_radius = 2
+log_thresh = 3
+plot_only_initial = True # of each set of 2 images (inital, survival) throw away survival
 
 # %% 
 
 # Calculate counts in each ROI using weighted pixel boxes and save to npy array for other functions to use
-ROIsObject = ROIs(roi_radius)
+ROIsObject = ROIs(roi_radius, log_thresh)
 roi_counts_matrix = ROIsObject.calculate_roi_counts(images_path, file_name_suffix, use_weighted_count=True)
-print("raw data: (nr ROIs, nr images): ", np.shape(roi_counts_matrix))
+print("raw data: (nr ROIs, nr shots): ", np.shape(roi_counts_matrix))
 np.save(images_path + 'roi_counts_matrix.npy', roi_counts_matrix)
 
 # %% 
 
 # Plot histograms for each ROI
+if plot_only_initial:
+    roi_counts_matrix = roi_counts_matrix[:, ::2]
 nr_rois = np.shape(roi_counts_matrix)[0]
 fig1, ax1 = plt.subplots(ncols=int(np.sqrt(nr_rois)), nrows=int(np.sqrt(nr_rois)),
     sharex=True, sharey=True)
@@ -96,7 +100,7 @@ ax2.hist(counts, bins=nr_bins_hist_avg, edgecolor='black')
 plt.grid(True)
 ax2.plot(x_fit_counts, y_fit_counts, 'r-', label='Double Gaussian fit')
 ax2.axvline(detection_treshold_counts, color='grey', linestyle='--', label='Detection threshold')
-fig2.legend()
+ax2.legend()
 
 # same histogram but rescaled in terms of photon number 
 # convert photon number from Ixon conversion formula using background count nr
@@ -117,9 +121,9 @@ fig3, ax3 = plt.subplots()
 ax3.set_xlabel('Number of photons')
 ax3.set_ylabel('Probability')
 ax3.grid()
-ax3.hist(photons_matrix*rescale_factor, bins=nr_bins_hist_avg, edgecolor='black', density=True) 
+ax3.hist(photons_matrix*rescale_factor, bins=nr_bins_hist_avg, edgecolor='black', density=True, label='Counts') 
 ax3.axvline(detection_threshold_photons*rescale_factor, color='grey', linestyle='--', label='Detection threshold')
-fig3.legend()
+ax3.legend()
 
 # %%
 

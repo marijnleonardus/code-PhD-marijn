@@ -20,9 +20,10 @@ from scipy.stats import sem
 
 
 class ROIs:
-    def __init__(self, roi_radius):
+    def __init__(self, roi_radius, log_thresh):
         self.roi_radius = roi_radius
         self.patch_size = 2*roi_radius + 1
+        self.log_thresh = log_thresh
 
     def extract_rois(self, images: np.ndarray, y_coords: np.ndarray, x_coords: np.ndarray):
         """
@@ -76,7 +77,7 @@ class ROIs:
 
         # 2) find your spot centers via LoG on the mean image
         mean_img = image_stack.mean(axis=0)
-        spots = blob_log(mean_img, max_sigma=3, min_sigma=1, num_sigma=5, threshold=12)
+        spots = blob_log(mean_img, max_sigma=3, min_sigma=1, num_sigma=5, threshold=self.log_thresh)
         y_coor, x_coor = spots[:,0], spots[:,1]
         print(f"Detected {len(spots)} spots")
 
