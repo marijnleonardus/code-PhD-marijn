@@ -7,6 +7,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from scipy.stats import sem
 import pandas as pd
 
 # append path with 'modules' dir in parent folder
@@ -46,7 +47,7 @@ sem_surv_prob = statistics_matrix[2]
 
 # plot for each ROI the survival plobability as function of detuning and fit with Gaussian
 nr_rois = np.shape(surv_matrix)[0]
-fig1, axs = plt.subplots(figsize = (10, 8), sharex=True, sharey=True,
+fig1, axs = plt.subplots(figsize = (11, 9), sharex=True, sharey=True,
     ncols=int(np.sqrt(nr_rois)), nrows=int(np.sqrt(nr_rois)))
 
 # needs to be 1d to iterate. prep intial guess for fitting
@@ -73,10 +74,11 @@ fig1.supylabel('Survival probabiility')
 # calculate uniformity
 detunings = np.array([arr[2] for arr in popt_list])
 avg_detuning = np.mean(detunings)
+sem_detuning = sem(detunings)
 std_deviation_detuning = np.std(detunings)
 uniformity = ImageStats.calculate_uniformity(detunings)
 
-print("Fit position:  ", np.round(avg_detuning/MHz, 2), "p/m ", np.round(std_deviation_detuning/MHz, 2), "MHz")
+print("Fit position:  ", np.round(avg_detuning/MHz, 2), "p/m ", np.round(sem_detuning/MHz, 2), "MHz")
 print("Standard deviation: ", 100*np.round(std_deviation_detuning/avg_detuning, 3), "%")
 print("uniformity: ", np.round(uniformity, 3))
 
