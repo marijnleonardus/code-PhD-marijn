@@ -22,7 +22,7 @@ from fitting_functions_class import FittingFunctions
 class ManipulateImage:
     """to do; need to merge some of these cropping functions that are similar
     crop_array_edge and crop_array_center can be static methods i think"""
-    def crop_array_edge(self, array, crop_range_x, crop_range_y):
+    def crop_array_edge(self, array: np.ndarray, crop_range_x: int, crop_range_y: int):
         """
         Crops an array by removing `x` number of rows and columns from each side.
 
@@ -38,7 +38,7 @@ class ManipulateImage:
         cropped_array = array[crop_range_y:-crop_range_y, crop_range_x:-crop_range_x]
         return cropped_array
     
-    def crop_array_center(self, array, center_x, center_y, crop_radius):
+    def crop_array_center(self, array: np.ndarray, center_x: int, center_y: int, crop_radius: int):
         """crop ROI from center position (column, row)
 
         Args:
@@ -59,7 +59,7 @@ class ManipulateImage:
         return center_roi
     
     @staticmethod
-    def crop_to_region_of_interest(image_file, row, column, roi_size):
+    def crop_to_region_of_interest(image_file: np.ndarray, row: int, column: int, roi_size: int):
         """crops image file to region of interest defined by (column, row), used for MOT images"""
     
         # cropping indices
@@ -73,17 +73,17 @@ class ManipulateImage:
         return region_of_interest
     
     @staticmethod
-    def crop_center(img, cropx, cropy):
+    def crop_center(img: np.ndarray, crop_x: int, crop_y: int):
         """crop image centered around middle"""
         
         y, x, *_ = img.shape
-        startx = x//2 - (cropx//2)
-        starty = y//2 - (cropy//2)    
-        return img[starty:starty + cropy, startx:startx + cropx, ...]
+        startx = x//2 - (crop_x//2)
+        starty = y//2 - (crop_y//2)    
+        return img[starty:starty + crop_y, startx:startx + crop_x, ...]
 
 
 class SpotDetectionFitting():
-    def __init__(self, sigma, threshold_detection, image):
+    def __init__(self, sigma: float, threshold_detection: float, image: np.ndarray):
         self.sigma = sigma
         self.threshold_detection = threshold_detection
         self.image = image
@@ -96,13 +96,14 @@ class SpotDetectionFitting():
             num_sigma=10, threshold=self.threshold_detection)
         return spots_laplacian_gaussian
     
-    def twod_gaussian_fit(self, amplitude_guess, offset_guess, print_enabled, plot_enabled):
+    def twod_gaussian_fit(self, amplitude_guess: float, offset_guess: float, print_enabled: bool, plot_enabled: bool):
         """fit 2d gaussian
 
         Args:
             amplitude_guess (float): _description_
             offset_guess (float): _description_
-            plot_enabled (float): _description_
+            print_enabled (Boolean): 
+            plot_enabled (Boolean): 
 
         Returns:
             amplitude, sigma_x, sigma_y (list): fit parameters of 2d gaussian result
@@ -160,7 +161,7 @@ class SpotDetectionFitting():
 
         return amplitude, sigma_x, sigma_y
 
-    def total_pixel_count(self, window_radius, print_enabled, plot_enabled):
+    def total_pixel_count(self, window_radius: int, print_enabled: bool, plot_enabled: bool):
         """compute total pixel count for absorption image
 
         Args:
@@ -195,7 +196,7 @@ class SpotDetectionFitting():
 
 class AbsorptionImage:
     @staticmethod
-    def compute_od(image):
+    def compute_od(image: np.ndarray):
         # need to do this to avoid underflow (below zero) in the image
         image = image.astype(np.int16)
 
@@ -209,7 +210,7 @@ class AbsorptionImage:
 
 class ImageStats():
     @staticmethod
-    def calculate_uniformity(input_vector):
+    def calculate_uniformity(input_vector: np.ndarray):
         """calculate uniformity in intensities for example
         from https://doi.org/10.1364/OE.15.001913
 

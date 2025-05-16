@@ -8,7 +8,7 @@ from scipy.constants import pi
 
 
 class GaussianBeam:
-    def __init__(self, power, waist):
+    def __init__(self, power: float, waist: float):
         self.power = power
         self.waist = waist
 
@@ -22,7 +22,7 @@ class GaussianBeam:
         max_intensity = 2*self.power/(pi*self.waist**2)
         return max_intensity
     
-    def get_rayleigh_range(self, wavelength):
+    def get_rayleigh_range(self, wavelength: float):
         """rayleigh range of gaussian beam
 
         Args:
@@ -35,7 +35,7 @@ class GaussianBeam:
         rayleigh_range = pi*self.waist**2/wavelength
         return rayleigh_range
 
-    def get_diffraction_limit(wavelength, numerical_aperture):
+    def get_diffraction_limit(self, wavelength: float, numerical_aperture: float):
         """ Compute diffraction limited waist for Gaussian that approaches Airy function
 
         Args:
@@ -49,7 +49,7 @@ class GaussianBeam:
     
 
 class EllipticalGaussianBeam:
-    def __init__(self, power, waist_x, waist_y):
+    def __init__(self, power: float, waist_x: float, waist_y: float):
         self.power = power
         self.waist_x = waist_x
         self.waist_y = waist_y

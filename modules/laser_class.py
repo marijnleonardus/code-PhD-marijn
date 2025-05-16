@@ -18,7 +18,7 @@ from atom_class import Sr
 
 
 class AllanDevFromDataset:
-    def __init__(self, dataset, sampling_rate: float):
+    def __init__(self, dataset: np.ndarray, sampling_rate: float):
         self.freqs = dataset
         self.sample_rate = sampling_rate
 
@@ -92,7 +92,7 @@ class AllanDevFromDataset:
 
 class AtomLightInteraction:
     @staticmethod
-    def calc_rydberg_rabi_freq(n, intensity, j_e):
+    def calc_rydberg_rabi_freq(n, intensity: float, j_e: int):
         """computes Rabi frequency to the rydberg state
         given RDME (radial dipole matrix element)
 
@@ -115,7 +115,7 @@ class AtomLightInteraction:
         return rydberg_rabi
     
     @staticmethod
-    def calc_dc_stark_shift(polarizability, electric_field):
+    def calc_dc_stark_shift(polarizability: float, electric_field: float):
         """see paper Mohan 2022 for Sr88 data
 
         Args:
@@ -129,7 +129,7 @@ class AtomLightInteraction:
         return dc_stark_Hz    
     
     @staticmethod
-    def saturation_intensity(lifetime, wavelength):
+    def saturation_intensity(lifetime: float, wavelength: float):
         """calculate saturation intensity
 
         Args:

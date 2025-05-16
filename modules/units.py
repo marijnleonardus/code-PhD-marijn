@@ -35,7 +35,7 @@ def get_hartree_energy_unit():
 hartree_energy = get_hartree_energy_unit()
 
 
-def get_atomic_pol_unit(hartree_energy):
+def get_atomic_pol_unit(hartree_energy: float):
     """get atomic polarizability unit
 
     Args:

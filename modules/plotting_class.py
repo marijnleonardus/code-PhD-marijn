@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 class Plotting:
     @staticmethod
-    def savefig(export_folder, file_name):
+    def savefig(export_folder: str, file_name: str):
         """save figure in export folder with file name
 
         Args:

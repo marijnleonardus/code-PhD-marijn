@@ -20,7 +20,7 @@ from scipy.stats import sem
 
 
 class ROIs:
-    def __init__(self, roi_radius, log_thresh):
+    def __init__(self, roi_radius: int, log_thresh: int):
         self.roi_radius = roi_radius
         self.patch_size = 2*roi_radius + 1
         self.log_thresh = log_thresh
@@ -46,7 +46,7 @@ class ROIs:
 
         return rois
 
-    def plot_single_roi(self, avg_patches):
+    def plot_single_roi(self, avg_patches: np.ndarray):
         """(optional) quick sanity plot for single ROI, e.g. ROI #0"""
         fig, ax = plt.subplots()
         im = ax.imshow(avg_patches[3], cmap='viridis')
@@ -54,7 +54,7 @@ class ROIs:
         fig.colorbar(im, ax=ax)
         ax.axis('off')
 
-    def calculate_roi_counts(self, images_path, file_name_suffix, use_weighted_count):
+    def calculate_roi_counts(self, images_path: str, file_name_suffix: str, use_weighted_count: bool):
         """calculate ROI counts for each image in the stack
 
         Args:
@@ -67,8 +67,7 @@ class ROIs:
         Returns:
             roi_counts: ROI counts for each image in the stack, per ROI
         """
-        background_px_count = 500
-
+      
         # 1) load your images
         image_stack = CameraImage().import_image_sequence(images_path, file_name_suffix)
         if image_stack.size == 0:
@@ -85,20 +84,19 @@ class ROIs:
         rois_mat = self.extract_rois(image_stack, y_coor, x_coor)
 
         if use_weighted_count:
-            # 4) per-ROI average patch, background subtracted
-            avg_patches = rois_mat.mean(axis=1)                 # (n_rois, p, p)
-            #avg_patches = avg_patches - background_px_count
+            # 4) per-ROI average patch, Shape (n_rois, p, p)
+            avg_patches = rois_mat.mean(axis=1)                
 
             # Optional: clip negatives if you want purely positive templates
             avg_patches = avg_patches - avg_patches.min(axis=(1,2), keepdims=True)
 
             # 5) normalize so ∑_{m,n} templates[i,m,n] == 1
-            sums        = avg_patches.sum(axis=(1,2), keepdims=True)
-            templates   = avg_patches / sums                    # (n_rois, p, p)
+            sums = avg_patches.sum(axis=(1,2), keepdims=True)
+            templates = avg_patches/sums  # (n_rois, p, p)
         else:
             # plain average (= uniform) template also sums to 1 now
             templates = np.ones((rois_mat.shape[0], *rois_mat.shape[2:]))
-            templates = templates / templates.sum(axis=(1,2), keepdims=True)
+            templates = templates/templates.sum(axis=(1,2), keepdims=True)
 
         # plot single ROI to check it went correctly
         self.plot_single_roi(templates)
@@ -139,7 +137,7 @@ class ROIs:
     
 
 class SingleAtoms():
-    def __init__(self, binary_threshold, images_path):
+    def __init__(self, binary_threshold: int, images_path: str):
         self.images_path = images_path
         self.binary_threshold = binary_threshold
     
@@ -181,7 +179,7 @@ class SingleAtoms():
             survival_matrix_binary[mask, im_idx] = final[mask]
         return survival_matrix_binary
     
-    def reshape_survival_matrix(self, df):
+    def reshape_survival_matrix(self, df: pd.DataFrame):
         """reshape survival matrix into shape (nr_rois, nr_x_values, nr_avgerages)
 
         Parameters:
@@ -201,7 +199,7 @@ class SingleAtoms():
         survival_matrix = survival_matrix_sorted.reshape(nr_rois, len(x_grid), nr_avg)
         return x_grid, np.array(survival_matrix)
     
-    def calculate_survival_statistics(self, df):
+    def calculate_survival_statistics(self, df: pd.DataFrame):
         """from the survival probabilty matrix in form (nr_rois, nr_x_values, nr_averages)
         compute mean and standard error both per ROI and globally
 
@@ -238,10 +236,10 @@ def main():
     # variables
     images_path = 'Z:\\Strontium\\Images\\2025-04-17\\scan131340\\'  # path to images
     file_name_suffix = 'image'  # import files ending with image.tif
-    roi_radius = 2  # ROI size. Radius 1 means 3x3 array
-    ROIobject = ROIs(roi_radius)
-    ROIobject.calculate_roi_counts(images_path, file_name_suffix)
-    Plotting.savefig("output", "average_patch.png")
+    ROIobject = ROIs(roi_radius=2, log_thresh=5)
+    ROIobject.calculate_roi_counts(images_path, file_name_suffix, use_weighted_count=True)
+    plt.show()
+    # Plotting.savefig("output", "average_patch.png")
 
 
 if __name__ == "__main__":
