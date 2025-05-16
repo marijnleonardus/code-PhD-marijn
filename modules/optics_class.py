@@ -19,8 +19,8 @@ class GaussianBeam:
             intensity (float): units [W/m^2]
         """
             
-        intensity = 2*self.power/pi/self.waist**2
-        return intensity
+        max_intensity = 2*self.power/(pi*self.waist**2)
+        return max_intensity
     
     def get_rayleigh_range(self, wavelength):
         """rayleigh range of gaussian beam
@@ -48,7 +48,7 @@ class GaussianBeam:
         return diffr_limited_waist
     
 
-class CylindricalGaussianBeam:
+class EllipticalGaussianBeam:
     def __init__(self, power, waist_x, waist_y):
         self.power = power
         self.waist_x = waist_x
@@ -61,6 +61,6 @@ class CylindricalGaussianBeam:
             intensity (float): units [W/m^2]
         """
             
-        intensity = 2*self.power/(pi*self.waist_x*self.waist_y)
-        return intensity
+        max_intensity = 2*self.power/(pi*self.waist_x*self.waist_y)
+        return max_intensity
     
