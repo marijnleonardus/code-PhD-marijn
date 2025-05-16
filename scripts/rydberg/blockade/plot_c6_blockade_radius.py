@@ -12,43 +12,40 @@ from scipy.constants import pi
 # append path with 'modules' dir in parent folder
 import sys
 import os
+from scipy.constants import pi
+
 script_dir = os.path.dirname(os.path.abspath(__file__))
 modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
 sys.path.append(modules_dir)
 
-from conversion_class import Conversion
 from optics_class import GaussianBeam
-from rates_class import LightAtomInteraction 
-from atom_class import VanDerWaals
+from laser_class import AtomLightInteraction 
+from atom_class import Rydberg
 from units import mW, MHz, um
 
 ## variables
 # array of n values
-n_start = 55
-n_end = 65
+n_start = 40
+n_end = 80
 n_array = np.linspace(n_start, n_end, n_end-n_start+1)
 
 # rabi freq. calculation
-beam_waist = 25*um  # [m]
+beam_waist = 18*um  # [m]
 beam_power = 30*mW
-rdmes = LightAtomInteraction.sr88_rdme_value_au(n_array)
 RydbergBeam = GaussianBeam(beam_power, beam_waist)
 intensity = RydbergBeam.get_intensity()
-rabi_frequencies = Conversion.rdme_to_rabi(rdmes, intensity, 1)
-rabi_frequencies_enhanced = np.sqrt(2)*rabi_frequencies
+rabi_freqs = AtomLightInteraction.calc_rydberg_rabi_freq(n_array, intensity, j_e=1)
+rabi_frequencies_enhanced = np.sqrt(2)*rabi_freqs
 
 # interaction energy
 R = 3e-6  # [m]
 
 # C6 coefficients
-c6_array = np.array([VanDerWaals.calculate_c6_coefficients(int(n), 0, 1, 0) for n in n_array])
-
-# C6 coeff in terms of h GHz/um^6 to h Hz/um^6
-# multiply with 2pi to make it an angular freq. 
-c6_Hz = c6_array*1e9*2*pi
+c6_array = np.array([Rydberg.calculate_c6_coefficients(int(n), 0, 1, 0) for n in n_array])
+print(c6_array[3])
 
 # compute blockade raddi for low and high estimates 
-blockade_radii = (abs(c6_Hz)/rabi_frequencies)**(1/6)
+blockade_radii = Rydberg().calculate_rydberg_blockade_radius(rabi_freqs)
 
 # arc style adjustment
 matplotlib.rcParams['font.family'] = 'sansserif'
@@ -57,9 +54,11 @@ matplotlib.style.use('default')
 # plot rabi frequencies
 fig0, ax0 = plt.subplots()
 ax0.grid()
-ax0.scatter(n_array, rabi_frequencies_enhanced/(2*pi*MHz))
+ax0.scatter(n_array, rabi_freqs/(2*pi*MHz), label=r'$\Omega/2\pi$ [MHz]')
+ax0.scatter(n_array, rabi_frequencies_enhanced/(2*pi*MHz), label=r'$\Omega_2/2\pi$ [MHz]')
+ax0.legend()
 ax0.set_xlabel(r'$n$')
-ax0.set_ylabel(r'$\Omega_2/2\pi$ [MHz]')
+ax0.set_ylabel('Rabi frequency')
 
 # plot C6 coefficient vs n
 fig1, ax1 = plt.subplots()

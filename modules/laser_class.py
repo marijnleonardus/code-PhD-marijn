@@ -102,12 +102,18 @@ class AtomLightInteraction:
             j_e (integer): quantum number J for rydberg state.
 
         Returns:
-            rabi (float): rabi freq. in [Hz]."""
+            rabi (float): rabi freq. in [rad/s]."""
+        
         e0 = elementary_charge # C
         a0 = scipy.constants.physical_constants['Bohr radius'][0] # m
+
+        # calculate radial dipole matrix elements
         rdme = Sr.get_rdme(n)
+
+        # calculate angular rabi freq. from Madjarov thesis eq. (4.5)
         rydberg_rabi = (rdme*e0*a0)/hbar*np.sqrt(2*intensity/(epsilon_0*c*(2*j_e + 1)))
         return rydberg_rabi
+    
     @staticmethod
     def calc_dc_stark_shift(polarizability, electric_field):
         """see paper Mohan 2022 for Sr88 data

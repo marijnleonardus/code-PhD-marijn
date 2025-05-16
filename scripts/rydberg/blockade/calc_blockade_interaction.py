@@ -11,7 +11,7 @@ from units import MHz, h, um
 from atom_class import Rydberg
 
 # variables
-rabi_freq = 7*MHz # rad/s
+rabi_freq = 0.4*MHz # rad/s
 omega = 2*pi*rabi_freq
 R = 3.6*um # [m]
 
