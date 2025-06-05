@@ -12,53 +12,43 @@ modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 sys.path.append(modules_dir)
 
 # user defined libraries 
-from atoms_tweezer_class import TrapFrequencies 
+from atoms_tweezer_class import AtomicMotion 
 from conversion_class import Conversion
 from optics_class import GaussianBeam
 from atoms_tweezer_class import AtomicCalculations
+from units import atomic_pol_unit, h, kHz, MHz, mK 
 
 # constants
-h = hbar*2*pi
-polarizability_ground_au = 286 # atomic units
-polarizability_3p1_au = 195 # atomic units
+pol_1s0_au = 286 # atomic units
+pol_3p1_au = 199 # atomic units
 mass = 88*proton_mass
-kHz = 1e3
-MHz = 1e6
 
 # variables
-lamb = 813e-9 # m
+lamb = 813.4e-9 # m
 waist_diff_limited = 0.8e-6 # m
 diff_stark_measured_J = -3.37*MHz*h # J
 number_traps = 5*5
-tweezer_power_total = 340*1e-3 # W
+tweezer_power_total = 330*1e-3 # W
 tweezer_power_total_reduced = 70*1e-3 # W for parametric heating measurements we ramp down traps
 tweezer_power = tweezer_power_total*0.95/number_traps # W
-print("power in tweezer: ", round(tweezer_power/1e-3, 1), "mW")
 
-# polarizatility in SI units
-pol_atomic_units = Conversion().get_atomic_pol_unit()
-polarizability_ground_si = polarizability_ground_au*pol_atomic_units
-
-# The measured trap depth for the ground state in J
-U0_measured_g_J = diff_stark_measured_J/(polarizability_3p1_au/polarizability_ground_au - 1)
-U0_measured_g_mK = U0_measured_g_J/Boltzmann/1e-3 # convert to mK
-U0_measured_g_MHz = U0_measured_g_J/h/MHz # convert to MHz
-
-# print trap depth in mK. 
-print("measured U0 |g>: ", round(U0_measured_g_mK, 2), "mK or ", round(U0_measured_g_MHz, 1), "MHz")
+# The measured trap depth for the ground state 1S0
+pol_1s0_SI = pol_1s0_au*atomic_pol_unit
+U0_measured_g_J = diff_stark_measured_J/(pol_3p1_au/pol_1s0_au - 1)
+print("measured U0 |g>: ", round(U0_measured_g_J/(Boltzmann*mK), 2), "mK or ", round(U0_measured_g_J/(h*MHz), 1), "MHz")
 
 # calculate theory stark shift
 DiffractionLimitedTweezer = GaussianBeam(tweezer_power, waist_diff_limited)
 intensity_diff_limited = DiffractionLimitedTweezer.get_intensity()
-AtomCalc = AtomicCalculations(pol_atomic_units)
-U0_theory_g_J = AtomCalc.ac_stark_shift(polarizability_ground_au, intensity_diff_limited)
+AtomCalc = AtomicCalculations(atomic_pol_unit)
+U0_theory_g_J = AtomCalc.ac_stark_shift(pol_1s0_au, intensity_diff_limited)
 
 # calculate waist from diff. limited vs measured trap depth
 waist_measured = waist_diff_limited*np.sqrt(U0_theory_g_J/U0_measured_g_J)
 print("estimated waist: ", round(waist_measured*MHz, 2), "um")
 
 # calculate trap frequency for full power
-trap_freq_rad = TrapFrequencies().trap_freq_radial(U0_measured_g_J, mass, waist_measured)
+trap_freq_rad = AtomicMotion().trap_frequency_radial(mass, waist_measured, U0_measured_g_J/Boltzmann)
 print("trap freq. radial full power: ", round(trap_freq_rad/kHz/(2*pi)), " kHz")
 
 # calculate trap freq. for reduced tweezer power, compare againts parametric heating
@@ -68,5 +58,5 @@ print("trap freq. radial reduced power: ", round(trap_freq_rad_reduced/kHz/(2*pi
 # calculate axial trap freq. for full power
 Tweezer = GaussianBeam(tweezer_power, waist_measured)
 rayleigh_range_estimated = Tweezer.get_rayleigh_range(lamb)
-trap_freq_axial = TrapFrequencies().trap_freq_axial(U0_measured_g_J, mass, rayleigh_range_estimated)
+trap_freq_axial = AtomicMotion().trap_frequency_axial(mass, rayleigh_range_estimated, U0_measured_g_J/Boltzmann)
 print("trap freq. axial: ", round(trap_freq_axial/kHz/(2*pi)), " kHz")

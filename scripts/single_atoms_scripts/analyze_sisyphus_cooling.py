@@ -46,7 +46,7 @@ max_surv_prob_err = np.round(glob_surv_sem[max_idx], 3)
 best_cooling_freq = x_grid[max_idx]
 print("best survival: ", max_surv_prob, " pm ", max_surv_prob_err, " at ", best_cooling_freq/MHz, " MHz")
 
-fig1, ax1 = plt.subplots()
+fig1, ax1 = plt.subplots(figsize=(4, 3))
 ax1.errorbar(x_grid/MHz, glob_surv, yerr=glob_surv_sem, fmt='o', color='blue')
 ax1.set_xlabel('Sisyphus cooling detuning. [MHz]')
 ax1.set_ylabel('Survival probability')

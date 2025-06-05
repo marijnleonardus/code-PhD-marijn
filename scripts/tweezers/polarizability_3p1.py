@@ -1,9 +1,7 @@
-# %% imports 
 
 import numpy as np
 import matplotlib.pyplot as plt                                      
 
-# %% variables
 # polarizabilit 1S0 in atomic units. source: rydberg simulation platform. 
 pol_1s0 = 274.4 + 6.4
 
@@ -18,21 +16,14 @@ theta_deg = theta_rad*180/np.pi
 pol_3p1_mj1 = alpha_s_3p1 + alpha_t_3p1*(3*np.cos(theta_rad)**2-1)/2*(3*1**2-2)
 pol_3p1_mj0 = alpha_s_3p1 + alpha_t_3p1*(3*np.cos(theta_rad)**2-1)/2*(3*0**2-2)
 
-# %% plotting
-fig, ax = plt.subplots(figsize=(5, 3.5))
-
-# plot 1s0, make matrix of length theta
+fig, ax = plt.subplots(figsize=(4, 3))
 pol_1s0 = np.linspace(pol_1s0, pol_1s0, len(theta_rad))
-ax.plot(theta_deg, pol_1s0, label=r'${}^1S_0$', color='black')
-
-# plot 3p1(mj=0, mj=+/-1)
-ax.plot(theta_deg, pol_3p1_mj0, label=r'${}^3P_1 \ (m_j=0)$', color='green')
-ax.plot(theta_deg, pol_3p1_mj1, label=r'${}^3P_1 \ (m_j=\pm 1$)', color='red')
-
+ax.plot(theta_deg, pol_1s0, label=r'${}^1S_0$', color='orange')
+ax.plot(theta_deg, pol_3p1_mj0, label=r'${}^3P_1 \ (m_{\text{j}}=0)$', color='blue')
+ax.plot(theta_deg, pol_3p1_mj1, label=r'${}^3P_1 \ (m_{\text{j}}=\pm 1$)', color='navy')
 ax.set_xlabel(r'$\theta$ (deg.)')
-ax.set_ylabel(r'$\alpha$ (atomic units)')
+ax.set_ylabel(r'$\alpha_{\text{tot}}$ (atomic units)')
 ax.legend()
-#plt.show()
 
-plt.savefig('polarizability_3p1.png', bbox_inches='tight', dpi=400)
+plt.savefig('output/polarizability_3p1.pdf', bbox_inches='tight', dpi=400)
 plt.show()

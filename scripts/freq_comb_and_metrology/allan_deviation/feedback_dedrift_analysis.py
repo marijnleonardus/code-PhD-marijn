@@ -15,7 +15,7 @@ modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 sys.path.append(modules_dir)
 
 # user defined functions
-from frequency_analysis_class import AllanDevFromDataset
+from laser_class import AllanDevFromDataset
 from data_handling_class import read_csv_file, pandas_read_datfile
 
 # %% parameters and import data

@@ -77,7 +77,6 @@ class AtomicCalculations:
         Returns:
             AC stark shift: trap depth in J
         """
-              
         shark_shift = polarizability*self.au/(2*c*epsilon_0)*intensity
         return shark_shift
     
