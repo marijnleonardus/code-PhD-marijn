@@ -113,9 +113,16 @@ def calculate_c_ops(linewidth, rabi_f, thetas, d_theta):
 
 print("Running Sisyphus cooling simulation...")
 
-H = calculate_H(linewidth, rabi_f, wg, we, detuning)
-c_ops = calculate_c_ops(linewidth, rabi_f, thetas, d_theta)
-res = mesolve(H, psi0, times, c_ops, e_ops=[project_e, number_op], options={"store_states": False})
+
+def solve_master_equation(freqs):
+    linewidth, rabi_f, wg, we, detuning = freqs
+    H = calculate_H(linewidth, rabi_f, wg, we, detuning)
+    c_ops = calculate_c_ops(linewidth, rabi_f, thetas, d_theta)
+    res = mesolve(H, psi0, times, c_ops, e_ops=[project_e, number_op], options={"store_states": False})
+    return res
+
+
+res = solve_master_equation([linewidth, rabi_f, wg, we, detuning])
 
 # %% plot results
 
@@ -155,7 +162,7 @@ for i, d in enumerate(tqdm(detunings)):
 fig, ax = plt.subplots(figsize=(4, 3))
 ax.plot(detunings/(2*pi*kHz), final_motional_levels)
 ax.set_xlabel(r"$\Delta/2\pi$ [kHz]")
-ax.set_ylabel(r"$\left<n\right>_{end}$")
+ax.set_ylabel(r"$\bar{n}$")
 ax.tick_params(axis="both",direction="in")
 ax.grid(linewidth = 0.5, linestyle = "-.")
 plt.show()
@@ -163,5 +170,36 @@ plt.show()
 min_n = np.min(final_motional_levels)
 detuning_min_n = detunings[np.argmin(final_motional_levels)]
 print(f"Lowest motional level of n = {min_n:.2f} was found for a detuning of {detuning_min_n/(2*pi*1e3):.2f} kHz")
+
+# %% investigate cooling rate 
+
+# Redefine time to only take 0.5 ms  
+max_time_s = 0.5*ms
+dt = 0.1 # [Rabi cycles]
+max_time_rabi = max_time_s*rabi_f # time in Rabi cycles. 
+times = np.arange(0, max_time_rabi, dt)
+
+detunings = 2*pi*np.linspace(-1*MHz, 0, 5)
+final_ns = np.zeros(detunings.size)
+base_freqs = base_freqs.copy()
+
+for i, detuning in enumerate(detunings):
+    print(f"run: {i+1}/{final_ns.size}")
+    base_freqs[4] = detuning
+    res = solve_master_equation(base_freqs)
+    n_final = res.expect[0][-1]
+    final_ns[i] = n_final
+    
+# %% plot the cooling rate as a function of detuning
+
+n_reductions = N_i*np.ones(detunings.size) - final_ns
+detunings_kHz = detunings/(2*pi*kHz)
+#detunings_kHz = detunings/wg
+
+fig, ax = plt.subplots()
+ax.plot(detunings_kHz, n_reductions)
+ax.set_ylabel(r"$\bar{n}_{f} - \bar{n}_{i}$")
+ax.set_xlabel(r"Detuning $\Delta/2\pi$ [kHz]")
+ax.tick_params(axis="both", direction="in")
 
 # %%
