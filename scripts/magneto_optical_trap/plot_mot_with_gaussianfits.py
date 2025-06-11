@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 import matplotlib.gridspec as gridspec
-from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+from matplotlib_scalebar.scalebar import ScaleBar
 from scipy.constants import pi
 
 import sys
@@ -34,7 +34,7 @@ h = 20000           # GridSpec height ratio
 cam_mag = 0.6       # Camera magnification
 pixel_size = 3.45e-6  # m
 bin_size = 1
-crop_r = 140      # Crop size in pixels
+crop_r = 160      # Crop size in pixels
 folder_name = r'T:\\KAT1\\Marijn\\thesis_measurements\\mot\\sf_mot\\absorption\\442187\\'
 file_name = r'0000absorption.tif'
 
@@ -97,12 +97,9 @@ def main(image, cmap, show_gaussian_fit):
     fig.colorbar(img_artist, ax=ax_img)
 
     # Add scalebar (convert a 0.5 mm object to pixel units)
-    scalebar_object_size = 0.2e-3  # 0.5 mm in meters
-    scalebar_pixels = CameraImage.m_to_pixels(scalebar_object_size, cam_mag, pixel_size, bin_size)
-    scale_bar = AnchoredSizeBar(ax_img.transData, scalebar_pixels, r'0.2 mm',
-        'upper left', pad=0.5, color='white', frameon=False, size_vertical=2.5)
-    ax_img.add_artist(scale_bar)
-    
+    scalebar = ScaleBar(pixel_size*bin_size/cam_mag, units='m', location='upper left')
+    ax_img.add_artist(scalebar)
+
     # --- 3. Optionally overlay Gaussian fits ---
     if show_gaussian_fit:
         # Calculate axes (in meters) for the fit plots using the fitted centers
@@ -140,6 +137,6 @@ if __name__ == '__main__':
     image = ManipulateImage.crop_to_region_of_interest(image, 470, 140, crop_r)
 
     # Fit the image and plot the result (set show_gaussian_fit True or False as needed)
-    main(image, cmap='magma', show_gaussian_fit=False)
+    main(image, cmap='Reds', show_gaussian_fit=False)
 
-    Plotting.savefig(export_folder=folder_name, file_name='\mot_' + image_type + '_plot.pdf')
+    Plotting.savefig('output', file_name='\mot_' + image_type + '_plot.pdf')

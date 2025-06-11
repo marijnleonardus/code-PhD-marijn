@@ -13,15 +13,13 @@ sys.path.append(modules_dir)
 # user defined libraries
 from fitting_functions_class import FittingFunctions
 from plotting_class import Plotting
+from units import ms, um, uK
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
 folder_name = r'T:\\KAT1\\Marijn\\thesis_measurements\\mot\\sf_time_of_flight\\second try\\'
-ms=1e-3 # s
-um=1e-6 # m
-uK=1e-6 # K
 
 # load data from origin file
 data_x = np.genfromtxt(folder_name + "logresult_sizexprocessed.csv", delimiter=',')

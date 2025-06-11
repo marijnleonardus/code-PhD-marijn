@@ -61,6 +61,12 @@ class AtomicMotion:
         trap_freq_ax = omega_trap_ax/(2*pi)
         return trap_freq_ax
     
+    @staticmethod
+    def lamb_dicke_parameter(mass, lamb, trap_freq):
+        """return lamb-dicke parameter eta"""
+        wave_nr = 2*pi/lamb
+        eta = wave_nr*np.sqrt(hbar/(2*mass*trap_freq))
+        return eta
 
 class AtomicCalculations:
     def __init__(self, atomic_unit):

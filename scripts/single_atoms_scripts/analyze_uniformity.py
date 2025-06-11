@@ -54,6 +54,7 @@ fig1, axs = plt.subplots(figsize = (11, 9), sharex=True, sharey=True,
 axs = axs.ravel()
 initial_guess = [1, -0.5, 3.5e6, 200e3] #  offset, amplitude, middle, width
 popt_list = []
+pcov_list = []
 
 # x axis with more values for fit plot
 x_axis_fit = np.linspace(x_grid[0], x_grid[-1], 500)
@@ -66,6 +67,7 @@ for roi_idx in range(nr_rois):
     # fit datapoints and plot result
     popt, pcov = curve_fit(FittingFunctions.gaussian_function, x_grid, surv_prob[roi_idx, :], p0=initial_guess)
     popt_list.append(popt)
+    pcov_list.append(pcov)
     axs[roi_idx].plot(x_axis_fit/MHz, FittingFunctions.gaussian_function(x_axis_fit, *popt), color='red')
 
 fig1.supxlabel('Detuning [MHz]')
@@ -73,6 +75,8 @@ fig1.supylabel('Survival probabiility')
 
 # calculate uniformity
 detunings = np.array([arr[2] for arr in popt_list])
+detunings_stddev = np.array([np.sqrt(pcov[2, 2]) for pcov in pcov_list])
+print(detunings_stddev)
 avg_detuning = np.mean(detunings)
 sem_detuning = sem(detunings)
 std_deviation_detuning = np.std(detunings)

@@ -35,7 +35,7 @@ tweezer_power = tweezer_power_total*0.95/number_traps # W
 # The measured trap depth for the ground state 1S0
 pol_1s0_SI = pol_1s0_au*atomic_pol_unit
 U0_measured_g_J = diff_stark_measured_J/(pol_3p1_au/pol_1s0_au - 1)
-print("measured U0 |g>: ", round(U0_measured_g_J/(Boltzmann*mK), 2), "mK or ", round(U0_measured_g_J/(h*MHz), 1), "MHz")
+print("measured U0 |g>: ", round(U0_measured_g_J/(Boltzmann*mK), 3), "mK or ", round(U0_measured_g_J/(h*MHz), 2), "MHz")
 
 # calculate theory stark shift
 DiffractionLimitedTweezer = GaussianBeam(tweezer_power, waist_diff_limited)
