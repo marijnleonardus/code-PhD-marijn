@@ -5,7 +5,6 @@
 
 # changes made: JIT compilation, MEsolve instead of MCsolve and some minor changes
     
-
 import os
 import sys
 import numpy as np
@@ -29,29 +28,29 @@ qutip.settings.auto_tidyup_atol = 1e-12
 
 # %% parameters
 
-# % physical parameters
+# physical parameters
 linewidth = 2*pi*7.4*kHz
 rabi_f = 2*pi*100*kHz
+alpha_e = 355 # polarizability, a.u.
+alpha_g = 286 # polarizability, a.u.
 wg = 2*pi*86*kHz
-alpha_e = 355 # atomic polarizability in atomic units
-alpha_g = 286 # atomic polarizability in atomic units
 we = np.sqrt(alpha_e/alpha_g)*wg
 detuning = -1.7*wg
 mass = 87.9*proton_mass
 lamb = 689*nm
 
 # simulation parameters
-N_max = 15        # motional levels
+N_max = 15      # motional levels
 N_i = 5           # initial Fock level
-max_time_s = 10*ms
+max_time_s = 5*ms
 dt = 0.1
 max_time_rabi = max_time_s*rabi_f # time in Rabi cycles. 
 # Confusing, but QuTip mesolve expects time in Rabi cycles
 # as t_nondimensionalized = t*real*omega_ref
-times = np.arange(0, max_time_rabi, dt)
+times_rabi = np.arange(0, max_time_rabi, dt)
 
 # emission angle discretization
-N_theta = 10
+N_theta = 5
 thetas = np.linspace(0, pi, N_theta)
 d_theta = thetas[1] - thetas[0]
 
@@ -64,6 +63,9 @@ absorb = emit.dag()
 project_e = tensor(projection(2, 1, 1), qeye(N_max))
 project_g = tensor(projection(2, 0, 0), qeye(N_max))
 number_op = a.dag()*a
+
+# group freq. list to pass down to master equatino solver
+base_freqs = [linewidth, rabi_f, wg, we, detuning]
 
 # %% helper functions
 
@@ -85,7 +87,7 @@ def calculate_H(linewidth, rabi_f, wg, we, detuning):
 
     # nondimensionalize
     freqs = np.array([linewidth, rabi_f, wg, we, detuning])/rabi_f
-    lw_nd, rabi_nd, wg_nd, we_nd, det_nd = freqs
+    _, rabi_nd, wg_nd, we_nd, det_nd = freqs
 
     H = (
         wg_nd*(a.dag()*a+0.5)*(project_g+project_e)
@@ -109,97 +111,109 @@ def calculate_c_ops(linewidth, rabi_f, thetas, d_theta):
     return c_ops
 
 
-# %% do one simulation for particular settings used
-
-print("Running Sisyphus cooling simulation...")
-
-
-def solve_master_equation(freqs):
+def solve_master_equation(freqs, times_rabi):
     linewidth, rabi_f, wg, we, detuning = freqs
     H = calculate_H(linewidth, rabi_f, wg, we, detuning)
     c_ops = calculate_c_ops(linewidth, rabi_f, thetas, d_theta)
-    res = mesolve(H, psi0, times, c_ops, e_ops=[project_e, number_op], options={"store_states": False})
+    res = mesolve(H, psi0, times_rabi, c_ops, e_ops=[project_e, number_op], options={"store_states": False})
     return res
 
 
-res = solve_master_equation([linewidth, rabi_f, wg, we, detuning])
+# %% do one simulation for particular settings used
 
-# %% plot results
+print("Running Sisyphus cooling simulation...")
+res = solve_master_equation([linewidth, rabi_f, wg, we, detuning], times_rabi)
 
 plt.figure()
 #plt.plot(times, res.expect[0], label=r"$P_e$")
-times_ms = times/rabi_f/ms # same rescaling as qubit mesolve expects, consistently scaled
+times_ms = times_rabi/rabi_f/ms # same rescaling as qubit mesolve expects, consistently scaled
 plt.plot(times_ms, res.expect[1], label=r"$\langle n \rangle$")
 plt.xlabel('Time [ms]')
 plt.legend()
 plt.tight_layout()
-plt.show()
 
-# %% solve as a function of detuning
+# %% plot the final <n> as a function of detuning
 
-detunings = 2*pi*np.linspace(-1.5*MHz, 1*MHz, 30)
-base_freqs = [linewidth, rabi_f, wg, we, detuning]
-
-final_motional_levels = np.zeros(detunings.size)
+detunings_ss = 2*pi*np.linspace(-1.5*MHz, 1*MHz, 5)
+final_motional_levels = np.zeros(detunings_ss.size)
 
 print("Running steadystate calculation for different detunings...")
-for i, d in enumerate(tqdm(detunings)):
+for i, det in enumerate(tqdm(detunings_ss)):
     # Update the detuning value for this iteration
-    base_freqs[4] = d
+    base_freqs[4] = det
     
-    # Calculate the Hamiltonian by UNPACKING the list of frequencies
     H = calculate_H(*base_freqs)
-    
-    # Find the steady state
-    ss = steadystate(H, c_ops, method='direct') # Using a specific method can sometimes help
+    c_ops = calculate_c_ops(linewidth, rabi_f, thetas, d_theta)
+    ss = steadystate(H, c_ops, method='direct')
 
     # Calculate the expectation value for the motional number operator
     final_n = expect(number_op, ss)
     final_motional_levels[i] = final_n
 
-# %% plot the final motional levels as a function of detuning
-
 fig, ax = plt.subplots(figsize=(4, 3))
-ax.plot(detunings/(2*pi*kHz), final_motional_levels)
+ax.plot(detunings_ss/(2*pi*kHz), final_motional_levels)
 ax.set_xlabel(r"$\Delta/2\pi$ [kHz]")
 ax.set_ylabel(r"$\bar{n}$")
 ax.tick_params(axis="both",direction="in")
 ax.grid(linewidth = 0.5, linestyle = "-.")
-plt.show()
 
 min_n = np.min(final_motional_levels)
-detuning_min_n = detunings[np.argmin(final_motional_levels)]
-print(f"Lowest motional level of n = {min_n:.2f} was found for a detuning of {detuning_min_n/(2*pi*1e3):.2f} kHz")
+detuning_min_n = detunings_ss[np.argmin(final_motional_levels)]
+print(f"Lowest n = {min_n:.2f} found for a detuning of {detuning_min_n/(2*pi*1e3):.2f} kHz")
 
-# %% investigate cooling rate 
+# %% investigate cooling rate as a function of detuning
 
 # Redefine time to only take 0.5 ms  
-max_time_s = 0.5*ms
+cooling_interval_s = 0.1*ms
 dt = 0.1 # [Rabi cycles]
-max_time_rabi = max_time_s*rabi_f # time in Rabi cycles. 
-times = np.arange(0, max_time_rabi, dt)
+cooling_interval_rabi = cooling_interval_s*rabi_f # time in Rabi cycles. 
+coolig_times_rabi = np.arange(0, cooling_interval_rabi, dt)
 
-detunings = 2*pi*np.linspace(-1*MHz, 0, 5)
-final_ns = np.zeros(detunings.size)
+detunings = 2*pi*np.linspace(-400*kHz, 0*kHz, 5)
+final_ns_vs_det = np.zeros(detunings.size)
 base_freqs = base_freqs.copy()
 
+print("Running Sisyphus cooling simulation as a function of detuning. ...")
+
 for i, detuning in enumerate(detunings):
-    print(f"run: {i+1}/{final_ns.size}")
+    print(f"run: {i + 1}/{final_ns_vs_det.size}")
     base_freqs[4] = detuning
-    res = solve_master_equation(base_freqs)
-    n_final = res.expect[0][-1]
-    final_ns[i] = n_final
-    
-# %% plot the cooling rate as a function of detuning
+    sol = solve_master_equation(base_freqs, coolig_times_rabi)
+    n_final = sol.expect[1][-1]
+    final_ns_vs_det[i] = n_final
 
-n_reductions = N_i*np.ones(detunings.size) - final_ns
-detunings_kHz = detunings/(2*pi*kHz)
-#detunings_kHz = detunings/wg
+n_reductions_vs_det = N_i*np.ones(detunings.size) - final_ns_vs_det
 
-fig, ax = plt.subplots()
-ax.plot(detunings_kHz, n_reductions)
-ax.set_ylabel(r"$\bar{n}_{f} - \bar{n}_{i}$")
+fig, ax = plt.subplots(figsize=(4, 3))
+ax.plot(detunings/(2*pi)/kHz, n_reductions_vs_det, label=r"$\Omega/2\pi$ ="+ f"{rabi_f/(2*pi*1e3):.0f} kHz")
 ax.set_xlabel(r"Detuning $\Delta/2\pi$ [kHz]")
+ax.set_ylabel(r"$\bar{n}_{f} - \bar{n}_{i}$")
+ax.legend()
 ax.tick_params(axis="both", direction="in")
+
+# %% Plot the cooling rate as a function of Rabi freq. 
+
+rabi_freqs = 2*pi*np.linspace(20, 200, 5)*kHz
+final_ns_vs_rabi = np.zeros(rabi_freqs.size)
+
+print("Running Sisyphus cooling simulation as a function of Rabi freq. ...")
+
+for i, new_rabi_f in enumerate(tqdm(rabi_freqs)):
+    print(f"run: {i + 1}/{final_ns_vs_rabi.size}")
+    base_freqs[1] = new_rabi_f
+    sol = solve_master_equation(base_freqs, coolig_times_rabi)
+    n_final = sol.expect[1][-1]
+    final_ns_vs_rabi[i] = n_final
+
+n_reductions_vs_rabi = N_i*np.ones(rabi_freqs.size) - final_ns_vs_rabi
+
+fig, ax = plt.subplots(figsize=(4, 3))
+ax.plot(rabi_freqs/(2*pi)/kHz, n_reductions_vs_rabi, label=r"$\Delta/2\pi$ ="+ f"{detuning/(2*pi*1e3):.0f} kHz")
+ax.set_xlabel(r"Rabi frequency $\Omega/2\pi$ [kHz]")
+ax.set_ylabel(r"$\bar{n}_{f} - \bar{n}_{i}$")
+ax.tick_params(axis="both", direction="in")
+plt.legend()
+plt.grid(linewidth = 0.5, linestyle = "-.")
+plt.show()
 
 # %%
