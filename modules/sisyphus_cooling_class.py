@@ -6,6 +6,7 @@
 
 import numpy as np
 from qutip import *
+from qutip.ui.progressbar import TextProgressBar
 
 # add local modules
 import os
@@ -57,6 +58,7 @@ class SisyphusCooling:
         freqs = np.array([linewidth, rabi_f, wg, we, detuning])/rabi_f
         _, rabi_nd, wg_nd, we_nd, det_nd = freqs
 
+        # for hamiltonian see 
         H = (
             wg_nd*(self.a.dag()*self.a + 0.5)*(self.project_g + self.project_e)
             + (we_nd**2 - wg_nd**2)/(4*wg_nd)*(self.a + self.a.dag())**2*self.project_e
@@ -77,14 +79,34 @@ class SisyphusCooling:
             c_ops.append(np.sqrt(rate)*kick*self.emit)
         return c_ops
     
-    def solve_master_equation(self, arguments):
-        "to be used in for loop, "
-        "this time we have to compute c_ops each time since they vary with rabi frequency, which "
-        "could be the argument in the for loop"
+    def solve_master_equation(self, arguments, show_progress=True):
+        """
+        Solve the master equation with an optional progress bar.
 
-        [linewidth, rabi_f, we, detuning, times_rabi] = arguments
+        Parameters:
+        - arguments: A list containing [linewidth, rabi_f, we, detuning, times_rabi].
+        - show_progress (bool): If True, a text-based progress bar will be displayed.
+        """
+        linewidth, rabi_f, we, detuning, times_rabi = arguments
         psi0, project_e, _, number_op = self.get_operators()
         H = self.calculate_H(linewidth, rabi_f, self.wg, we, detuning)
         c_ops = self.calculate_c_ops(linewidth, rabi_f, self.thetas, self.d_theta)
-        sol = mesolve(H, psi0, times_rabi, c_ops, e_ops=[project_e, number_op], options={"store_states": False})
+
+        # Set up the options dictionary for the solver.
+        # We initialize it as a dictionary directly.
+        options = {"store_states": True} 
+
+        # Conditionally add the progress bar using dictionary key assignment
+        if show_progress:
+            options['progress_bar'] = 'text'
+
+        # Run the master equation solver, passing the options dictionary
+        sol = mesolve(
+            H,
+            psi0,
+            times_rabi,
+            c_ops,
+            e_ops=[project_e, number_op],
+            options=options
+        )
         return sol

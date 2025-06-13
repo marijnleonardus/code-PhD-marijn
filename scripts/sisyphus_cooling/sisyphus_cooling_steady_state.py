@@ -4,6 +4,8 @@
 
 # refactored code in class and seperate main functinos, MEsolve instead of MCsolve and some minor changes
 
+# %%
+
 import os
 import sys
 import numpy as np
@@ -27,8 +29,8 @@ qutip.settings.auto_tidyup = True
 qutip.settings.auto_tidyup_atol = 1e-12
 
 # simulation parameters
-N_max = 20      # motional levels
-N_i = 5           # initial Fock level
+N_max = 25      # motional levels
+N_i = 12           # initial Fock level
 max_time_s = 10*ms
 dt = 0.1
 max_time_rabi = max_time_s*rabi_f # time in Rabi cycles. 
@@ -37,11 +39,12 @@ max_time_rabi = max_time_s*rabi_f # time in Rabi cycles.
 times_rabi = np.arange(0, max_time_rabi, dt)
 
 # calculate solid state solution as a function of following detunings
-detunings_ss = 2*pi*np.linspace(-1.5*MHz, 1*MHz, 120)
+detunings_ss = 2*pi*np.linspace(-1.5*MHz, 1*MHz, 250)
 
 # prepare simulation
 SisCooling = SisyphusCooling(N_max, N_i, mass, lamb, wg, thetas, d_theta)
 
+# %% 
 print("Running Sisyphus cooling simulation...")
 sol = SisCooling.solve_master_equation([linewidth, rabi_f, we, detuning, times_rabi])
 
@@ -50,11 +53,11 @@ times_ms = times_rabi/rabi_f/ms # same rescaling as qubit mesolve expects, consi
 
 ax.plot(times_ms, sol.expect[1], label=r"$\langle n \rangle$")
 #plt.plot(times, res.expect[0], label=r"$P_e$")
-
 ax.set_xlabel('Time [ms]')
 ax.legend()
 fig.tight_layout()
 
+# %% 
 # Plot final n as a function of detuning
 final_motional_levels = np.zeros(detunings_ss.size)
 arguments = [linewidth, rabi_f, wg, we, detuning]
@@ -77,9 +80,10 @@ for i, det in enumerate(tqdm(detunings_ss)):
     final_n = expect(number_op, ss)
     final_motional_levels[i] = final_n
 
+# %% 
 fig2, ax2 = plt.subplots(figsize=(4, 3))
 ax2.plot(detunings_ss/(2*pi*kHz), final_motional_levels)
-ax2.set_xlabel(r"$\Delta/2\pi$ [kHz]")
+ax2.set_xlabel(r"$\Delta'/2\pi$ [kHz]")
 ax2.set_ylabel(r"$\bar{n}$")
 ax2.tick_params(axis="both",direction="in")
 ax2.grid()
@@ -88,3 +92,5 @@ min_n = np.min(final_motional_levels)
 detuning_min_n = detunings_ss[np.argmin(final_motional_levels)]
 print(f"Lowest n = {min_n:.2f} found for a detuning of {detuning_min_n/(2*pi*1e3):.2f} kHz")
 plt.show()
+
+# %%
