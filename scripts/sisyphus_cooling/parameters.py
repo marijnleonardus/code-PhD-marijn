@@ -1,3 +1,8 @@
+"""parameter to be used during Sisyphus cooling simulations
+
+The reason they are here, is that there are separate scripts, but they should use the same parameters.
+"""	
+
 from scipy.constants import pi, proton_mass
 import numpy as np
 
@@ -22,6 +27,6 @@ mass = 87.9*proton_mass
 lamb = 689*nm
 
 # emission angle discretization
-N_theta = 10
+N_theta = 20
 thetas = np.linspace(0, pi, N_theta)
 d_theta = thetas[1] - thetas[0]

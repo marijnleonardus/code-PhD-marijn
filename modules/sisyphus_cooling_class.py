@@ -14,12 +14,14 @@ from atoms_tweezer_class import AtomicMotion
 
 
 class SisyphusCooling:
-    def __init__(self, N_max, N_i, mass, lamb, wg):
+    def __init__(self, N_max, N_i, mass, lamb, wg, thetas, d_theta):
         # Initialize parameters
         self.mass = mass
         self.lamb = lamb
         self.wg = wg
-        
+        self.thetas = thetas
+        self.d_theta = d_theta
+
         # construct operators
         self.psi0 = tensor(basis(2, 0), fock(N_max, N_i))
         self.a = tensor(qeye(2), destroy(N_max))
@@ -70,3 +72,15 @@ class SisyphusCooling:
             kick = (-1j*(self.a + self.a.dag())*np.cos(theta)).expm()
             c_ops.append(np.sqrt(rate)*kick*self.emit)
         return c_ops
+    
+    def solve_master_equation(self, arguments):
+        "to be used in for loop, "
+        "this time we have to compute c_ops each time since they vary with rabi frequency, which "
+        "could be the argument in the for loop"
+
+        [linewidth, rabi_f, we, detuning, times_rabi] = arguments
+        psi0, project_e, _, number_op = self.get_operators()
+        H = self.calculate_H(linewidth, rabi_f, self.wg, we, detuning)
+        c_ops = self.calculate_c_ops(linewidth, rabi_f, self.thetas, self.d_theta)
+        sol = mesolve(H, psi0, times_rabi, c_ops, e_ops=[project_e, number_op], options={"store_states": False})
+        return sol
