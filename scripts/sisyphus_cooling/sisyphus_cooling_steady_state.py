@@ -1,9 +1,9 @@
-# this is the script from R.M.P. Teunissen on Sisyphus cooling, as described in:
+# adapted from the script from R.M.P. Teunissen on Sisyphus cooling, as described in:
     # Teunissen, R.M.P. (2023). Building Arrays of Individually Trapped 88Sr Atoms (MSc thesis). 
     # Eindhoven University of Technology, Eindhoven, The Netherlands.
 
-# changes made: JIT compilation, MEsolve instead of MCsolve and some minor changes
-    
+# refactored code in class and seperate main functinos, MEsolve instead of MCsolve and some minor changes
+
 import os
 import sys
 import numpy as np

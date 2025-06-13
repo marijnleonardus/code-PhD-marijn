@@ -1,4 +1,8 @@
-# Helper functions for Sisyphus cooling simulation
+# adapted from the script from R.M.P. Teunissen on Sisyphus cooling, as described in:
+    # Teunissen, R.M.P. (2023). Building Arrays of Individually Trapped 88Sr Atoms (MSc thesis). 
+    # Eindhoven University of Technology, Eindhoven, The Netherlands.
+
+# refactored code in class and seperate main functinos, MEsolve instead of MCsolve and some minor changes
 
 import numpy as np
 from qutip import *
