@@ -30,19 +30,19 @@ qutip.settings.auto_tidyup = True
 qutip.settings.auto_tidyup_atol = 1e-12
 
 # simulation parameters
-N_max = 10      # motional levels
+N_max = 15      # motional levels
 N_i = 3           # initial Fock level
-time_interval = 0.05*ms
+time_interval = 0.1*ms
 dt = 0.1
 max_time_rabi = time_interval*rabi_f # time in Rabi cycles. 
 # Confusing, but QuTip mesolve expects time in Rabi cycles
 # as t_nondimensionalized = t*real*omega_ref
 times_rabi = np.arange(0, max_time_rabi, dt)
-num_rabi_frequencies_sim = 3
+num_rabi_frequencies_sim = 11
 
 # %% Plot the cooling rate as a function of Rabi freq. 
 
-rabi_freqs = 2*pi*np.linspace(5, 250, num_rabi_frequencies_sim)*kHz
+rabi_freqs = 2*pi*np.linspace(5*kHz, 250*kHz, num_rabi_frequencies_sim)
 final_ns_vs_rabi = np.zeros(rabi_freqs.size)
 
 # prepare simulation

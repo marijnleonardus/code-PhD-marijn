@@ -30,9 +30,9 @@ qutip.settings.auto_tidyup = True
 qutip.settings.auto_tidyup_atol = 1e-12
 
 # simulation parameters
-N_max = 10      # motional levels
-N_i = 3           # initial Fock level
-max_time_s = 1*ms
+N_max = 15      # motional levels
+N_i = 12           # initial Fock level
+max_time_s = 10*ms
 dt = 0.1
 max_time_rabi = max_time_s*rabi_f # time in Rabi cycles. 
 # Confusing, but QuTip mesolve expects time in Rabi cycles
@@ -53,9 +53,12 @@ sol = SisCooling.solve_master_equation([linewidth, rabi_f, we, detuning, times_r
 fig, ax = plt.subplots(figsize=(4, 3))
 times_ms = times_rabi/rabi_f/ms # same rescaling as qubit mesolve expects, consistently scaled
 
+# %%
+
 ax.plot(times_ms, sol.expect[1])
 #plt.plot(times, res.expect[0], label=r"$P_e$")
 ax.set_xlabel('Time [ms]')
+ax.set_yscale('log')
 ax.set_ylabel(r"$\bar{n}$")
 fig.tight_layout()
 Plotting.savefig('output', 'sis_cooling_time_evolution.pdf')
