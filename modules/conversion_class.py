@@ -133,7 +133,6 @@ class Conversion:
         wavelength = 2*pi*hbar*c/transition_energy
         return wavelength
 
-
     @staticmethod
     def compute_rabi_freq(rdme, electric_field):
         """
@@ -155,4 +154,19 @@ class Conversion:
     def wavenr_from_wavelength(wavelength):
         return 2*pi/wavelength
     
+    @staticmethod
+    def rabi_to_on_res_saturation(rabi_freq, linewidth):
+        """
+        Calculate the on-resonance saturation intensity from the Rabi frequency.
+        
+        Args:
+            rabi_freq (float): Rabi frequency in rad/s.
+            linewidth (float): Linewidth in rad/s.
+        
+        Returns:
+            float: On-resonance saturation intensity in W/m^2.
+        """
+        
+        s0 = 2*rabi_freq**2/linewidth**2
+        return s0
    

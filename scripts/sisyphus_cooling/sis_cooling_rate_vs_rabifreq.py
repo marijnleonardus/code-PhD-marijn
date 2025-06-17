@@ -22,6 +22,7 @@ from units import kHz, ms
 from sisyphus_cooling_class import SisyphusCooling
 from parameters import linewidth, rabi_f, wg, we, detuning, mass, lamb, thetas, d_theta
 from plotting_class import Plotting
+from conversion_class import Conversion
 
 # QuTiP settings for performance
 # enable automatic cleanup of negligible elements
@@ -70,5 +71,13 @@ ax.set_ylabel(r"Cooling rate $\Delta n/\Delta t$ [ms$^{-1}$]")
 ax.tick_params(axis="both", direction="in")
 plt.legend()
 Plotting.savefig('output', 'sis_cooling_rate_vs_rabifreq.pdf')
+
+# %%
+
+best_rabi_freq = rabi_freqs[np.argmax(cooling_rate)]  # Rabi frequency at which cooling rate is maximum
+print(f"Best Rabi frequency for cooling: {best_rabi_freq/(2*pi)/kHz:.0f} kHz")
+
+on_res_saturation = Conversion.rabi_to_on_res_saturation(best_rabi_freq, linewidth)
+print(f"On-resonance saturation intensity: {on_res_saturation:.2f}")
 
 # %%
