@@ -17,6 +17,7 @@ import os
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.constants import pi
+import scipy 
 
 # append path with 'modules' dir in parent folder
 import sys
@@ -26,14 +27,14 @@ sys.path.append(modules_dir)
 
 # user defined libraries
 from fitting_functions_class import FittingFunctions
-from single_atoms_class import ROIs
+from single_atoms_class import ROIs, BinaryThresholding
 from camera_image_class import EMCCD
 from plotting_class import Plotting
 
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-images_path = 'Z:\\Strontium\\Images\\2025-05-12\\scan171709\\'
+images_path = 'Z:\\Strontium\\Images\\2025-05-12\\Scan154334\\'
 file_name_suffix = 'image'  # import files ending with image.tiff
 nr_bins_hist_roi = 30
 nr_bins_hist_avg = 40
@@ -51,7 +52,7 @@ np.save(images_path + 'roi_counts_matrix.npy', roi_counts_matrix)
 
 # %% 
 
-# Plot histograms for each ROI
+# compute histograms for each ROI
 if plot_only_initial:
     roi_counts_matrix = roi_counts_matrix[:, ::2]
 nr_rois = np.shape(roi_counts_matrix)[0]
@@ -62,7 +63,7 @@ for roi_idx in range(nr_rois):
     axs[roi_idx].hist(roi_counts_matrix[roi_idx, :], bins=nr_bins_hist_roi, edgecolor='black')
 fig1.supxlabel('EMCCD Counts')
 fig1.supylabel('Occurences')
-plt.show()
+# plt.show()
 
 # change to 1D matrix for histogram computation averaged over all ROIs
 counts = roi_counts_matrix.ravel()
@@ -78,18 +79,27 @@ init_guess = [max(hist_vals), np.mean(counts)*0.9, np.std(counts)*0.5,
 fit_limits = (0, [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
 popt, _ = curve_fit(FittingFunctions.double_gaussian, bin_centers, hist_vals, p0=init_guess, bounds=fit_limits)
 
-# produce data with finer grid for plottint double gaussian
+# produce data with finer grid for ploting double gaussian function
 x_fit_counts = np.linspace(bin_centers[0], bin_centers[-1], 200)
 y_fit_counts = FittingFunctions.double_gaussian(x_fit_counts, *popt)
 
 # calculate detection threshold
-detection_treshold_counts = ROIs.calculate_histogram_detection_threshold(popt)
+detection_treshold_counts = ROIs.calculate_histogram_detection_threshold(popt, 0.45)
 print('detection threshold: ', detection_treshold_counts)
 np.save(images_path + 'detection_threshold.npy', detection_treshold_counts)
 
 # calculate area 1 peak
 filling_fraction = np.sum(counts > detection_treshold_counts)/len(counts)
 print(f"Filling fraction: {filling_fraction:.3f}")
+
+# %% calculate imaging fidelity
+
+BinaryThresholding = BinaryThresholding(popt)
+fidelity = BinaryThresholding.calculate_imaging_fidelity(filling_fraction, detection_treshold_counts)
+print(f"Imaging fidelity: {fidelity:.5f}")
+print(popt)
+
+#%% plotting
 
 # plot avg histogram using EMCCD counts as x axis
 fig2, ax2 = plt.subplots()

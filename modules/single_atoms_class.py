@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt 
 import pandas as pd
+import scipy.integrate
 
 # append modules dir
 import sys
@@ -12,10 +13,10 @@ sys.path.append(modules_dir)
 # user defined modules
 from math_class import Math
 from data_handling_class import sort_raw_measurements
-from plotting_class import Plotting
 from camera_image_class import CameraImage
 from skimage.feature import blob_log
 from scipy.stats import sem
+from fitting_functions_class import FittingFunctions
 
 
 
@@ -48,11 +49,16 @@ class ROIs:
 
     def plot_single_roi(self, avg_patches: np.ndarray):
         """(optional) quick sanity plot for single ROI, e.g. ROI #0"""
-        fig, ax = plt.subplots()
-        im = ax.imshow(avg_patches[3], cmap='viridis')
-        ax.set_title("Average patch used as filter for ROI #1")
+        fig, ax = plt.subplots(figsize=(3.5, 2.5))
+
+        # internally, the counts are not multiplied, for the conversino to photons to work
+        # but for visualization we multiply by patch_size^2, otherwise it is confusing to have 
+        # a weight matrix that sums to 1
+        im = ax.imshow(avg_patches[3]*self.patch_size**2, cmap='viridis') 
+        #ax.set_title("Average patch used as filter for ROI #1")
         fig.colorbar(im, ax=ax)
         ax.axis('off')
+        #plt.savefig("output/average_patch.png", dpi=300, bbox_inches='tight')
 
     def calculate_roi_counts(self, images_path: str, file_name_suffix: str, use_weighted_count: bool):
         """calculate ROI counts for each image in the stack
@@ -109,12 +115,14 @@ class ROIs:
         roi_counts *= (self.patch_size**2)
 
         return roi_counts
-
+    
     @staticmethod
-    def calculate_histogram_detection_threshold(fit_params: np.ndarray):
-        """calculate detection threshold for double gaussian fit
-        found by settings g1(x) = g2(x) and solving for x (ABC formula)"""
+    def calculate_histogram_detection_threshold(fit_params: np.ndarray,  p1: float=0.5):
+        """calculate detection threshold for double gaussian fit found by 
+        maximing the imaging fidelity by setting the derivative of the fidelity 
+        to 0 and solving for x_t where x_t is the detection threshold."""
 
+        print(fit_params)
         # obtain fit parameters
         ampl0 = fit_params[0]
         mu0 = fit_params[1]
@@ -123,12 +131,10 @@ class ROIs:
         mu1 = fit_params[4]
         sigma1 = fit_params[5]
 
-        A = 1/(2*sigma0**2)-1/(2*sigma1**2)
-        B = mu1/sigma1**2 - mu0/sigma0**2
-        C = mu0**2/(2*sigma0**2) - mu1**2/(2*sigma1**2) + np.log(ampl1*sigma0/ampl0/sigma0)
-
+        A = 1/sigma1**2 - 1/sigma0**2
+        B = 2*mu0/sigma0**2 - 2*mu1/sigma1**2
+        C = mu1**2/sigma1**2 - mu0**2/sigma0**2 - 2*np.log(ampl1*p1/(ampl0*(1 - p1)))
         sols = Math.solve_quadratic_equation(A, B, C)
-        # print("solutions", sols)
         
         # take solution between mu0 and mu1
         valid_sol = [x for x in [sols[0], sols[1]] if mu0 <= x <= mu1]
@@ -230,6 +236,47 @@ class SingleAtoms():
 
         stats_matrix = surv_prob_per_roi, surv_prob_global, sem_per_roi, global_sem
         return stats_matrix
+
+
+class BinaryThresholding():
+    def __init__(self, popt: np.ndarray):
+        """Initialize with fit parameters from double Gaussian fit"""
+        self.ampl0 = popt[0]
+        self.mu0 = popt[1]
+        self.sigma0 = popt[2]
+        self.ampl1 = popt[3]
+        self.mu1 = popt[4]
+        self.sigma1 = popt[5]
+
+    def gauss_function_0peak(self, x):
+        """Gaussian function with 0 peak, used for fitting"""
+        
+        return FittingFunctions.gaussian_function(x, 0, self.ampl0, self.mu0, self.sigma0)
+
+
+    def gauss_function_1peak(self, x):
+        """Gaussian function with 1 peak, used for fitting"""
+
+        return FittingFunctions.gaussian_function(x, 0, self.ampl1, self.mu1, self.sigma1)
+
+
+    def calculate_imaging_fidelity(self, filling_fraction, threshold):
+        """Calculate the imaging fidelity based on the area under the Gaussian 
+        curves above the detection threshold.
+        see Madjarov thesis, eq. 2.110"""
+
+        # contribute contribution of 0 peak for total integrand
+        contrib_peak0, _ = scipy.integrate.quad(self.gauss_function_0peak, -np.inf, threshold)
+        total_peak0 = self.ampl0*self.sigma0*np.sqrt(2*np.pi)
+        fidelity_0 = contrib_peak0/total_peak0
+
+        # and for 1 peak 
+        contrib_peak1, _ = scipy.integrate.quad(self.gauss_function_1peak, threshold, np.inf)
+        total_peak1 = self.ampl1*self.sigma1*np.sqrt(2*np.pi)
+        fidelity_1 = contrib_peak1/total_peak1
+
+        fidelity = (1 - filling_fraction)*fidelity_0 + filling_fraction*fidelity_1
+        return fidelity
 
 
 def main():

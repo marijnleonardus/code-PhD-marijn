@@ -16,9 +16,10 @@ sys.path.append(modules_dir)
 # user defined libraries
 from camera_image_class import CameraImage
 from plotting_class import Plotting
+from units import um
 
 # import image sequence
-raw_data_path = 'Z:\\Strontium\\Images\\2025-04-17\\scan131340\\'
+raw_data_path = 'Z:\\Strontium\\Images\\2025-05-12\\scan143438\\'
 raw_data_suffix = 'image'
 image_stack = CameraImage().import_image_sequence(raw_data_path, raw_data_suffix)
 
@@ -30,7 +31,6 @@ M_telescope = 1.25 # magnification of the telescope
 magnification = M_telescope*f_emccd/f_obj # 1.25 is the magnification of the objective lens
 pixel_size = 13e-6
 bin_factor = 1
-um = 1e-6 # m
 
 #%%
 
