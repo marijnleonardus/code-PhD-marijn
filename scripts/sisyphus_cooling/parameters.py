@@ -22,7 +22,7 @@ alpha_e = 355 # polarizability, a.u.
 alpha_g = 286 # polarizability, a.u.
 wg = 2*pi*86*kHz
 we = np.sqrt(alpha_e/alpha_g)*wg
-detuning = -1.7*wg
+detuning = -2*pi*134*kHz  # detuning from the excited state
 mass = 87.9*proton_mass
 lamb = 689*nm
 

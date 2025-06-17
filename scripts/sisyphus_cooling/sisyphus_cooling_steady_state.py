@@ -22,6 +22,7 @@ if modules_dir not in sys.path:
 from units import kHz, ms, MHz
 from sisyphus_cooling_class import SisyphusCooling
 from parameters import linewidth, rabi_f, wg, we, detuning, mass, lamb, thetas, d_theta
+from plotting_class import Plotting
 
 # QuTiP settings for performance
 # enable automatic cleanup of negligible elements
@@ -29,9 +30,9 @@ qutip.settings.auto_tidyup = True
 qutip.settings.auto_tidyup_atol = 1e-12
 
 # simulation parameters
-N_max = 25      # motional levels
-N_i = 12           # initial Fock level
-max_time_s = 10*ms
+N_max = 10      # motional levels
+N_i = 3           # initial Fock level
+max_time_s = 1*ms
 dt = 0.1
 max_time_rabi = max_time_s*rabi_f # time in Rabi cycles. 
 # Confusing, but QuTip mesolve expects time in Rabi cycles
@@ -39,7 +40,8 @@ max_time_rabi = max_time_s*rabi_f # time in Rabi cycles.
 times_rabi = np.arange(0, max_time_rabi, dt)
 
 # calculate solid state solution as a function of following detunings
-detunings_ss = 2*pi*np.linspace(-1.5*MHz, 1*MHz, 250)
+num_detunings_ss = 6
+detunings_ss = 2*pi*np.linspace(-1.5*MHz, 1*MHz, num_detunings_ss)
 
 # prepare simulation
 SisCooling = SisyphusCooling(N_max, N_i, mass, lamb, wg, thetas, d_theta)
@@ -51,11 +53,12 @@ sol = SisCooling.solve_master_equation([linewidth, rabi_f, we, detuning, times_r
 fig, ax = plt.subplots(figsize=(4, 3))
 times_ms = times_rabi/rabi_f/ms # same rescaling as qubit mesolve expects, consistently scaled
 
-ax.plot(times_ms, sol.expect[1], label=r"$\langle n \rangle$")
+ax.plot(times_ms, sol.expect[1])
 #plt.plot(times, res.expect[0], label=r"$P_e$")
 ax.set_xlabel('Time [ms]')
-ax.legend()
+ax.set_ylabel(r"$\bar{n}$")
 fig.tight_layout()
+Plotting.savefig('output', 'sis_cooling_time_evolution.pdf')
 
 # %% 
 # Plot final n as a function of detuning
@@ -91,6 +94,6 @@ ax2.grid()
 min_n = np.min(final_motional_levels)
 detuning_min_n = detunings_ss[np.argmin(final_motional_levels)]
 print(f"Lowest n = {min_n:.2f} found for a detuning of {detuning_min_n/(2*pi*1e3):.2f} kHz")
-plt.show()
+Plotting.savefig('output', 'sis_cooling_steady_state.pdf')
 
 # %%

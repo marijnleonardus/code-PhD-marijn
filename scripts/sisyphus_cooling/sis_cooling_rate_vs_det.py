@@ -20,6 +20,7 @@ if modules_dir not in sys.path:
     sys.path.append(modules_dir)
 from units import kHz, ms
 from sisyphus_cooling_class import SisyphusCooling
+from plotting_class import Plotting
 from parameters import linewidth, rabi_f, wg, we, detuning, mass, lamb, thetas, d_theta
 
 # QuTiP settings for performance
@@ -28,18 +29,19 @@ qutip.settings.auto_tidyup = True
 qutip.settings.auto_tidyup_atol = 1e-12
 
 # simulation parameters
-N_max = 20      # motional levels
-N_i = 5           # initial Fock level
-time_interval = 0.2*ms
+N_max = 10      # motional levels
+N_i = 3           # initial Fock level
+time_interval = 0.05*ms
 dt = 0.1
 max_time_rabi = time_interval*rabi_f # time in Rabi cycles. 
 # Confusing, but QuTip mesolve expects time in Rabi cycles
 # as t_nondimensionalized = t*real*omega_ref
 times_rabi = np.arange(0, max_time_rabi, dt)
+num_detunings_sim = 6
 
 # %% calculate cooling rate as a function of detuning
 
-detunings = 2*pi*np.linspace(-400*kHz, 0*kHz, 41)
+detunings = 2*pi*np.linspace(-400*kHz, 0*kHz, num_detunings_sim)
 final_ns_vs_det = np.zeros(detunings.size)
 
 # prepare simulation
@@ -55,13 +57,19 @@ for i, detuning in enumerate(detunings):
     n_final = sol.expect[1][-1]
     final_ns_vs_det[i] = n_final
 
+# %% 
 n_reductions_vs_det = N_i*np.ones(detunings.size) - final_ns_vs_det
+cooling_rate = n_reductions_vs_det/time_interval
 
 fig, ax = plt.subplots(figsize=(4, 3))
-ax.plot(detunings/(2*pi)/kHz, n_reductions_vs_det, label=r"$\Omega/2\pi$ ="+ f"{rabi_f/(2*pi*1e3):.0f} kHz")
+ax.grid()
+ax.plot(detunings/(2*pi)/kHz, cooling_rate/(1/ms), label=r"$\Omega/2\pi$ ="+ f"{rabi_f/(2*pi*1e3):.0f} kHz")
 ax.set_xlabel(r"Detuning $\Delta/2\pi$ [kHz]")
-ax.set_ylabel(r"$\bar{n}_{f} - \bar{n}_{i}$")
+ax.set_ylabel(r"Cooling rate $\Delta n/\Delta t$ [ms$^{-1}$]")
 ax.legend()
 ax.tick_params(axis="both", direction="in")
 
-plt.show()
+# %%
+
+Plotting.savefig('output', 'sis_cooling_rate_vs_det.pdf')
+# %%
