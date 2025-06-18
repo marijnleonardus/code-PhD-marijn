@@ -16,7 +16,7 @@ sys.path.append(modules_dir)
 # user defined libraries
 from camera_image_class import CameraImage
 from plotting_class import Plotting
-from units import um
+from utils.units import um
 
 # import image sequence
 raw_data_path = 'Z:\\Strontium\\Images\\2025-05-12\\scan143438\\'

@@ -19,7 +19,7 @@ sys.path.append(modules_dir)
 from fitting_functions_class import FittingFunctions
 from single_atoms_class import SingleAtoms
 from plotting_class import Plotting
-from units import kHz
+from utils.units import kHz
 
 os.system('cls' if os.name == 'nt' else 'clear')
 

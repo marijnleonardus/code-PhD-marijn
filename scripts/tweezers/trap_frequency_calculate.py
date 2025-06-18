@@ -16,7 +16,7 @@ from atoms_tweezer_class import AtomicMotion
 from conversion_class import Conversion
 from optics_class import GaussianBeam
 from atoms_tweezer_class import AtomicCalculations
-from units import atomic_pol_unit, h, kHz, MHz, mK 
+from utils.units import atomic_pol_unit, h, kHz, MHz, mK 
 
 # constants
 pol_1s0_au = 286 # atomic units

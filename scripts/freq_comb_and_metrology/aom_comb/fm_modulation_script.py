@@ -19,10 +19,12 @@ import os
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
+utils_dir = os.path.abspath(os.path.join(script_dir, '../../../utils'))
 sys.path.append(modules_dir)
+sys.path.append(utils_dir)
 
 from units import MHz, kHz
-from plotting_class import Plotting
+from plot_utils import Plotting
 
 # broadband red MOT parameters
 mod_depth = 2*1.7*MHz  # [Hz]
@@ -32,8 +34,8 @@ detuning = -450*kHz  # [1/s]
 carrier_freq = aom_center_freq + detuning
 
 # sampling parameters
-sample_overhead = 20  # how much higher sampling freq. is than carrier freq. 
-nr_ramps_to_sample = 200  # nr of freq. ramps to sample in time domain
+sample_overhead = 10  # how much higher sampling freq. is than carrier freq. 
+nr_ramps_to_sample = 100  # nr of freq. ramps to sample in time domain
 
 # FFT parameters
 sample_freq = int(carrier_freq*sample_overhead)  # [1/s], 100 samples per carrier period
@@ -89,5 +91,6 @@ ax.set_ylim(0, 1.05*np.max(np.abs(fft_signal)))
 ax.set_xlabel("Detuning [MHz]")
 ax.set_ylabel("Intensity [a.u.]")
 
-Plotting.savefig('output', 'fm_modulation_spectrum.png')
-plt.show()
+Plot = Plotting('output')
+Plot.savefig('fm_modulation_spectrum.png')
+Plot.savepgf('fm_mod')

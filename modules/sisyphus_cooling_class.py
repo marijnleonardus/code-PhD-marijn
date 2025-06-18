@@ -92,11 +92,12 @@ class SisyphusCooling:
         H = self.calculate_H(linewidth, rabi_f, self.wg, we, detuning)
         c_ops = self.calculate_c_ops(linewidth, rabi_f, self.thetas, self.d_theta)
 
-        # Set up the options dictionary for the solver.
-        # We initialize it as a dictionary directly.
-        options = {"store_states": True} 
+        # Additional projectors for |g,0⟩ and |e,0⟩
+        dim_fock = self.a.dims[0][1]
+        proj_g0 = tensor(projection(2, 0, 0), projection(dim_fock, 0, 0))
+        proj_e0 = tensor(projection(2, 1, 1), projection(dim_fock, 0, 0))
 
-        # Conditionally add the progress bar using dictionary key assignment
+        options = {"store_states": True} 
         if show_progress:
             options['progress_bar'] = 'text'
 
@@ -106,7 +107,7 @@ class SisyphusCooling:
             psi0,
             times_rabi,
             c_ops,
-            e_ops=[project_e, number_op],
+            e_ops=[project_e, number_op, proj_g0, proj_e0],
             options=options
         )
         return sol

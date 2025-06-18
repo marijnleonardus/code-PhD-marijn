@@ -21,7 +21,7 @@ from fitting_functions_class import FittingFunctions
 from image_analysis_class import ImageStats
 from single_atoms_class import SingleAtoms
 from plotting_class import Plotting
-from units import MHz
+from utils.units import MHz
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')

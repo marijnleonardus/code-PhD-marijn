@@ -14,7 +14,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
 sys.path.append(modules_dir)
 
-from units import MHz
+from utils.units import MHz
 
 
 a0 = scipy.constants.physical_constants['Bohr radius'][0] # m

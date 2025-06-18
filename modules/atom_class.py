@@ -12,7 +12,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
 sys.path.append(modules_dir)
 
-from units import GHz, h, us, um, MHz
+from utils.units import GHz, h, us, um, MHz
 
 Sr88 = Strontium88()
 

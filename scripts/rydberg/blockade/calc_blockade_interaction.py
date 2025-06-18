@@ -7,7 +7,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
 sys.path.append(modules_dir)
 
-from units import MHz, h, um
+from utils.units import MHz, h, um
 from atom_class import Rydberg
 
 # variables

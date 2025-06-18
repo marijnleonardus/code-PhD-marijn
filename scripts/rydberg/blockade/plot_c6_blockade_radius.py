@@ -21,7 +21,7 @@ sys.path.append(modules_dir)
 from optics_class import GaussianBeam, EllipticalGaussianBeam
 from laser_class import AtomLightInteraction 
 from atom_class import Rydberg
-from units import mW, MHz, um
+from utils.units import mW, MHz, um
 
 ## variables
 # array of n values

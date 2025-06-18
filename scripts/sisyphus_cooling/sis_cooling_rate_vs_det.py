@@ -18,7 +18,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 if modules_dir not in sys.path:
     sys.path.append(modules_dir)
-from units import kHz, ms
+from utils.units import kHz, ms
 from sisyphus_cooling_class import SisyphusCooling
 from plotting_class import Plotting
 from parameters import linewidth, rabi_f, wg, we, detuning, mass, lamb, thetas, d_theta

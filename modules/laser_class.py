@@ -12,7 +12,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
 sys.path.append(modules_dir)
 
-from units import MHz, um, mW
+from utils.units import MHz, um, mW
 from optics_class import GaussianBeam
 from atom_class import Sr
 

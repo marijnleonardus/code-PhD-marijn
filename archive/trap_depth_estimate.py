@@ -24,7 +24,7 @@ sys.path.append(modules_dir)
 # user defined libraries
 from optics import GaussianBeam
 from atoms_tweezer import AtomicCalculations
-from units import UnitConversion
+from utils.units import UnitConversion
 
 # %% variables
 

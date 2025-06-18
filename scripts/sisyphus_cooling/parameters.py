@@ -13,7 +13,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 if modules_dir not in sys.path:
     sys.path.append(modules_dir)
-from units import kHz, nm
+from utils.units import kHz, nm
 
 # physical parameters
 linewidth = 2*pi*7.4*kHz

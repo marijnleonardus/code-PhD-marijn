@@ -13,7 +13,7 @@ sys.path.append(modules_dir)
 # user defined libraries
 from fitting_functions_class import FittingFunctions
 from plotting_class import Plotting
-from units import ms, um, uK
+from utils.units import ms, um, uK
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')

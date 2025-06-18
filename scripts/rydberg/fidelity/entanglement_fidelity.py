@@ -24,7 +24,7 @@ from atoms_tweezer_class import AtomicMotion
 from optics_class import GaussianBeam
 from conversion_class import Conversion
 from laser_class import AtomLightInteraction
-from units import uK, um, mW, h, nm
+from utils.units import uK, um, mW, h, nm
 
 plt.style.use('default')
 os.system('cls' if os.name == 'nt' else 'clear')

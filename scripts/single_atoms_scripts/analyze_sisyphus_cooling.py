@@ -18,7 +18,7 @@ sys.path.append(modules_dir)
 # user defined libraries
 from single_atoms_class import SingleAtoms
 from plotting_class import Plotting
-from units import MHz
+from utils.units import MHz
 
 os.system('cls' if os.name == 'nt' else 'clear')
 

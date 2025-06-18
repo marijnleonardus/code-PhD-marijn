@@ -17,7 +17,7 @@ sys.path.append(modules_dir)
 # user defined libraries
 from single_atoms_class import SingleAtoms
 from plotting_class import Plotting
-from units import us
+from utils.units import us
 
 os.system('cls' if os.name == 'nt' else 'clear')
 
