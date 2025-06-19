@@ -3,6 +3,8 @@
 
 """first run histogram_and_threshold.py """
 
+# %%
+
 import numpy as np
 import os
 import matplotlib.pyplot as plt
@@ -13,12 +15,14 @@ import pandas as pd
 import sys
 script_dir = os.path.dirname(os.path.abspath(__file__))
 modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
+utils_dir = os.path.abspath(os.path.join(script_dir, '../../utils'))
 sys.path.append(modules_dir)
+sys.path.append(utils_dir)
 
 # user defined libraries
 from single_atoms_class import SingleAtoms
-from plotting_class import Plotting
-from utils.units import MHz
+from units import MHz, pol_1s0, pol_3p1
+from plot_utils import Plotting
 
 os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -29,6 +33,13 @@ binary_threshold = np.load(images_path + 'detection_threshold.npy')
 
 # load x values 
 df = pd.read_csv(images_path + 'log.csv')
+
+# settings experiment
+power_tweezers = 300
+power_tweezers_max = 340
+trapdepth = 11.08*MHz*power_tweezers/power_tweezers_max
+
+# %%
 
 # calculate survival probability from x values, threshold and images list
 SingleAtomsStats = SingleAtoms(binary_threshold, images_path)
@@ -44,13 +55,29 @@ max_idx = np.argmax(glob_surv)
 max_surv_prob = np.round(glob_surv[max_idx], 4)
 max_surv_prob_err = np.round(glob_surv_sem[max_idx], 3)
 best_cooling_freq = x_grid[max_idx]
+
+# %%
+
 print("best survival: ", max_surv_prob, " pm ", max_surv_prob_err, " at ", best_cooling_freq/MHz, " MHz")
 
 fig1, ax1 = plt.subplots(figsize=(4, 3))
-ax1.errorbar(x_grid/MHz, glob_surv, yerr=glob_surv_sem, fmt='o', color='blue')
+ax1.errorbar(x_grid/MHz, glob_surv, yerr=glob_surv_sem, fmt='o', color='blue', label='Survival probability')
 ax1.set_xlabel('Sisyphus cooling detuning. [MHz]')
 ax1.set_ylabel('Survival probability')
 ax1.set_xlim([-3.65, -1.65])
-#ax1.legend()
 
-Plotting().savefig('output//','sis_cooling_surv.pdf') 
+#ax1.axvline(x=best_cooling_freq/MHz, color='red', linestyle='dashed', linewidth=1.5)
+
+# add line for AC Stark shifted resonance
+diff_ac_stark = trapdepth*(1 - pol_3p1/pol_1s0)
+ax1.axvline(x=diff_ac_stark/MHz, color='grey', 
+    linestyle='dashed', linewidth=1.5, label='AC Stark shifted resonance')
+print(diff_ac_stark)
+
+ax1.legend()
+
+Plot=Plotting('output')
+Plot.savefig('sis_cooling_surv.pdf') 
+plt.show()
+
+# %%

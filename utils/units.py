@@ -27,6 +27,8 @@ uK = 1e-6
 # constants
 h = 2*pi*hbar
 
+# polarizabilities
+
 
 def get_atomic_pol_unit():
     """get atomic polarizability unit
@@ -43,4 +45,13 @@ def get_atomic_pol_unit():
 
 
 atomic_pol_unit = get_atomic_pol_unit()
-    
+
+# [atomic units]
+pol_1s0_au = 286 #au
+pol_3p1_mj1_au = 355 #au
+pol_3p1_mj0_au = 199 # atomic units
+
+# [SI units]
+pol_1s0 = pol_1s0_au*atomic_pol_unit
+pol_3p1_mj1 = pol_3p1_mj1_au*atomic_pol_unit
+pol_3p1_mj0 = pol_3p1_mj0_au*atomic_pol_unit
