@@ -24,7 +24,7 @@ add_local_paths(__file__, ['../../modules', '../../utils'])
 
 from units import kHz, ms, MHz
 from sisyphus_cooling_class import SisyphusCooling
-from parameters import linewidth, rabi_f, wg, we, detuning, mass, lamb, thetas, d_theta
+from parameters import linewidth, rabi_f, wg, we, N_max, N_i, mass, lamb, thetas, d_theta
 from plot_utils import Plotting
 
 # QuTiP settings for performance
@@ -33,129 +33,95 @@ qutip.settings.auto_tidyup = True
 qutip.settings.auto_tidyup_atol = 1e-12
 
 # simulation parameters
-N_max = 20      # motional levels
-N_i = 12           # initial Fock level
-max_time_s = 5*ms
+max_time_s = 1*ms
 dt = 0.1
 max_time_rabi = max_time_s*rabi_f # time in Rabi cycles. 
 # Confusing, but QuTip mesolve expects time in Rabi cycles
 # as t_nondimensionalized = t*real*omega_ref
 times_rabi = np.arange(0, max_time_rabi, dt)
 
-# calculate solid state solution as a function of following detunings
-num_detunings_ss = 86
-detunings_ss = 2*pi*np.linspace(-1.5*MHz, 0.2*MHz, num_detunings_ss)
-
-# calculate solid state sol. for rabi freqs.
-num_rabifreqs_ss = 101
+# calculate solid state solution as a function of following detunings, rabi freqs.
+num_detunings_ss = 10
+num_rabifreqs_ss = 10
+detunings_ss = 2*pi*np.linspace(-1*MHz, 0.2*MHz, num_detunings_ss)
 rabi_freqs_ss = 2*pi*np.linspace(5*kHz, 355*kHz, num_rabifreqs_ss)
 
 # prepare simulation
 SisCooling = SisyphusCooling(N_max, N_i, mass, lamb, wg, thetas, d_theta)
-
-# %% 
-print("Running Sisyphus cooling simulation...")
-sol = SisCooling.solve_master_equation([linewidth, rabi_f, we, detuning, times_rabi])
-
-avg_n = sol.expect[1]
-pop_g_0 = sol.expect[2]
-pop_e_0 = sol.expect[3]
-pop_ground = pop_g_0 + pop_e_0
-times_ms = times_rabi/rabi_f/ms # same rescaling as qubit mesolve expects, consistently scaled
-
-# %% 
 Plot = Plotting('output')
-fig, ax = plt.subplots(figsize=(4, 3))
-ax.grid()
-ax.plot(times_ms, avg_n)
-ax.set_xlabel('Time [ms]')
-ax.set_yscale('log')
-ax.set_ylabel(r"$\bar{n}$")
-Plot.savefig('sis_cooling_time_evolution.pdf')
 
-fig2, ax2 = plt.subplots(figsize=(4, 3))
-ax2.grid()
-ax2.plot(times_ms, pop_g_0, label=r'$P($g$, n=0)$')
-ax2.plot(times_ms, pop_e_0, label=r'$P($e$, n=0)$')
-ax2.plot(times_ms, pop_ground, label=r'$P($g$+$e$, n=0)$')
-ax2.set_xlabel('Time [ms]')
-ax2.set_ylabel('Population')
-ax2.legend()
-Plot.savefig('sis_cooling_populations.pdf')
+# %% 2D scan over detuning and rabi frequency
 
-# %% Plot final n as a function of detuning
+# Allocate 2D result array
+final_n = np.zeros((rabi_freqs_ss.size, detunings_ss.size))
 
-arguments = [linewidth, rabi_f, wg, we, detuning]
+# Prepare system
+SisCooling = SisyphusCooling(N_max, N_i, mass, lamb, wg, thetas, d_theta)
 psi0, project_e, project_g, number_op = SisCooling.get_operators()
 
-print("Running steadystate calculation for different detunings...")
+print("Running 2D steadystate calculation over detuning and Rabi frequency...")
 
-final_n_det = np.zeros(detunings_ss.size)
-for i, det in enumerate(tqdm(detunings_ss)):
-    # we don't use the function'solve_master_equation here, but rather calculate the steady state directly
-    # because we are interested in the steady state for different detunings
+for i, rabi in enumerate(tqdm(rabi_freqs_ss, desc="Rabi scan")):
+    for j, det in enumerate(detunings_ss):
+        arguments = [linewidth, rabi, wg, we, det]
+        H = SisCooling.calculate_H(*arguments)
+        c_ops = SisCooling.calculate_c_ops(linewidth, rabi, thetas, d_theta)
+        ss = steadystate(H, c_ops, method='direct')
+        final_n[i, j] = expect(number_op, ss)
 
-    # Update the detuning value for this iteration
-    arguments[4] = det
-    
-    H = SisCooling.calculate_H(*arguments)
-    c_ops = SisCooling.calculate_c_ops(linewidth, rabi_f, thetas, d_theta)
-    ss = steadystate(H, c_ops, method='direct')
+# %% plotting 2d scan result
 
-    # Calculate the expectation value for the motional number operator
-    final_n = expect(number_op, ss)
-    final_n_det[i] = final_n
+# Convert to MHz and kHz for plotting axes
+rabi_axis = rabi_freqs_ss/(2*pi*kHz)  # in kHz
+detuning_axis = detunings_ss/(2*pi*kHz)  # in kHz
 
-# %% 
-fig2, ax2 = plt.subplots(figsize=(4, 3))
-ax2.plot(detunings_ss/(2*pi*kHz), final_n_det, label=r"$\Omega/2\pi$ ="+ f"{rabi_f/(2*pi*1e3):.0f} kHz")
-ax2.set_xlabel(r"$\Delta'/2\pi$ [kHz]")
-ax2.set_ylabel(r"$\bar{n}$")
-ax2.tick_params(axis="both", direction="in")
-ax2.legend()
-ax2.grid()
+fig, ax = plt.subplots(figsize=(6, 4))
+im = ax.imshow(final_n, aspect='auto', origin='lower', cmap='bwr',
+    extent=[detuning_axis[0], detuning_axis[-1], rabi_axis[0], rabi_axis[-1]])
+cbar = plt.colorbar(im, ax=ax)
+cbar.set_label(r"Final $\bar{n}$", rotation=270, labelpad=15)
+ax.set_xlabel(r"Detuning $\Delta'/2\pi$ [kHz]")
+ax.set_ylabel(r"Rabi frequency $\Omega/2\pi$ [kHz]")
+ax.tick_params(axis="both", direction="in")
+ax.grid(False)
 
-min_n_det = np.min(final_n_det)
-detuning_min_n = detunings_ss[np.argmin(final_n_det)]
-print(f"Lowest n = {min_n_det:.2f} found for a detuning of {detuning_min_n/(2*pi)/kHz:.2f} kHz")
-Plot.savefig('sis_cooling_ss_det.pdf')
+#%% print ideal settings
 
-# %% plot final n as a function of rabi freq. 
+# Find the minimum ⟨n⟩ and corresponding indices
+min_n = np.min(final_n)
+min_idx = np.unravel_index(np.argmin(final_n), final_n.shape)
+i_opt, j_opt = min_idx
 
-arguments = [linewidth, rabi_f, wg, we, detuning]
-psi0, project_e, project_g, number_op = SisCooling.get_operators()
+# Get optimal parameters
+rabi_opt = rabi_freqs_ss[i_opt]         # in rad/s
+detuning_opt = detunings_ss[j_opt]      # in rad/s
 
-print("Running steadystate calculation for different rabi frequencies...")
+print(f"Minimum ⟨n⟩ = {min_n:.3f}")
+print(f"Optimal Rabi frequency: {rabi_opt/(2*pi*kHz):.3f} MHz")
+print(f"Optimal Detuning: {detuning_opt/(2*pi*kHz):.2f} kHz")
 
-final_n_rabi = np.zeros(rabi_freqs_ss.size)
-for i, rabi in enumerate(tqdm(rabi_freqs_ss)):
-    # we don't use the function'solve_master_equation here, but rather calculate the steady state directly
-    # because we are interested in the steady state for different detunings
+# %% print 1d slices of optimum point
 
-    # Update the detuning value for this iteration
-    arguments[1] = rabi
-    
-    H = SisCooling.calculate_H(*arguments)
-    c_ops = SisCooling.calculate_c_ops(linewidth, rabi_f, thetas, d_theta)
-    ss = steadystate(H, c_ops, method='direct')
+# 1D slice at optimal detuning (i.e. vary Rabi frequency)
+slice_vs_rabi = final_n[:, j_opt]  # fixed detuning (column)
 
-    # Calculate the expectation value for the motional number operator
-    final_n = expect(number_op, ss)
-    final_n_rabi[i] = final_n
+fig_rabi, ax_rabi = plt.subplots(figsize=(4, 3))
+ax_rabi.plot(rabi_freqs_ss/(2*pi*kHz), slice_vs_rabi, label=f"Detuning = {detuning_opt/(2*pi*kHz):.1f} kHz")
+ax_rabi.set_xlabel(r'Rabi frequency $\Omega/2\pi$ [MHz]')
+ax_rabi.set_ylabel(r'Final $\bar{n}$')
+ax_rabi.grid()
+ax_rabi.legend()
+Plot.savefig("final_n_vs_rabi.pdf")
 
-# %% 
+# 1D slice at optimal rabi (i.e. vary detuning)
+slice_vs_det = final_n[i_opt, :]  # fixed rabi frequency (row)
 
-fig3, ax3 = plt.subplots(figsize=(4, 3))
-ax3.plot(rabi_freqs_ss/(2*pi*kHz), final_n_rabi, label=r"$\Delta/2\pi$ ="+ f"{detuning/(2*pi*kHz):.0f} kHz")
-ax3.set_xlabel(r"$\Omega/2\pi$ [kHz]")
-ax3.set_ylabel(r"$\bar{n}$")
-ax3.tick_params(axis="both", direction="in")
-ax3.legend()
-ax3.grid()
+fig_det, ax_det = plt.subplots(figsize=(4, 3))
+ax_det.plot(detunings_ss/(2*pi*kHz), slice_vs_det, label=f"Rabi = {rabi_opt/(2*pi*kHz):.2f} kHz")
+ax_det.set_xlabel(r"Detuning $\Delta' / 2\pi$ [kHz]")
+ax_det.set_ylabel(r'Final $\bar{n}$')
+ax_det.grid()
+ax_det.legend()
+Plot.savefig("final_n_vs_det.pdf")
 
-min_n_rabi = np.min(final_n_rabi)
-rabi_min_n = rabi_freqs_ss[np.argmin(final_n_rabi)]
-print(f"Lowest n = {min_n_rabi:.2f} found for a rabi freq. of {rabi_min_n/(2*pi)/kHz:.2f} kHz")
-Plot.savefig('sis_cooling_ss_rabi.pdf')
-
-# %%
+#%%
