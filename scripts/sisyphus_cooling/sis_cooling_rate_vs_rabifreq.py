@@ -15,13 +15,16 @@ from qutip import *
 
 # add local modules
 script_dir = os.path.dirname(os.path.abspath(__file__))
-modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
-if modules_dir not in sys.path:
-    sys.path.append(modules_dir)
-from utils.units import kHz, ms
+lib_dir = os.path.abspath(os.path.join(script_dir, '../../lib'))
+if lib_dir not in sys.path:
+    sys.path.append(lib_dir)
+from setup_paths import add_local_paths
+add_local_paths(__file__, ['../../modules', '../../utils'])
+
+from units import kHz, ms
 from sisyphus_cooling_class import SisyphusCooling
 from parameters import linewidth, rabi_f, wg, we, detuning, mass, lamb, thetas, d_theta
-from plotting_class import Plotting
+from plot_utils import Plotting
 from conversion_class import Conversion
 
 # QuTiP settings for performance
@@ -30,19 +33,19 @@ qutip.settings.auto_tidyup = True
 qutip.settings.auto_tidyup_atol = 1e-12
 
 # simulation parameters
-N_max = 15      # motional levels
-N_i = 3           # initial Fock level
-time_interval = 0.1*ms
+N_max = 20      # motional levels
+N_i = 12           # initial Fock level
+time_interval = 0.05*ms
 dt = 0.1
 max_time_rabi = time_interval*rabi_f # time in Rabi cycles. 
 # Confusing, but QuTip mesolve expects time in Rabi cycles
 # as t_nondimensionalized = t*real*omega_ref
 times_rabi = np.arange(0, max_time_rabi, dt)
-num_rabi_frequencies_sim = 11
+num_rabi_frequencies_sim = 71
 
 # %% Plot the cooling rate as a function of Rabi freq. 
 
-rabi_freqs = 2*pi*np.linspace(5*kHz, 250*kHz, num_rabi_frequencies_sim)
+rabi_freqs = 2*pi*np.linspace(5*kHz, 355*kHz, num_rabi_frequencies_sim)
 final_ns_vs_rabi = np.zeros(rabi_freqs.size)
 
 # prepare simulation
@@ -70,7 +73,8 @@ ax.set_xlabel(r"Rabi frequency $\Omega/2\pi$ [kHz]")
 ax.set_ylabel(r"Cooling rate $\Delta n/\Delta t$ [ms$^{-1}$]")
 ax.tick_params(axis="both", direction="in")
 plt.legend()
-Plotting.savefig('output', 'sis_cooling_rate_vs_rabifreq.pdf')
+Plot = Plotting('output')
+Plot.savefig('sis_cooling_rate_vs_rabifreq.pdf')
 
 # %%
 

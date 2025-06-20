@@ -16,13 +16,16 @@ from qutip import *
 
 # add local modules
 script_dir = os.path.dirname(os.path.abspath(__file__))
-modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
-if modules_dir not in sys.path:
-    sys.path.append(modules_dir)
-from utils.units import kHz, ms, MHz
+lib_dir = os.path.abspath(os.path.join(script_dir, '../../lib'))
+if lib_dir not in sys.path:
+    sys.path.append(lib_dir)
+from setup_paths import add_local_paths
+add_local_paths(__file__, ['../../modules', '../../utils'])
+
+from units import kHz, ms, MHz
 from sisyphus_cooling_class import SisyphusCooling
 from parameters import linewidth, rabi_f, wg, we, detuning, mass, lamb, thetas, d_theta
-from utils.plot_utils import Plotting
+from plot_utils import Plotting
 
 # QuTiP settings for performance
 # enable automatic cleanup of negligible elements
@@ -31,7 +34,7 @@ qutip.settings.auto_tidyup_atol = 1e-12
 
 # simulation parameters
 N_max = 20      # motional levels
-N_i = 6           # initial Fock level
+N_i = 12           # initial Fock level
 max_time_s = 5*ms
 dt = 0.1
 max_time_rabi = max_time_s*rabi_f # time in Rabi cycles. 
@@ -40,12 +43,12 @@ max_time_rabi = max_time_s*rabi_f # time in Rabi cycles.
 times_rabi = np.arange(0, max_time_rabi, dt)
 
 # calculate solid state solution as a function of following detunings
-num_detunings_ss = 6
-detunings_ss = 2*pi*np.linspace(-1.5*MHz, 1*MHz, num_detunings_ss)
+num_detunings_ss = 86
+detunings_ss = 2*pi*np.linspace(-1.5*MHz, 0.2*MHz, num_detunings_ss)
 
 # calculate solid state sol. for rabi freqs.
-num_rabifreqs_ss = 61
-rabi_freqs_ss = 2*pi*np.linspace(5*kHz, 350*kHz, num_rabifreqs_ss)
+num_rabifreqs_ss = 101
+rabi_freqs_ss = 2*pi*np.linspace(5*kHz, 355*kHz, num_rabifreqs_ss)
 
 # prepare simulation
 SisCooling = SisyphusCooling(N_max, N_i, mass, lamb, wg, thetas, d_theta)
@@ -61,13 +64,14 @@ pop_ground = pop_g_0 + pop_e_0
 times_ms = times_rabi/rabi_f/ms # same rescaling as qubit mesolve expects, consistently scaled
 
 # %% 
+Plot = Plotting('output')
 fig, ax = plt.subplots(figsize=(4, 3))
 ax.grid()
 ax.plot(times_ms, avg_n)
 ax.set_xlabel('Time [ms]')
 ax.set_yscale('log')
 ax.set_ylabel(r"$\bar{n}$")
-Plotting.savefig('output', 'sis_cooling_time_evolution.pdf')
+Plot.savefig('sis_cooling_time_evolution.pdf')
 
 fig2, ax2 = plt.subplots(figsize=(4, 3))
 ax2.grid()
@@ -76,7 +80,8 @@ ax2.plot(times_ms, pop_e_0, label=r'$P($e$, n=0)$')
 ax2.plot(times_ms, pop_ground, label=r'$P($g$+$e$, n=0)$')
 ax2.set_xlabel('Time [ms]')
 ax2.set_ylabel('Population')
-Plotting.savefig('output', 'sis_cooling_populations.pdf')
+ax2.legend()
+Plot.savefig('sis_cooling_populations.pdf')
 
 # %% Plot final n as a function of detuning
 
@@ -103,16 +108,17 @@ for i, det in enumerate(tqdm(detunings_ss)):
 
 # %% 
 fig2, ax2 = plt.subplots(figsize=(4, 3))
-ax2.plot(detunings_ss/(2*pi*kHz), final_n_det)
+ax2.plot(detunings_ss/(2*pi*kHz), final_n_det, label=r"$\Omega/2\pi$ ="+ f"{rabi_f/(2*pi*1e3):.0f} kHz")
 ax2.set_xlabel(r"$\Delta'/2\pi$ [kHz]")
 ax2.set_ylabel(r"$\bar{n}$")
 ax2.tick_params(axis="both", direction="in")
+ax2.legend()
 ax2.grid()
 
 min_n_det = np.min(final_n_det)
 detuning_min_n = detunings_ss[np.argmin(final_n_det)]
 print(f"Lowest n = {min_n_det:.2f} found for a detuning of {detuning_min_n/(2*pi)/kHz:.2f} kHz")
-Plotting('output').savefig('sis_cooling_ss_det.pdf')
+Plot.savefig('sis_cooling_ss_det.pdf')
 
 # %% plot final n as a function of rabi freq. 
 
@@ -140,15 +146,16 @@ for i, rabi in enumerate(tqdm(rabi_freqs_ss)):
 # %% 
 
 fig3, ax3 = plt.subplots(figsize=(4, 3))
-ax3.plot(rabi_freqs_ss/(2*pi*kHz), final_n_rabi)
+ax3.plot(rabi_freqs_ss/(2*pi*kHz), final_n_rabi, label=r"$\Delta/2\pi$ ="+ f"{detuning/(2*pi*kHz):.0f} kHz")
 ax3.set_xlabel(r"$\Omega/2\pi$ [kHz]")
 ax3.set_ylabel(r"$\bar{n}$")
 ax3.tick_params(axis="both", direction="in")
+ax3.legend()
 ax3.grid()
 
 min_n_rabi = np.min(final_n_rabi)
 rabi_min_n = rabi_freqs_ss[np.argmin(final_n_rabi)]
 print(f"Lowest n = {min_n_rabi:.2f} found for a rabi freq. of {rabi_min_n/(2*pi)/kHz:.2f} kHz")
-Plotting.savefig('output', 'sis_cooling_ss_rabi.pdf')
+Plot.savefig('sis_cooling_ss_rabi.pdf')
 
 # %%

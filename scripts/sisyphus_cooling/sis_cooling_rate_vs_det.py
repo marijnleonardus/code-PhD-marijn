@@ -14,13 +14,19 @@ from scipy.constants import pi
 from qutip import *
 
 # add local modules
+import os
+
+# Add lib/ to sys.path so we can import setup_paths
 script_dir = os.path.dirname(os.path.abspath(__file__))
-modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
-if modules_dir not in sys.path:
-    sys.path.append(modules_dir)
-from utils.units import kHz, ms
+lib_dir = os.path.abspath(os.path.join(script_dir, '../../lib'))
+if lib_dir not in sys.path:
+    sys.path.append(lib_dir)
+from setup_paths import add_local_paths
+add_local_paths(__file__, ['../../modules', '../../utils'])
+
+from units import kHz, ms
 from sisyphus_cooling_class import SisyphusCooling
-from plotting_class import Plotting
+from plot_utils import Plotting
 from parameters import linewidth, rabi_f, wg, we, detuning, mass, lamb, thetas, d_theta
 
 # QuTiP settings for performance
@@ -29,15 +35,15 @@ qutip.settings.auto_tidyup = True
 qutip.settings.auto_tidyup_atol = 1e-12
 
 # simulation parameters
-N_max = 10      # motional levels
-N_i = 3           # initial Fock level
-time_interval = 0.05*ms
+N_max = 20      # motional levels
+N_i = 12           # initial Fock level
+time_interval = 1*ms
 dt = 0.1
 max_time_rabi = time_interval*rabi_f # time in Rabi cycles. 
 # Confusing, but QuTip mesolve expects time in Rabi cycles
 # as t_nondimensionalized = t*real*omega_ref
 times_rabi = np.arange(0, max_time_rabi, dt)
-num_detunings_sim = 6
+num_detunings_sim = 11
 
 # %% calculate cooling rate as a function of detuning
 
@@ -64,12 +70,12 @@ cooling_rate = n_reductions_vs_det/time_interval
 fig, ax = plt.subplots(figsize=(4, 3))
 ax.grid()
 ax.plot(detunings/(2*pi)/kHz, cooling_rate/(1/ms), label=r"$\Omega/2\pi$ ="+ f"{rabi_f/(2*pi*1e3):.0f} kHz")
-ax.set_xlabel(r"Detuning $\Delta/2\pi$ [kHz]")
+ax.set_xlabel(r"Detuning $\Delta'/2\pi$ [kHz]")
 ax.set_ylabel(r"Cooling rate $\Delta n/\Delta t$ [ms$^{-1}$]")
 ax.legend()
 ax.tick_params(axis="both", direction="in")
+Plot = Plotting('output')
+Plot.savefig('sis_cooling_rate_vs_det.pdf')
 
 # %%
 
-Plotting.savefig('output', 'sis_cooling_rate_vs_det.pdf')
-# %%
