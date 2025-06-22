@@ -35,16 +35,16 @@ qutip.settings.auto_tidyup = True
 qutip.settings.auto_tidyup_atol = 1e-12
 
 # simulation parameters
-max_time_s = 0.2*ms
-dt = 0.3
+max_time_s = 0.5*ms
+dt = 0.1
 max_time_rabi = max_time_s*rabi_f # time in Rabi cycles. 
 # Confusing, but QuTip mesolve expects time in Rabi cycles
 # as t_nondimensionalized = t*real*omega_ref
 times_rabi = np.arange(0, max_time_rabi, dt)
 
-num_rabi_freqs = 21
-num_detunings = 21
-detunings_array = 2*pi*np.linspace(-1*MHz, 0.2*MHz, num_detunings)
+num_rabi_freqs = 51
+num_detunings = 51
+detunings_array = 2*pi*np.linspace(-0.4*MHz, 0.2*MHz, num_detunings)
 rabifreqs_array = 2*pi*np.linspace(5*kHz, 355*kHz, num_rabi_freqs)
 
 # %% cooling rate: 2D scan over detuning and rabi frequency
