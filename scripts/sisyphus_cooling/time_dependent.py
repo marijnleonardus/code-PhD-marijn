@@ -24,7 +24,7 @@ add_local_paths(__file__, ['../../modules', '../../utils'])
 
 from units import kHz, ms, MHz
 from sisyphus_cooling_class import SisyphusCooling
-from parameters import linewidth, rabi_f, wg, we, detuning, mass, lamb, thetas, d_theta
+from parameters import linewidth, rabi_f, wg, we, N_i, N_max, detuning, mass, lamb, thetas, d_theta
 from plot_utils import Plotting
 
 # QuTiP settings for performance
@@ -32,10 +32,7 @@ from plot_utils import Plotting
 qutip.settings.auto_tidyup = True
 qutip.settings.auto_tidyup_atol = 1e-12
 
-# simulation parameters
-N_max = 12      # motional levels
-N_i = 3           # initial Fock level
-max_time_s = 1*ms
+max_time_s = 5*ms
 dt = 0.1
 max_time_rabi = max_time_s*rabi_f # time in Rabi cycles. 
 # Confusing, but QuTip mesolve expects time in Rabi cycles

@@ -32,8 +32,8 @@ lamb = 689*nm
 
 # simulation parameters
 # motional levels
-N_max = 8      # motional levels
-N_i = 3           # initial Fock level
+N_max = 20      # motional levels
+N_i = 12           # initial Fock level
 
 # emission angle discretization
 N_theta = 30

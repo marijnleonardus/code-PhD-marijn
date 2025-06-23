@@ -68,8 +68,12 @@ for i, Ω in enumerate(tqdm(rabifreqs_array, desc="Ω sweep")):
         final_n[i, j] = n_final
 
 # %% 
-n_reduc = N_i*np.ones((num_rabi_freqs, num_detunings)) -final_n
-cooling_rate = n_reduc/max_time_s
+
+np.savetxt('sims/sol.txt', sol)
+
+# %% 
+n_change = final_n - N_i*np.ones((num_rabi_freqs, num_detunings)) 
+dndt = n_change/max_time_s
 
 # Convert to MHz and kHz for plotting axes
 rabi_axis = rabifreqs_array/(2*pi*kHz)  # in kHz
@@ -78,7 +82,7 @@ detuning_axis = detunings_array/(2*pi*kHz)  # in kHz
 Plot = Plotting('output')
 
 fig, ax = plt.subplots(figsize=(6, 4))
-im = ax.imshow(cooling_rate/(1/ms), aspect='auto', origin='lower', cmap='bwr',
+im = ax.imshow(dndt/(1/ms), aspect='auto', origin='lower', cmap='bwr',
     extent=[detuning_axis[0], detuning_axis[-1], rabi_axis[0], rabi_axis[-1]])
 cbar = plt.colorbar(im, ax=ax)
 cbar.set_label(r"Cooling rate $\Delta n/\Delta t$ [ms$^{-1}$]", rotation=270, labelpad=15)
@@ -91,22 +95,22 @@ Plot.savefig('coolingrate_2d.pdf')
 #%% print ideal settings
 
 # Find the minimum ⟨n⟩ and corresponding indices
-max_dn = np.max(cooling_rate)
-max_dn_idx = np.unravel_index(np.argmax(cooling_rate), cooling_rate.shape)
-i_opt, j_opt = max_dn_idx
+max_dndt = np.max(dndt)
+max_dndt_idx = np.unravel_index(np.argmax(dndt), dndt.shape)
+i_opt, j_opt = max_dndt_idx
 
 # Get optimal parameters
 rabi_opt = rabifreqs_array[i_opt]         # in rad/s
 detuning_opt = detunings_array[j_opt]      # in rad/s
 
-print(f"max d⟨n⟩/dt = {max_dn/(1/ms):.3f}")
+print(f"max d⟨n⟩/dt = {max_dndt/(1/ms):.3f}")
 print(f"Optimal Rabi frequency: {rabi_opt/(2*pi*kHz):.3f} kHz")
 print(f"Optimal Detuning: {detuning_opt/(2*pi*kHz):.2f} kHz")
 
 # %% print 1d slices of optimum point
 
 # 1D slice at optimal detuning (i.e. vary Rabi frequency)
-slice_vs_rabi = cooling_rate[:, j_opt]  # fixed detuning (column)
+slice_vs_rabi = dndt[:, j_opt]  # fixed detuning (column)
 
 fig_rabi, ax_rabi = plt.subplots(figsize=(4, 3))
 ax_rabi.plot(rabifreqs_array/(2*pi*kHz), slice_vs_rabi/(1/ms), 
@@ -118,13 +122,13 @@ ax_rabi.legend()
 Plot.savefig("cooling_rate_vs_rabi.pdf")
 
 # 1D slice at optimal rabi (i.e. vary detuning)
-slice_vs_det = cooling_rate[i_opt, :]  # fixed rabi frequency (row)
+slice_vs_det = dndt[i_opt, :]  # fixed rabi frequency (row)
 
 fig_det, ax_det = plt.subplots(figsize=(4, 3))
 ax_det.plot(detunings_array/(2*pi*kHz), slice_vs_det/(1/ms), 
     label=rf"$\Omega/2\pi =$ {rabi_opt/(2*pi*kHz):.2f} kHz")
 ax_det.set_xlabel(r"Detuning $\Delta' / 2\pi$ [kHz]")
-ax_det.set_ylabel(r"Cooling rate $\Delta n/\Delta t$ [ms$^{-1}$]")
+ax_det.set_ylabel(r"$\Delta n/\Delta t$ [ms$^{-1}$]")
 ax_det.grid()
 ax_det.legend()
 Plot.savefig("cooling_rate_vs_detuning.pdf")
