@@ -22,7 +22,7 @@ if lib_dir not in sys.path:
 from setup_paths import add_local_paths
 add_local_paths(__file__, ['../../modules', '../../utils'])
 
-from units import kHz, ms, MHz
+from units import ms
 from sisyphus_cooling_class import SisyphusCooling
 from parameters import linewidth, rabi_f, wg, we, N_i, N_max, detuning, mass, lamb, thetas, d_theta
 from plot_utils import Plotting
@@ -32,8 +32,8 @@ from plot_utils import Plotting
 qutip.settings.auto_tidyup = True
 qutip.settings.auto_tidyup_atol = 1e-12
 
-max_time_s = 5*ms
-dt = 0.1
+max_time_s = 3*ms
+dt = 0.2
 max_time_rabi = max_time_s*rabi_f # time in Rabi cycles. 
 # Confusing, but QuTip mesolve expects time in Rabi cycles
 # as t_nondimensionalized = t*real*omega_ref
@@ -52,6 +52,8 @@ pop_g_0 = sol.expect[2]
 pop_e_0 = sol.expect[3]
 pop_ground = pop_g_0 + pop_e_0
 times_ms = times_rabi/rabi_f/ms # same rescaling as qubit mesolve expects, consistently scaled
+
+np.save('sisyphus_cooling_time_dependent.npy', [avg_n, pop_g_0, pop_e_0, pop_ground, times_ms])
 
 # %% plot time dependent result
 

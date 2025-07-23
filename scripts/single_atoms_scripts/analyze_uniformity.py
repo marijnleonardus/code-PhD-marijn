@@ -4,24 +4,27 @@
 """first run histogram_and_threshold.py """
 
 import numpy as np
+import sys
 import os
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.stats import sem
 import pandas as pd
 
-# append path with 'modules' dir in parent folder
-import sys
+# add local modules
 script_dir = os.path.dirname(os.path.abspath(__file__))
-modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
-sys.path.append(modules_dir)
+lib_dir = os.path.abspath(os.path.join(script_dir, '../../lib'))
+if lib_dir not in sys.path:
+    sys.path.append(lib_dir)
+from setup_paths import add_local_paths
+add_local_paths(__file__, ['../../modules', '../../utils'])
 
 # user defined libraries
 from fitting_functions_class import FittingFunctions
 from image_analysis_class import ImageStats
 from single_atoms_class import SingleAtoms
-from plotting_class import Plotting
-from utils.units import MHz
+from plot_utils import Plotting
+from units import MHz
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
@@ -47,7 +50,7 @@ sem_surv_prob = statistics_matrix[2]
 
 # plot for each ROI the survival plobability as function of detuning and fit with Gaussian
 nr_rois = np.shape(surv_matrix)[0]
-fig1, axs = plt.subplots(figsize = (11, 9), sharex=True, sharey=True,
+fig1, axs = plt.subplots(figsize = (7, 6), sharex=True, sharey=True,
     ncols=int(np.sqrt(nr_rois)), nrows=int(np.sqrt(nr_rois)))
 
 # needs to be 1d to iterate. prep intial guess for fitting
@@ -61,8 +64,8 @@ x_axis_fit = np.linspace(x_grid[0], x_grid[-1], 500)
 
 for roi_idx in range(nr_rois):
     axs[roi_idx].errorbar(x_grid/MHz, surv_prob[roi_idx, :], sem_surv_prob[roi_idx, :],
-        fmt='o', capsize=1, capthick=1)
-    axs[roi_idx].set_title(f'ROI {roi_idx}')
+        fmt='o', ms=2, capsize=1, capthick=1)
+    #axs[roi_idx].set_title(f'ROI {roi_idx}')
 
     # fit datapoints and plot result
     popt, pcov = curve_fit(FittingFunctions.gaussian_function, x_grid, surv_prob[roi_idx, :], p0=initial_guess)
@@ -86,4 +89,6 @@ print("Fit position:  ", np.round(avg_detuning/MHz, 2), "p/m ", np.round(sem_det
 print("Standard deviation: ", 100*np.round(std_deviation_detuning/avg_detuning, 3), "%")
 print("uniformity: ", np.round(uniformity, 3))
 
-Plotting.savefig('output//','uniformity_plot.png')
+Plot = Plotting('output')
+Plot.savefig('uniformity_plot.png')
+plt.show()

@@ -42,8 +42,8 @@ max_time_rabi = max_time_s*rabi_f # time in Rabi cycles.
 # as t_nondimensionalized = t*real*omega_ref
 times_rabi = np.arange(0, max_time_rabi, dt)
 
-num_rabi_freqs = 51
-num_detunings = 51
+num_rabi_freqs = 5
+num_detunings = 5
 detunings_array = 2*pi*np.linspace(-0.4*MHz, 0.2*MHz, num_detunings)
 rabifreqs_array = 2*pi*np.linspace(5*kHz, 355*kHz, num_rabi_freqs)
 

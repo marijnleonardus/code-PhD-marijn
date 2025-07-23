@@ -19,22 +19,26 @@ from scipy.optimize import curve_fit
 from scipy.constants import pi
 import scipy 
 
-# append path with 'modules' dir in parent folder
+# append modules dir
 import sys
+import os
 script_dir = os.path.dirname(os.path.abspath(__file__))
-modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
-sys.path.append(modules_dir)
+lib_dir = os.path.abspath(os.path.join(script_dir, '../../lib'))
+if lib_dir not in sys.path:
+    sys.path.append(lib_dir)
+from setup_paths import add_local_paths
+add_local_paths(__file__, ['../../modules', '../../utils'])
 
 # user defined libraries
 from fitting_functions_class import FittingFunctions
 from single_atoms_class import ROIs, BinaryThresholding
 from camera_image_class import EMCCD
-from plotting_class import Plotting
+from plot_utils import Plotting
 
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-images_path = 'Z:\\Strontium\\Images\\2025-05-12\\Scan154334\\'
+images_path = 'Z:\\Strontium\\Images\\2025-07-23\\scan104032\\'
 file_name_suffix = 'image'  # import files ending with image.tiff
 nr_bins_hist_roi = 30
 nr_bins_hist_avg = 40
@@ -137,5 +141,8 @@ ax3.legend()
 
 # %%
 
-Plotting.savefig("output//", 'roi_histogram.png')
+Plotting = Plotting('output')
+Plotting.savefig('roi_histogram.png')
+plt.show()
+
 # %%

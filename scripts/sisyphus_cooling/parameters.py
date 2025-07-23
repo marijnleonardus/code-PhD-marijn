@@ -19,23 +19,27 @@ if utils_dir not in sys.path:
 
 from units import kHz, nm
 
+# laser parameters
+detuning = -2*pi*145*kHz  # detuning from the excited state
+rabi_f = 2*pi*66*kHz
+
 # physical parameters
+mass = 87.9*proton_mass
+lamb = 689*nm
 linewidth = 2*pi*7.4*kHz
-rabi_f = 2*pi*36*kHz
+
+# trap parameters
 alpha_e = 355 # polarizability, a.u.
 alpha_g = 286 # polarizability, a.u.
 wg = 2*pi*86*kHz
 we = np.sqrt(alpha_e/alpha_g)*wg
-detuning = -2*pi*160*kHz  # detuning from the excited state
-mass = 87.9*proton_mass
-lamb = 689*nm
 
 # simulation parameters
 # motional levels
-N_max = 20      # motional levels
-N_i = 12           # initial Fock level
+N_max = 8      # motional levels
+N_i = 3           # initial Fock level
 
 # emission angle discretization
-N_theta = 30
+N_theta = 10
 thetas = np.linspace(0, pi, N_theta)
 d_theta = thetas[1] - thetas[0]

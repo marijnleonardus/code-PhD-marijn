@@ -7,17 +7,19 @@ import scipy.integrate
 import sys
 import os
 script_dir = os.path.dirname(os.path.abspath(__file__))
-modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
-sys.path.append(modules_dir)
+lib_dir = os.path.abspath(os.path.join(script_dir, '../lib'))
+if lib_dir not in sys.path:
+    sys.path.append(lib_dir)
+from setup_paths import add_local_paths
+add_local_paths(__file__, ['../../modules', '../../utils'])
 
 # user defined modules
 from math_class import Math
-from data_handling_class import sort_raw_measurements
+#from data_handling import sort_raw_measurements
 from camera_image_class import CameraImage
 from skimage.feature import blob_log
 from scipy.stats import sem
 from fitting_functions_class import FittingFunctions
-
 
 
 class ROIs:
