@@ -15,7 +15,7 @@ add_local_paths(__file__, ['../../modules', '../../utils'])
 
 # user defined modules
 from math_class import Math
-#from data_handling import sort_raw_measurements
+from data_handling import sort_raw_measurements
 from camera_image_class import CameraImage
 from skimage.feature import blob_log
 from scipy.stats import sem
@@ -28,7 +28,7 @@ class ROIs:
         self.patch_size = 2*roi_radius + 1
         self.log_thresh = log_thresh
 
-    def extract_rois(self, images: np.ndarray, y_coords: np.ndarray, x_coords: np.ndarray):
+    def _extract_rois(self, images: np.ndarray, y_coords: np.ndarray, x_coords: np.ndarray):
         """
         Slice out p×p patches around each (y,x) from every image.
         Returns:
@@ -49,7 +49,7 @@ class ROIs:
 
         return rois
 
-    def plot_single_roi(self, avg_patches: np.ndarray):
+    def _plot_single_roi(self, avg_patches: np.ndarray):
         """(optional) quick sanity plot for single ROI, e.g. ROI #0"""
         fig, ax = plt.subplots(figsize=(3.5, 2.5))
 
@@ -89,7 +89,7 @@ class ROIs:
         print(f"Detected {len(spots)} spots")
 
         # 3) extract all patches into a 4D array of shape (n_rois, n_images, p, p)
-        rois_mat = self.extract_rois(image_stack, y_coor, x_coor)
+        rois_mat = self._extract_rois(image_stack, y_coor, x_coor)
 
         if use_weighted_count:
             # 4) per-ROI average patch, Shape (n_rois, p, p)
@@ -107,7 +107,7 @@ class ROIs:
             templates = templates/templates.sum(axis=(1,2), keepdims=True)
 
         # plot single ROI to check it went correctly
-        self.plot_single_roi(templates)
+        self._plot_single_roi(templates)
 
         # 6) apply matched‐filter on each patch
         #    counts[i,j] = ∑_{m,n} rois_mat[i,j,m,n] * templates[i,m,n]
@@ -124,7 +124,7 @@ class ROIs:
         maximing the imaging fidelity by setting the derivative of the fidelity 
         to 0 and solving for x_t where x_t is the detection threshold."""
 
-        print(fit_params)
+        #print(fit_params)
         # obtain fit parameters
         ampl0 = fit_params[0]
         mu0 = fit_params[1]
@@ -149,7 +149,7 @@ class SingleAtoms():
         self.images_path = images_path
         self.binary_threshold = binary_threshold
     
-    def calculate_survival_probability_binary(self):
+    def _calculate_survival_probability_binary(self):
         """
         Calculate the survival probability of atoms in ROIs based on ROI counts matrix and binary threshold.
         Images 0, 3, 5, etc. are initial images, and images 1, 2, 4, etc. are final images.
@@ -199,7 +199,7 @@ class SingleAtoms():
         """
 
         # sort the binary matrix based on x values
-        survival_matrix_binary = self.calculate_survival_probability_binary()
+        survival_matrix_binary = self._calculate_survival_probability_binary()
         nr_avg, x_grid, survival_matrix_sorted = sort_raw_measurements(df, survival_matrix_binary)
     
         # Reshape now that duplicates are consecutive

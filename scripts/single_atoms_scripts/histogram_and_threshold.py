@@ -38,12 +38,12 @@ from plot_utils import Plotting
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-images_path = 'Z:\\Strontium\\Images\\2025-07-23\\scan104032\\'
+images_path = 'Z:\\Strontium\\Images\\2025-07-31\\scan163640\\'
 file_name_suffix = 'image'  # import files ending with image.tiff
 nr_bins_hist_roi = 30
 nr_bins_hist_avg = 40
 roi_radius = 2
-log_thresh = 3
+log_thresh = 10
 plot_only_initial = True # of each set of 2 images (inital, survival) throw away survival
 
 # %% 
@@ -67,7 +67,6 @@ for roi_idx in range(nr_rois):
     axs[roi_idx].hist(roi_counts_matrix[roi_idx, :], bins=nr_bins_hist_roi, edgecolor='black')
 fig1.supxlabel('EMCCD Counts')
 fig1.supylabel('Occurences')
-# plt.show()
 
 # change to 1D matrix for histogram computation averaged over all ROIs
 counts = roi_counts_matrix.ravel()
@@ -101,7 +100,6 @@ print(f"Filling fraction: {filling_fraction:.3f}")
 BinaryThresholding = BinaryThresholding(popt)
 fidelity = BinaryThresholding.calculate_imaging_fidelity(filling_fraction, detection_treshold_counts)
 print(f"Imaging fidelity: {fidelity:.5f}")
-print(popt)
 
 #%% plotting
 
@@ -143,6 +141,5 @@ ax3.legend()
 
 Plotting = Plotting('output')
 Plotting.savefig('roi_histogram.png')
-plt.show()
 
 # %%
