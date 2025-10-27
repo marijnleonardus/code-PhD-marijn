@@ -6,18 +6,25 @@ import matplotlib.pyplot as plt
 
 # 1) Set up your LaTeX/PGF rcParams once, but do NOT call mpl.use("pgf") here.
 #    That way your default backend (usually Agg) stays in place for PNG/PDF exports.
+latex_fontsize_pt = 10
+scale_factor = 1.2 #dejavu appears larger
+font_size = latex_fontsize_pt/scale_factor
+
 mpl.rcParams.update({
-    "pgf.texsystem":        "pdflatex",
-    "text.usetex": False,
+    "pgf.texsystem": "pdflatex",
+    "text.usetex": True,
     "pgf.rcfonts": False,
-    "font.size": 10,
-    "font.family":          "sans-serif",
-    "font.sans-serif":      ["DejaVu Sans"],
-    "mathtext.fontset":     "dejavusans",
-    "mathtext.rm":          "sans",       # use sans for “normal” (roman) math
-    "mathtext.it":          "sans:italic",
-    "mathtext.bf":          "sans:bold",
+    "font.size": font_size,
+    "axes.labelsize": font_size,
+    "legend.fontsize": font_size - 1,
+    "xtick.labelsize": font_size - 1,
+    "ytick.labelsize": font_size - 1,
+    "font.family": "sans-serif",
+    "text.latex.preamble": r"""
+        \usepackage{sfmath}        
+    """,
 })
+
 
 
 class Plotting:

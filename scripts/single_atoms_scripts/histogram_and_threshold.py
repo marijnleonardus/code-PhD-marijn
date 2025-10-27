@@ -38,10 +38,10 @@ from plot_utils import Plotting
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-images_path = 'Z:\\Strontium\\Images\\2025-07-31\\scan163640\\'
+images_path = 'Z:\\Strontium\\Images\\2025-07-31\\scan145702\\'
 file_name_suffix = 'image'  # import files ending with image.tiff
-nr_bins_hist_roi = 30
-nr_bins_hist_avg = 40
+nr_bins_hist_roi = 15
+nr_bins_hist_avg = 30
 roi_radius = 2
 log_thresh = 10
 plot_only_initial = True # of each set of 2 images (inital, survival) throw away survival
@@ -129,7 +129,9 @@ roi_counts_matrix_non_weighted = ROIsObject.calculate_roi_counts(images_path, fi
 photons_matrix_non_weighted = iXon888.counts_to_photons(roi_counts_matrix_non_weighted.ravel(), backgr_counts)
 rescale_factor = photons_matrix_non_weighted.mean()/photons_matrix.mean()
 
-fig3, ax3 = plt.subplots()
+fig_width = 3.375  # inches, matches one column
+fig_height = fig_width*0.61
+fig3, ax3 = plt.subplots(figsize = (fig_width, fig_height))
 ax3.set_xlabel('Number of photons')
 ax3.set_ylabel('Probability')
 ax3.grid()
@@ -140,6 +142,9 @@ ax3.legend()
 # %%
 
 Plotting = Plotting('output')
-Plotting.savefig('roi_histogram.png')
+Plotting.savefig('roi_histogram.pdf')
 
+# %%
+
+plt.show()
 # %%

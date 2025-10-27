@@ -21,7 +21,7 @@ sys.path.append(utils_dir)
 
 # user defined libraries
 from single_atoms_class import SingleAtoms
-from units import MHz, pol_1s0, pol_3p1
+from units import MHz, pol_1s0, pol_3p1_mj1
 from plot_utils import Plotting
 
 os.system('cls' if os.name == 'nt' else 'clear')
@@ -60,7 +60,9 @@ best_cooling_freq = x_grid[max_idx]
 
 print("best survival: ", max_surv_prob, " pm ", max_surv_prob_err, " at ", best_cooling_freq/MHz, " MHz")
 
-fig1, ax1 = plt.subplots(figsize=(4, 3))
+fig_width = 3.375  # inches, matches one column
+fig_height = fig_width*0.61
+fig1, ax1 = plt.subplots(figsize = (fig_width, fig_height))
 ax1.errorbar(x_grid/MHz, glob_surv, yerr=glob_surv_sem, fmt='o', color='blue', label='Survival probability')
 ax1.set_xlabel('Sisyphus cooling detuning. [MHz]')
 ax1.set_ylabel('Survival probability')
@@ -69,7 +71,7 @@ ax1.set_xlim([-3.65, -1.65])
 #ax1.axvline(x=best_cooling_freq/MHz, color='red', linestyle='dashed', linewidth=1.5)
 
 # add line for AC Stark shifted resonance
-diff_ac_stark = trapdepth*(1 - pol_3p1/pol_1s0)
+diff_ac_stark = trapdepth*(1 - pol_3p1_mj1/pol_1s0)
 ax1.axvline(x=diff_ac_stark/MHz, color='grey', 
     linestyle='dashed', linewidth=1.5, label='AC Stark shifted resonance')
 print(diff_ac_stark)
@@ -78,6 +80,5 @@ ax1.legend()
 
 Plot=Plotting('output')
 Plot.savefig('sis_cooling_surv.pdf') 
-plt.show()
 
 # %%
