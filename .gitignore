@@ -163,3 +163,4 @@ calculation_scripts/mot/recoil-limited-mot/data
 # raw data
 *.csv
 *.npy
+*.npz

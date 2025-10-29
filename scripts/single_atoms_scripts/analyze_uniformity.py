@@ -2,6 +2,7 @@
 # April 2025
 
 """first run histogram_and_threshold.py """
+#%%
 
 import numpy as np
 import sys
@@ -28,6 +29,8 @@ from units import MHz
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
+
+#%%
 
 # variables
 images_path = 'T:\\KAT1\\Marijn\scan174612\\'
@@ -65,7 +68,7 @@ x_axis_fit = np.linspace(x_grid[0], x_grid[-1], 500)
 for roi_idx in range(nr_rois):
     axs[roi_idx].errorbar(x_grid/MHz, surv_prob[roi_idx, :], sem_surv_prob[roi_idx, :],
         fmt='o', ms=2, capsize=1, capthick=1)
-    #axs[roi_idx].set_title(f'ROI {roi_idx}')
+    axs[roi_idx].set_title(f'ROI {roi_idx}')
 
     # fit datapoints and plot result
     popt, pcov = curve_fit(FittingFunctions.gaussian_function, x_grid, surv_prob[roi_idx, :], p0=initial_guess)
@@ -79,7 +82,6 @@ fig1.supylabel('Survival probabiility')
 # calculate uniformity
 detunings = np.array([arr[2] for arr in popt_list])
 detunings_stddev = np.array([np.sqrt(pcov[2, 2]) for pcov in pcov_list])
-print(detunings_stddev)
 avg_detuning = np.mean(detunings)
 sem_detuning = sem(detunings)
 std_deviation_detuning = np.std(detunings)
@@ -92,3 +94,15 @@ print("uniformity: ", np.round(uniformity, 3))
 Plot = Plotting('output')
 Plot.savefig('uniformity_plot.png')
 plt.show()
+
+# save results to be used by `tweezers_charact_combined.py`
+export_data = {
+    'detunings': detunings,
+    'surv_prob': surv_prob,
+    'sem_surv_prob': sem_surv_prob,
+    'x_grid': x_grid,
+    'x_axis_fit': x_axis_fit,
+    'popt_list': popt_list
+}
+
+np.savez('output/combined_figs/uniformity_data_dict.npz', **export_data)
