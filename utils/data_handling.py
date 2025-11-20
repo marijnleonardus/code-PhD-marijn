@@ -1,6 +1,7 @@
 import pandas as pd
 import csv
 from collections import defaultdict
+from PIL import Image
 import numpy as np
 
 

@@ -63,7 +63,7 @@ print("best survival: ", max_surv_prob, " pm ", max_surv_prob_err, " at ", best_
 fig_width = 3.375  # inches, matches one column
 fig_height = fig_width*0.61
 fig1, ax1 = plt.subplots(figsize = (fig_width, fig_height))
-ax1.errorbar(x_grid/MHz, glob_surv, yerr=glob_surv_sem, fmt='o', color='blue', label='Survival probability')
+ax1.errorbar(x_grid/MHz, glob_surv, yerr=glob_surv_sem, fmt='o', color='blue')
 ax1.set_xlabel('Sisyphus cooling detuning. [MHz]')
 ax1.set_ylabel('Survival probability')
 ax1.set_xlim([-3.65, -1.65])
@@ -73,10 +73,8 @@ ax1.set_xlim([-3.65, -1.65])
 # add line for AC Stark shifted resonance
 diff_ac_stark = trapdepth*(1 - pol_3p1_mj1/pol_1s0)
 ax1.axvline(x=diff_ac_stark/MHz, color='grey', 
-    linestyle='dashed', linewidth=1.5, label='AC Stark shifted resonance')
+    linestyle='dashed', linewidth=1.5)
 print(diff_ac_stark)
-
-ax1.legend()
 
 Plot=Plotting('output')
 Plot.savefig('sis_cooling_surv.pdf') 

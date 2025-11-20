@@ -36,6 +36,38 @@ class CameraImage:
         return np.array(image_stack)
     
     @staticmethod
+    def crop_image_around_point(img: np.ndarray, x0: int, y0: int, w: int, h: int):
+        """
+        Crop a 2D image around (x0, y0) with width w and height h.
+        
+        Parameters
+        ----------
+        img : 2D numpy array
+            Input image.
+        x0, y0 : int
+            Center point (column, row).
+        w, h : int
+            Width and height of the crop box.
+            
+        Returns
+        -------
+        cropped : 2D numpy array
+            The cropped image region.
+        """
+
+        # Half-sizes
+        half_w = w // 2
+        half_h = h // 2
+
+        # Compute bounds
+        x1 = max(0, x0 - half_w)
+        x2 = min(img.shape[1], x0 + half_w)
+        y1 = max(0, y0 - half_h)
+        y2 = min(img.shape[0], y0 + half_h)
+
+        return img[y1:y2, x1:x2]
+    
+    @staticmethod
     def load_image_from_file(location, name):
     
         """spits out numpy array of BMP image loaded into memory"""
@@ -49,6 +81,7 @@ class CameraImage:
         # convert to numpy format
         array = np.array(image_file_grey)
         return array
+
     @staticmethod
     def compute_pixel_sums_x_y(image_file):
         """computes pixel sums over rows (y) and columns (x) of given image"""
