@@ -5,14 +5,18 @@ import numpy as np
 from scipy.constants import pi, hbar, c, epsilon_0, elementary_charge
 import scipy.constants
 import allantools
-
+import os 
 import sys
-import os
-script_dir = os.path.dirname(os.path.abspath(__file__))
-modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
-sys.path.append(modules_dir)
 
-from utils.units import MHz, um, mW
+# add local modules
+script_dir = os.path.dirname(os.path.abspath(__file__))
+lib_dir = os.path.abspath(os.path.join(script_dir, '../lib'))
+if lib_dir not in sys.path:
+    sys.path.append(lib_dir)
+from setup_paths import add_local_paths
+add_local_paths(__file__, ['../modules', '../utils'])
+
+from units import MHz, um, mW, nm
 from optics_class import GaussianBeam
 from atom_class import Sr
 
@@ -128,8 +132,7 @@ class AtomLightInteraction:
         dc_stark_Hz = dc_stark_MHz*MHz
         return dc_stark_Hz    
     
-    @staticmethod
-    def saturation_intensity(lifetime: float, wavelength: float):
+    def saturation_intensity(self, lifetime: float, wavelength: float):
         """calculate saturation intensity
 
         Args:
@@ -141,14 +144,35 @@ class AtomLightInteraction:
         """
         saturation_intensity = pi*(hbar*2*pi)*c/(3*lifetime*wavelength**3)
         return saturation_intensity
+    
+    def scattering_rate_sat(self, intensity: float, detuning: float, linewidth: float, wavelength: float=461*nm):
+        """compute scattering rate given beam intensity, detuning and linewidth
+
+        Args:
+            intensity (float or np array): intensity in [W/m^2].
+            detuning (float): detuning in [Hz].
+            linewidth (float): linewidth in [Hz].
+
+        Returns:
+            scattering_rate (float or np array): scattering rate in [Hz].
+        """
+        s0 = self.saturation_intensity(1/linewidth, wavelength)
+        s = intensity/s0
+        scattering_rate = (linewidth/2)*(s/(1 + s + (2*detuning/linewidth)**2))
+        return scattering_rate
 
 
 def main():
+
     beam_power = 30*mW 
     beam_waist = 18*um
     uv_intensity = GaussianBeam(beam_power, beam_waist).get_intensity()
-    rabi_freq = AtomLightInteraction.calc_rydberg_rabi_freq(61, uv_intensity, j_e=1)
-    print(rabi_freq/(2*pi*MHz), " MHz")
+    rabi_freq = AtomLightInteraction().calc_rydberg_rabi_freq(61, uv_intensity, j_e=1)
+    print("Rydberg rabi", rabi_freq/(2*pi*MHz), " MHz")
+
+    gamma=2*pi*32*MHz
+    s0 = AtomLightInteraction().saturation_intensity(1/gamma, 461*nm)
+    print("s0:", s0, " W/m^2")
 
 
 if __name__ == "__main__":
