@@ -13,8 +13,9 @@ if lib_dir not in sys.path:
 from setup_paths import add_local_paths
 add_local_paths(__file__, ['../../modules', '../../utils'])
 
-from units import nm, um
+from units import nm, um, mm
 from camera_image_class import CameraImage
+from plot_utils import Plotting
 
 # constants
 wavelength = 461*nm  # in meters
@@ -23,9 +24,9 @@ binning = 1  # binning factor
 magnification = 150/250  # magnification factor
 
 # data: path and image croppin settings
-#path = r'Z:/Strontium/Images/2025-11-19/635229'
-path = r"Z://Strontium//Images//2024-10-21//442187//"
-x0 = 140
+path = r'Z:/Strontium/Images/2024-10-21/442187/' # red MOT
+# path = r"Z://Strontium//Images//202-11-25//638385//" # blue MOT
+x0=140
 y0=475
 w=150
 h=150
@@ -73,24 +74,23 @@ def plot_with_scaled_axes(image: np.ndarray):
     roi_size_y = CameraImage.pixels_to_m(pixels_y, magnification, px_size, binning)
     roi_size_x = CameraImage.pixels_to_m(pixels_x, magnification, px_size, binning)
     
-    fig, ax = plt.subplots(figsize=(2.5, 2.3))
-    ax.set_xlabel(r'x ($\mu$m)')
-    ax.set_ylabel(r'y ($\mu$m)')
-    im = ax.imshow(image, cmap="inferno", extent=[0, roi_size_y/um, 0, roi_size_x/um])
+    fig, ax = plt.subplots(figsize=(1.5, 1.5))
+    ax.set_xlabel(r'x [mm]')
+    ax.set_ylabel(r'y [mm]')
+    im = ax.imshow(image, cmap="jet", extent=[0, roi_size_x/mm, 0, roi_size_y/mm])
     fig.colorbar(im, ax=ax, label='Optical Density')
-    plt.show()
 
 
 if __name__ == "__main__":
     ImageObject = CameraImage()
     
-    img0 = ImageObject._load_image(path + "\\0000image.tif")   # absorption image
+    img0 = ImageObject._load_image(path + "0000image.tif")   # absorption image
     img0 = ImageObject.crop_image_around_point(img0, x0=x0, y0=y0, w=w, h=h)
 
-    img1 = ImageObject._load_image(path + "\\0001image.tif")   # reference image
+    img1 = ImageObject._load_image(path + "0001image.tif")   # reference image
     img1 = ImageObject.crop_image_around_point(img1, x0=x0, y0=y0, w=w, h=h)
 
-    img2 = ImageObject._load_image(path + "\\0002image.tif")   # background image
+    img2 = ImageObject._load_image(path + "0002image.tif")   # background image
     img2 = ImageObject.crop_image_around_point(img2, x0=x0, y0=y0, w=w, h=h)
 
     od_img = compute_od(img0, img1, img2)
@@ -99,3 +99,6 @@ if __name__ == "__main__":
     print(f"Number of atoms: {nr_atoms:.2e}")
 
     plot_with_scaled_axes(od_img)
+    Plot = Plotting('output')
+    Plot.savefig('absorp_red_mot.png')
+    plt.show()
