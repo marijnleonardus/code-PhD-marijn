@@ -1,7 +1,10 @@
-
 # %% 
 
-"""the script uses natural units (hbar = m = 1) for the quantum mechanics calculations, where
+"""
+Marijn Venderbosch
+November 2025
+
+the script uses natural units (hbar = m = 1) for the quantum mechanics calculations, where
 omega sets the energy and length scales.
 
 For plotting and physical interpretation, we convert back to SI units using the trap frequency
@@ -28,9 +31,6 @@ sys.path.append(utils_dir)
 # user defined libraries
 from units import kHz, um, uK, us
 from plot_utils import Plotting
-
-# Physical constants (using natural units where hbar = m = 1)
-# In these units, omega defines the energy and length scales
 
 # %% 
 
@@ -136,7 +136,6 @@ class OpticalTweezer:
         n_bound = np.sum(bound_mask)
         
         print(f"Found {n_bound} bound states")
-        print(f"Ground state energy: {energies[0]:.4f} ℏω")
         return energies, eigenvectors
     
     def get_bound_states(self):
@@ -167,9 +166,9 @@ class OpticalTweezer:
             psi += c_n*self._harmonic_oscillator_wf(n, r)
         return psi
     
-    def free_evolution(self, tau, x):
+    def free_evolution(self, tau, x, initial_state_idx=0):
         """
-        Compute time-evolved wavefunction after free evolution from ground state.
+        Compute time-evolved wavefunction after free evolution from a given initial state.
         
         Parameters:
         -----------
@@ -177,14 +176,16 @@ class OpticalTweezer:
             Evolution time in units of 1/omega
         x : array
             Position grid
+        initial_state_idx : int
+            Index of the initial bound state (default: 0 for ground state)
             
         Returns:
         --------
         psi : array (complex)
             Time-evolved wavefunction
         """
-        # Start with ground state of the Gaussian potential (not HO!)
-        psi_0 = self.position_wavefunction(0, x)
+        # Start with specified initial state of the Gaussian potential
+        psi_0 = self.position_wavefunction(initial_state_idx, x)
         
         # For general initial state, need to evolve via momentum space
         # or use propagator. For now, let's use the simpler approach:
@@ -211,7 +212,7 @@ class OpticalTweezer:
         # Verify normalization
         norm = simpson(np.abs(psi_t)**2, x=x)
         if abs(norm - 1.0) > 0.01:
-            print(f"Warning: evolved wavefunction norm = {norm:.6f}")
+            print(f"Warning: evolved wavefunction normalization = {norm:.6f}")
         return psi_t
     
     def compute_overlap(self, psi_evolved, state_idx, r):
@@ -236,7 +237,7 @@ class OpticalTweezer:
         overlap = simpson(np.conj(psi_n)*psi_evolved, x=r)
         return overlap
     
-    def recapture_probability(self, tau, r_grid=None):
+    def recapture_probability(self, tau, r_grid=None, initial_state_idx=0):
         """
         Compute recapture probability after hold time tau.
         
@@ -246,6 +247,8 @@ class OpticalTweezer:
             Hold time in units of 1/omega
         r_grid : array, optional
             Position grid for integration
+        initial_state_idx : int
+            Index of the initial bound state (default: 0 for ground state)
             
         Returns:
         --------
@@ -261,8 +264,8 @@ class OpticalTweezer:
             x_max = max(20*self.a_ho, 15*self.a_ho*spread_factor)
             r_grid = np.linspace(-x_max, x_max, 4000)
         
-        # Compute evolved wavefunction
-        psi_t = self.free_evolution(tau, r_grid)
+        # Compute evolved wavefunction from specified initial state
+        psi_t = self.free_evolution(tau, r_grid, initial_state_idx)
         
         # Get bound states
         bound_energies, bound_eigenstates = self.get_bound_states()
@@ -276,6 +279,66 @@ class OpticalTweezer:
         probability_total = np.sum(probability_n)
         return probability_n, probability_total
     
+    def thermal_recapture_probability(self, tau, temperature_natural, r_grid=None):
+        """
+        Compute thermally-averaged recapture probability.
+        
+        The thermal state is a statistical mixture of energy eigenstates with
+        Boltzmann weights:
+            ρ_thermal = Σ_n p_n |n⟩⟨n|
+        where p_n = exp(-E_n/kT) / Z
+        
+        Parameters:
+        -----------
+        tau : float
+            Hold time in units of 1/omega
+        temperature_natural : float
+            Temperature in units of hbar*omega/k_B
+        r_grid : array, optional
+            Position grid for integration
+            
+        Returns:
+        --------
+        probability_n_thermal : array
+            Thermally-averaged probability for each bound state
+        total_prob_thermal : float
+            Thermally-averaged total recapture probability
+        thermal_occupation : array
+            Initial thermal occupation probabilities p_n
+        """
+        # Get bound states
+        bound_energies, _ = self.get_bound_states()
+        n_bound = len(bound_energies)
+        
+        # Compute Boltzmann weights for initial thermal distribution
+        # p_n = exp(-E_n / kT) / Z
+        beta = 1.0/temperature_natural
+        boltzmann_factors = np.exp(-beta*bound_energies)
+        partition_function = np.sum(boltzmann_factors)
+        thermal_occupation = boltzmann_factors / partition_function
+        
+        print(f"Ground state occupation: {thermal_occupation[0]:.4f}")
+        
+        # Initialize arrays for thermally-averaged probabilities
+        probability_n_thermal = np.zeros(n_bound)
+        total_prob_thermal = 0.0
+        
+        # For each initial state, compute recapture and weight by thermal occupation
+        print(f"Computing thermal average over {n_bound} initial states...")
+        for n_init in range(n_bound):
+            # Only include states with significant occupation (save computation)
+            if thermal_occupation[n_init] < 1e-6:
+                continue
+                
+            # Compute recapture probability starting from state n_init
+            P_n, P_total = self.recapture_probability(tau, r_grid, initial_state_idx=n_init)
+            
+            # Add weighted contribution to thermal average
+            probability_n_thermal += thermal_occupation[n_init]*P_n
+            total_prob_thermal += thermal_occupation[n_init]*P_total
+        
+        return probability_n_thermal, total_prob_thermal, thermal_occupation
+    
 
 # %% compute result
 
@@ -285,19 +348,22 @@ def main():
     """
 
     # Parameters
-    trap_frequency = 25*kHz
-    trap_depth = 50*uK
+    trap_frequency = 10*kHz
+    trap_depth = 5*uK
+    temperature = 2.2*uK  # Temperature for thermal state (set to 0 for pure ground state)
     m = 88*atomic_mass
     n_ho_basis = 50  # Number of HO basis states
     number_r_grid_points = 1024  # Points in position grid
-    max_release_time_s = 20*us
+    max_release_time_s = 50*us
     nr_tau_values = 25  # Number of hold time values to compute
 
     # Derived parameters
     U0 = Boltzmann*trap_depth/(hbar*2*pi*trap_frequency)  # Trap depth in units of hbar*omega
+    T_natural = Boltzmann*temperature/(hbar*2*pi*trap_frequency)  # Temperature in natural units
     trap_freq_rad = 2*pi*trap_frequency  # in rad/s
     tweezer_waist_m = 2*np.sqrt(Boltzmann*trap_depth/(m*trap_freq_rad**2))  # in meters
     print(f"Tweezer waist (1/e^2 radius): {tweezer_waist_m/um:.2f} μm")
+    print(f"Temperature: {temperature/uK:.2f} μK = {T_natural:.4f} ℏω/k_B")
     r_grid = np.linspace(-20, 20, number_r_grid_points) # Position grid in units of a_ho
 
     # Create tweezer object and solve for eigenstates
@@ -328,38 +394,97 @@ def main():
     ax1.set_ylim([-U0 - 3, 3])
     ax1.legend()
     ax1.grid(True, alpha=0.3)
+    Plot = Plotting('output')
+    Plot.savefig('release_recapture/tweezer_potential_eigenstates.pdf')
     
     # Plot 2: Recapture probability vs hold time
     fig2, ax2 = plt.subplots()
 
     tau_values = np.linspace(0, max_release_time_s*trap_freq_rad, nr_tau_values)
-    P_total_values = []
+    P_total_values_T0 = []
+    P_total_values_thermal = []
     
     print("\nComputing recapture vs hold time...")
+    
+    # Determine if we should compute thermal or T=0 case
+    use_thermal = (temperature > 0) and (T_natural > 0.01)
+
+    if use_thermal:
+        bound_energies, _ = Tweezer.get_bound_states()
+        n_bound = len(bound_energies)
+        beta = 1.0/T_natural
+        boltzmann_factors = np.exp(-beta*bound_energies)
+        partition_function = np.sum(boltzmann_factors)
+        thermal_occ = boltzmann_factors/partition_function
+    
     for tau in tau_values:
-        _, P_total = Tweezer.recapture_probability(tau)
-        P_total_values.append(P_total)
+        if use_thermal:
+            # Thermal state calculation - compute weighted average
+            P_n_thermal = np.zeros(n_bound)
+            P_total_thermal = 0.0
+            
+            for n_init in range(n_bound):
+                if thermal_occ[n_init] < 1e-6:
+                    continue
+                P_n, P_total = Tweezer.recapture_probability(tau, r_grid, initial_state_idx=n_init)
+                P_n_thermal += thermal_occ[n_init]*P_n
+                P_total_thermal += thermal_occ[n_init]*P_total
+            
+            P_total_values_thermal.append(P_total_thermal)
+        else:
+            # Ground state only (T=0)
+            _, P_total = Tweezer.recapture_probability(tau, r_grid, initial_state_idx=0)
+            P_total_values_T0.append(P_total)
 
     # Convert dimensionless time to seconds
     tau_seconds = tau_values/trap_freq_rad
     
-    ax2.plot(tau_seconds/um, P_total_values, 'b-')
+    if use_thermal:
+        ax2.plot(tau_seconds/us, P_total_values_thermal, 'r-', label=rf'T = {temperature/uK:.1f} $\mu$K')
+    else:
+        ax2.plot(tau_seconds/us, P_total_values_T0, 'b-', label='T = 0 (ground state)')
+    
     ax2.set_xlabel(r'Hold time [$\mu$s]')
     ax2.set_ylabel('Recapture Probability')
+    ax2.legend()
     ax2.grid(True, alpha=0.3)
     ax2.set_ylim([0, 1.05])
+    Plot.savefig('release_recapture/recapture_vs_time.pdf')
     
-    # Plot 4: State-by-state probabilities for specific tau
+    # Plot 3: State-by-state probabilities for specific tau
     fig3, ax3 = plt.subplots()
-    tau_example_s = 40*us 
+    tau_example_s = 10*us 
     tau_example = tau_example_s*trap_freq_rad  # in dimensionless units
-    p_n, p_total = Tweezer.recapture_probability(tau_example, r_grid)
+    
+    if use_thermal:
+        p_n, p_total, thermal_occ = Tweezer.thermal_recapture_probability(tau_example, T_natural, r_grid)
+        title_str = (
+            f"T = {temperature/uK:.1f} $\\mu$K, "
+            f"$\\tau$ = {tau_example_s/us:.1f} $\\mu$s\n"
+            f"Recapture: {p_total:.3f}"
+        )
+    else:
+        p_n, p_total = Tweezer.recapture_probability(tau_example, r_grid, initial_state_idx=0)
+        title_str = rf'T = 0, $\tau$ = {tau_example_s/us:.1f} $\mu$s \n Recapture: {p_total:.3f}'
     
     n_states = len(p_n) 
     ax3.bar(range(n_states), p_n[:n_states])
     ax3.set_xlabel(r'Oscillator level $n$')
     ax3.set_ylabel('Probability')
+    ax3.set_title(title_str)
     ax3.grid(True, alpha=0.3, axis='y')
+    Plot.savefig('release_recapture/state_distribution.pdf')
+    
+    # Plot 4: Initial thermal occupation (if thermal)
+    if use_thermal:
+        fig4, ax4 = plt.subplots()
+        ax4.bar(range(len(thermal_occ)), thermal_occ, alpha=0.7, color='orange')
+        ax4.set_xlabel(r'Oscillator level $n$')
+        ax4.set_ylabel('Thermal occupation probability')
+        ax4.set_title(rf'Initial thermal distribution at T = {temperature/uK:.1f} $\mu$K')
+        ax4.grid(True, alpha=0.3, axis='y')
+        Plot.savefig('release_recapture/thermal_occupation.pdf')
+    
     plt.show() 
 
 
