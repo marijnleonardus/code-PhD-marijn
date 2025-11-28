@@ -1,6 +1,12 @@
 
 # %% 
 
+"""the script uses natural units (hbar = m = 1) for the quantum mechanics calculations, where
+omega sets the energy and length scales.
+
+For plotting and physical interpretation, we convert back to SI units using the trap frequency
+and atomic mass of strontium-88."""
+
 # import numpy as np
 from scipy.constants import pi, Boltzmann, hbar, atomic_mass
 import math
@@ -20,8 +26,7 @@ sys.path.append(modules_dir)
 sys.path.append(utils_dir)
 
 # user defined libraries
-from single_atoms_class import SingleAtoms
-from units import kHz, um, uK
+from units import kHz, um, uK, us
 from plot_utils import Plotting
 
 # Physical constants (using natural units where hbar = m = 1)
@@ -35,7 +40,7 @@ class OpticalTweezer:
     after free evolution.
     """
     
-    def __init__(self, U0, omega, n_ho_basis=100):
+    def __init__(self, U0, omega, r_grid, n_ho_basis=100):
         """
         Parameters:
         -----------
@@ -53,7 +58,7 @@ class OpticalTweezer:
         self.waist = 2*self.a_ho*np.sqrt(U0/omega)  # Beam waist in units of a_ho
         
         # Solve for eigenstates of Gaussian potential
-        self.energies, self.eigenstates_ho = self._solve_gaussian_potential()
+        self.energies, self.eigenstates_ho = self._solve_gaussian_potential(r_grid)
         
     def _harmonic_oscillator_wf(self, n, r):
         """
@@ -83,7 +88,7 @@ class OpticalTweezer:
         gaussian_potential = -self.U0*np.exp(-2*r**2/self.waist**2)
         return gaussian_potential
     
-    def _solve_gaussian_potential(self):
+    def _solve_gaussian_potential(self, r_grid):
         """
         Solve Schrödinger equation for Gaussian potential in HO basis.
         
@@ -106,8 +111,7 @@ class OpticalTweezer:
         # V_nm = <n|gaussian_potential(x)|m> - <n|0.5*m*omega^2*x^2|m>
         # The second term removes the HO potential that's already in T
         
-        r_grid = np.linspace(-10*self.a_ho, 10*self.a_ho, 1000)
-        dx = r_grid[1] - r_grid[0]
+        dr = r_grid[1] - r_grid[0]
         
         for n in range(self.n_ho_basis):
             psi_n = self._harmonic_oscillator_wf(n, r_grid)
@@ -229,7 +233,7 @@ class OpticalTweezer:
             <eigenstate | psi_evolved>
         """
         psi_n = self.position_wavefunction(state_idx, r)
-        overlap = simpson(np.conj(psi_n)*psi_evolved, r=r)
+        overlap = simpson(np.conj(psi_n)*psi_evolved, x=r)
         return overlap
     
     def recapture_probability(self, tau, r_grid=None):
@@ -265,12 +269,12 @@ class OpticalTweezer:
         n_bound = len(bound_energies)
         
         # Compute overlaps
-        P_n = np.zeros(n_bound)
+        probability_n = np.zeros(n_bound)
         for i in range(n_bound):
             overlap = self.compute_overlap(psi_t, i, r_grid)
-            P_n[i] = np.abs(overlap)**2
-        P_total = np.sum(P_n)
-        return P_n, P_total
+            probability_n[i] = np.abs(overlap)**2
+        probability_total = np.sum(probability_n)
+        return probability_n, probability_total
     
 
 # %% compute result
@@ -285,89 +289,82 @@ def main():
     trap_depth = 50*uK
     m = 88*atomic_mass
     n_ho_basis = 50  # Number of HO basis states
-    number_x_grid_points = 2048  # Points in position grid
+    number_r_grid_points = 1024  # Points in position grid
+    max_release_time_s = 20*us
+    nr_tau_values = 25  # Number of hold time values to compute
 
     # Derived parameters
     U0 = Boltzmann*trap_depth/(hbar*2*pi*trap_frequency)  # Trap depth in units of hbar*omega
     trap_freq_rad = 2*pi*trap_frequency  # in rad/s
     tweezer_waist_m = 2*np.sqrt(Boltzmann*trap_depth/(m*trap_freq_rad**2))  # in meters
     print(f"Tweezer waist (1/e^2 radius): {tweezer_waist_m/um:.2f} μm")
+    r_grid = np.linspace(-20, 20, number_r_grid_points) # Position grid in units of a_ho
 
     # Create tweezer object and solve for eigenstates
     omega = 1.0  # Trap frequency (natural units)
-    tweezer = OpticalTweezer(U0, omega, n_ho_basis)
-    
-    # Position grid for plotting and integration
-    r_grid = np.linspace(-20, 20, number_x_grid_points)
-    
+    Tweezer = OpticalTweezer(U0, omega, r_grid, n_ho_basis)
+        
     # Plot potential and some eigenstates
     fig1, ax1 = plt.subplots()
     ho_length_m = np.sqrt(hbar/(m*2*pi*trap_frequency))  # in meters
     r_grid_plot = r_grid*ho_length_m  # in units of m for plotting
     
     # Plot gaussian potential and HO approximation
-    gaussian_potential = tweezer._gaussian_potential(r_grid)
+    gaussian_potential = Tweezer._gaussian_potential(r_grid)
     ax1.plot(r_grid_plot/um, gaussian_potential, 'k-', linewidth=2, label='Gaussian potential')
     V_ho = 0.5*omega**2*r_grid**2 - U0
-    ax1.plot(r_grid_plot/um, V_ho, 'r--', alpha=0.5, label='Harmonic approximation')
+    ax1.plot(r_grid_plot/um, V_ho, 'b--', label='Harmonic approximation')
     
     # Plot energy levels
-    bound_energies, _ = tweezer.get_bound_states()
+    bound_energies, _ = Tweezer.get_bound_states()
 
     # Plot n=5, n=10, n=15 wavefunctions, etc. 
     for i in range(0, len(bound_energies), 5):
-        psi = tweezer.position_wavefunction(i, r_grid)
+        psi = Tweezer.position_wavefunction(i, r_grid)
         ax1.plot(r_grid_plot/um, psi + bound_energies[i], label=f'n={i}')
     
-    ax1.plot(r_grid_plot/um, gaussian_potential, 'k-', alpha=0.3, linewidth=1)
-    ax1.set_xlabel(r'Radial position $r$ [μm]')
-    ax1.set_ylabel('Energy (units of $\hbar\omega$)')
+    ax1.set_xlabel(r'Radial position $r$ [$\mu$m]')
+    ax1.set_ylabel('Energy [$\hbar\omega$]')
     ax1.set_ylim([-U0 - 3, 3])
     ax1.legend()
     ax1.grid(True, alpha=0.3)
     
-    """ # Plot 3: Recapture probability vs hold time
-    ax = axes[1, 0]
-    tau_values = np.linspace(0, 4*pi, 100)
+    # Plot 2: Recapture probability vs hold time
+    fig2, ax2 = plt.subplots()
+
+    tau_values = np.linspace(0, max_release_time_s*trap_freq_rad, nr_tau_values)
     P_total_values = []
     
     print("\nComputing recapture vs hold time...")
     for tau in tau_values:
-        _, P_total = tweezer.recapture_probability(tau)
+        _, P_total = Tweezer.recapture_probability(tau)
         P_total_values.append(P_total)
 
     # Convert dimensionless time to seconds
-    tau_seconds = tau_values / omega_rad_per_sec
+    tau_seconds = tau_values/trap_freq_rad
     
-    ax.plot(tau_seconds/1e-6, P_total_values, 'b-', linewidth=2)
-    ax.set_xlabel('Hold time (μs)', fontsize=12)
-    ax.set_ylabel('Recapture Probability', fontsize=12)
-    ax.set_title('Recapture Probability vs Hold Time', fontsize=14, fontweight='bold')
-    ax.grid(True, alpha=0.3)
-    ax.set_ylim([0, 1.05])
+    ax2.plot(tau_seconds/um, P_total_values, 'b-')
+    ax2.set_xlabel(r'Hold time [$\mu$s]')
+    ax2.set_ylabel('Recapture Probability')
+    ax2.grid(True, alpha=0.3)
+    ax2.set_ylim([0, 1.05])
     
     # Plot 4: State-by-state probabilities for specific tau
-    ax = axes[1, 1]
-    tau_example = 0.5
-    P_n, P_total = tweezer.recapture_probability(tau_example, r_grid)
+    fig3, ax3 = plt.subplots()
+    tau_example_s = 40*us 
+    tau_example = tau_example_s*trap_freq_rad  # in dimensionless units
+    p_n, p_total = Tweezer.recapture_probability(tau_example, r_grid)
     
-    #n_states = min(30, len(P_n))
-    n_states = len(P_n)
-    ax.bar(range(n_states), P_n[:n_states], color='steelblue', alpha=0.7)
-    ax.set_xlabel('Quantum Number n', fontsize=12)
-    ax.set_ylabel('Probability', fontsize=12)
-    ax.set_title(f'State Distribution at $\\tau\omega = {tau_example}$\n' + f'Total Recapture: {P_total:.4f}')
-    ax.grid(True, alpha=0.3, axis='y')
+    n_states = len(p_n) 
+    ax3.bar(range(n_states), p_n[:n_states])
+    ax3.set_xlabel(r'Oscillator level $n$')
+    ax3.set_ylabel('Probability')
+    ax3.grid(True, alpha=0.3, axis='y')
     plt.show() 
-    
-    # Print detailed results for specific hold time
-    print(f"\n{'='*60}")
-    print(f"Detailed Results for τω = {tau_example}")
-    print(f"{'='*60}")
-    print(f"Total recapture probability: {P_total:.6f}")"""
 
 
 if __name__ == "__main__":
     main()
+
 
 # %%
