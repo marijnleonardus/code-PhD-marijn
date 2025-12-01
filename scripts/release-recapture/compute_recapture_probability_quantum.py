@@ -2,6 +2,14 @@
 """
 Marijn Venderbosch 
 November 2025
+
+Code for computing recapture probability after turning off tweezers for variable duration
+
+Assuming Gaussian optical tweezer potential. 
+
+Inputs to the model are Trap depth and trap frequency (or waist).
+
+You can also provide a temperature. If not provided, will assume n = 0 state initially.
 """
 
 import numpy as np
@@ -17,7 +25,7 @@ import os
 import sys
 script_dir = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(script_dir, "..", ".."))
-DATA_FOLDER = os.path.join(PROJECT_ROOT, "raw_data", "release_recapture")
+DATA_FOLDER = os.path.join(PROJECT_ROOT, "raw_data", "release_recapture") # adjust as needed
 
 sys.path.append(DATA_FOLDER)
 
@@ -29,15 +37,15 @@ us = 1e-6
 
 # --- Parameters ---
 trap_depth = 190*uK
-temperature = 19.66*uK
+temperature = 0*uK
 waist_computed = 0.92*um
 m = 85*atomic_mass
 n_ho_basis = 110  # should be higher than number of bound states
-number_r_grid_points = int(2**13) # Use power of 2 for FFT efficiency
-max_radius = 1  # in harmonic oscillator units
-max_release_time_s = 100*us
-nr_tau_values = 30 
-use_exp_data = True  # Whether to load and plot experimental data
+number_r_grid_points = int(2**14) # Use power of 2 for FFT efficiency
+max_radius = 6  # in harmonic oscillator units
+max_release_time_s = 1000*us
+nr_tau_values = 80 
+use_exp_data = False  # Whether to load and plot experimental data
 
 # --- Derived parameters ---
 trap_frequency = 2*np.sqrt(Boltzmann*trap_depth/(m*waist_computed**2))/(2*pi)  # in Hz
@@ -175,6 +183,9 @@ class OpticalTweezer:
         return psi_t
     
     def recapture_probability(self, tau, r_grid, initial_state_idx=0):
+        """compute recapture probability into bound states after free evolution,
+        for a given initial state"""
+
         # We assume r_grid is passed correctly (not None) for speed
         psi_t = self.free_evolution(tau, r_grid, initial_state_idx)
         
@@ -210,9 +221,12 @@ class OpticalTweezer:
         return probs, np.sum(probs)
 
     def thermal_recapture_probability(self, tau, temperature_natural, r_grid):
+        """compute recapture probability averaged over thermal distribution"""
+
         bound_energies, _ = self.get_bound_states()
         n_bound = len(bound_energies)
         
+        # calculate Boltzmann factors
         beta = 1.0/temperature_natural
         boltzmann_factors = np.exp(-beta*bound_energies)
         partition_function = np.sum(boltzmann_factors)
@@ -221,7 +235,7 @@ class OpticalTweezer:
         probability_n_thermal = np.zeros(n_bound)
         total_prob_thermal = 0.0
         
-        # This loop is still needed, but the inner functions are now vectorized
+        # the inner functions within this loop are vectorized for speed
         for n_init in range(n_bound):
             if thermal_occupation[n_init] < 1e-6: continue
             
@@ -299,8 +313,8 @@ def plot_recapture_probability(tau_values, prob_tot_values):
 
         # calculate correlation coefficient
         # Interpolate theory onto the experimental x-values
-        internp_function = interp1d(tau_seconds/us, prob_tot_values, kind='quadratic')
-        theory_interp = internp_function(x_exp)
+        internpol_function = interp1d(tau_seconds/us, prob_tot_values, kind='quadratic')
+        theory_interp = internpol_function(x_exp)
 
         # Compute R^2 goodness of fit
         residuals = y_exp - theory_interp
@@ -318,7 +332,6 @@ def plot_recapture_probability(tau_values, prob_tot_values):
 
 
 def main():
-    # --- PLOT 1: Potential and Eigenstates 
     plot_potential_and_states()
 
     # --- Calculation: Recapture vs Hold time ---
@@ -329,11 +342,14 @@ def main():
     prob_tot_values = []
     
     for tau in tau_values:
-        _, p_tot, _ = Tweezer.thermal_recapture_probability(tau, t_natural, r_grid)
-        prob_tot_values.append(p_tot)
+        if temperature > 0*uK:
+            _, p_tot, _ = Tweezer.thermal_recapture_probability(tau, t_natural, r_grid)
+            prob_tot_values.append(p_tot)
+        else:
+            _, p_tot = Tweezer.recapture_probability(tau, r_grid)
+            prob_tot_values.append(p_tot)
     print(f"Calculation complete in {time.time()-t0:.2f} seconds.")
 
-    # --- PLOT 2: Recapture Probability ---
     plot_recapture_probability(tau_values, prob_tot_values)
     plt.show()
 
