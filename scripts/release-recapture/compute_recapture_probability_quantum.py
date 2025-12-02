@@ -24,31 +24,34 @@ from scipy.interpolate import interp1d
 import os
 import sys
 script_dir = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(script_dir, "..", ".."))
-DATA_FOLDER = os.path.join(PROJECT_ROOT, "raw_data", "release_recapture") # adjust as needed
 
-sys.path.append(DATA_FOLDER)
+data_dir = os.path.join(script_dir,'../../raw_data/release_recapture/') # adjust as needed
+modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
+utils_dir = os.path.abspath(os.path.join(script_dir, '../../utils'))
+
+sys.path.append(modules_dir)
+sys.path.append(utils_dir)
+sys.path.append(data_dir)
 
 # --- Unit conversions ---
-kHz = 1e3
-um = 1e-6
-uK = 1e-6
-us = 1e-6
+from units import uK, um, us, kHz
+from plot_utils import Plotting
 
 # --- Parameters ---
 trap_depth = 190*uK
-temperature = 0*uK
+temperature = 18*uK
 waist_computed = 0.92*um
 m = 85*atomic_mass
 n_ho_basis = 110  # should be higher than number of bound states
-number_r_grid_points = int(2**14) # Use power of 2 for FFT efficiency
-max_radius = 6  # in harmonic oscillator units
-max_release_time_s = 1000*us
-nr_tau_values = 80 
-use_exp_data = False  # Whether to load and plot experimental data
+number_r_grid_points = int(2**12) # Use power of 2 for FFT efficiency
+max_radius = 5  # in harmonic oscillator units
+max_release_time_s = 100*us
+nr_tau_values = 30 
+use_exp_data = True  # Whether to load and plot experimental data
 
 # --- Derived parameters ---
 trap_frequency = 2*np.sqrt(Boltzmann*trap_depth/(m*waist_computed**2))/(2*pi)  # in Hz
+print(trap_frequency)
 U0 = Boltzmann*trap_depth/(hbar*2*pi*trap_frequency)
 t_natural = Boltzmann*temperature/(hbar*2*pi*trap_frequency)
 trap_freq_rad = 2*pi*trap_frequency
