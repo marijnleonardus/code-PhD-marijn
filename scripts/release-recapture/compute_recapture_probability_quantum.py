@@ -43,7 +43,7 @@ temperature = 18*uK
 waist_computed = 0.92*um
 m = 85*atomic_mass
 n_ho_basis = 110  # should be higher than number of bound states
-number_r_grid_points = int(2**12) # Use power of 2 for FFT efficiency
+number_r_grid_points = int(2**11) # Use power of 2 for FFT efficiency
 max_radius = 5  # in harmonic oscillator units
 max_release_time_s = 100*us
 nr_tau_values = 30 
@@ -155,7 +155,6 @@ class OpticalTweezer:
         bound_mask = energies < 0
         n_bound = np.sum(bound_mask)
         print(f"Found {n_bound} bound states. Matrix construction & diag took {t_end-t_start:.4f}s")
-        
         return energies, eigenvectors
     
     def get_bound_states(self):
@@ -282,11 +281,10 @@ def plot_potential_and_states():
         ax.plot(r_grid_plot/um, psi + bound_energies[i], label=f'n={i}')
 
     ax.set_xlabel(r'Radial position $r$ [$\mu$m]')
-    ax.set_ylabel('Energy [$\hbar\omega$]')
+    ax.set_ylabel(r'Energy [$\hbar\omega$]')
     ax.set_ylim([-U0 - 3, 5]) # Adjusted limits to see the potential bottom
     ax.legend(loc='upper right')
     ax.grid(True, alpha=0.3)
-    ax.set_title(f'Trap Potential & Eigenstates (Depth = {trap_depth/uK:.1f} $\mu$K)')
 
 
 def load_exp_data():
