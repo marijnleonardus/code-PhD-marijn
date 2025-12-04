@@ -137,7 +137,6 @@ ax3.set_ylabel('Probability')
 ax3.grid()
 ax3.hist(photons_matrix*rescale_factor, bins=nr_bins_hist_avg, edgecolor='black', density=True, label='Counts') 
 ax3.axvline(detection_threshold_photons*rescale_factor, color='grey', linestyle='--', label='Detection threshold')
-ax3.legend()
 
 # %%
 

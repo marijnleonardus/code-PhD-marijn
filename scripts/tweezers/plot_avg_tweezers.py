@@ -8,18 +8,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # append path with 'modules' dir in parent folder
+
+# add local modules
 import sys
 script_dir = os.path.dirname(os.path.abspath(__file__))
-modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
-sys.path.append(modules_dir)
+lib_dir = os.path.abspath(os.path.join(script_dir, '../../lib'))
+if lib_dir not in sys.path:
+    sys.path.append(lib_dir)
+from setup_paths import add_local_paths
+add_local_paths(__file__, ['../../modules', '../../utils'])
 
 # user defined libraries
 from camera_image_class import CameraImage
-from plotting_class import Plotting
-from utils.units import um
+from plot_utils import Plotting
+from units import um
 
 # import image sequence
-raw_data_path = 'Z:\\Strontium\\Images\\2025-05-12\\scan143438\\'
+raw_data_path = 'Z:\\Strontium\\Images\\2025-07-22\\scan181314\\'
 raw_data_suffix = 'image'
 image_stack = CameraImage().import_image_sequence(raw_data_path, raw_data_suffix)
 
@@ -45,7 +50,7 @@ roi_size_y = CameraImage.pixels_to_m(pixels_y, magnification, pixel_size, bin_fa
 
 # %% plotting'
 
-fig1, (ax1, ax2) = plt.subplots(1, 2)
+fig1, (ax1, ax2) = plt.subplots(1, 2, figsize=(3, 1.5))
 fig1.subplots_adjust(wspace=0.5)  # Adjust horizontal space between subplots
 
 ax1.imshow(random_image, cmap='gist_yarg', extent=[0, roi_size_x/um, 0, roi_size_y/um])
@@ -58,5 +63,8 @@ ax2.set_xlabel(r'x ($\mu$m)')
 ax2.set_ylabel(r'y ($\mu$m)')
 ax2.tick_params(axis='both', direction='in')  
 
-Plotting().savefig('output', 'tweezers_avg_image.png')
+Plot = Plotting('output')
+Plot.savefig('tweezers_avg_image.png')
+plt.show()
+
 # %%

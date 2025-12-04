@@ -3,7 +3,6 @@
 
 """first run histogram_and_threshold.py """
 
-# %%
 
 import numpy as np
 import os
@@ -39,8 +38,6 @@ power_tweezers = 300
 power_tweezers_max = 340
 trapdepth = 11.08*MHz*power_tweezers/power_tweezers_max
 
-# %%
-
 # calculate survival probability from x values, threshold and images list
 SingleAtomsStats = SingleAtoms(binary_threshold, images_path)
 x_grid, surv_matrix = SingleAtomsStats.reshape_survival_matrix(df)
@@ -56,16 +53,14 @@ max_surv_prob = np.round(glob_surv[max_idx], 4)
 max_surv_prob_err = np.round(glob_surv_sem[max_idx], 3)
 best_cooling_freq = x_grid[max_idx]
 
-# %%
-
 print("best survival: ", max_surv_prob, " pm ", max_surv_prob_err, " at ", best_cooling_freq/MHz, " MHz")
 
-fig_width = 3.375  # inches, matches one column
-fig_height = fig_width*0.61
+fig_width = 2  # inches, matches one column
+fig_height = 2
 fig1, ax1 = plt.subplots(figsize = (fig_width, fig_height))
-ax1.errorbar(x_grid/MHz, glob_surv, yerr=glob_surv_sem, fmt='o', color='blue')
-ax1.set_xlabel('Sisyphus cooling detuning. [MHz]')
-ax1.set_ylabel('Survival probability')
+ax1.errorbar(x_grid/MHz, glob_surv, yerr=glob_surv_sem, ms=1.5, fmt='o', color='blue')
+ax1.set_xlabel('Detuning [MHz]')
+ax1.set_ylabel('Avg. Surv. Prob')
 ax1.set_xlim([-3.65, -1.65])
 
 #ax1.axvline(x=best_cooling_freq/MHz, color='red', linestyle='dashed', linewidth=1.5)
@@ -77,6 +72,6 @@ ax1.axvline(x=diff_ac_stark/MHz, color='grey',
 print(diff_ac_stark)
 
 Plot=Plotting('output')
-Plot.savefig('sis_cooling_surv.pdf') 
+Plot.savefig('sis_cooling_surv.png') 
 
-# %%
+plt.show()
