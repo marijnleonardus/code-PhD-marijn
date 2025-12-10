@@ -9,7 +9,7 @@ MODIFICATION:
 - Evolution is performed in free space.
 - Recapture projection is performed onto the actual Gaussian bound states.
 - Visualization of Gaussian Potential + Eigenstates included.
-- ADDED: 2D Recapture Probability using (n+1) degeneracy weighting.
+- ADDED: 2D Recapture Probability using (n + 1) degeneracy weighting.
 """
 
 import numpy as np
@@ -37,19 +37,21 @@ from units import uK, um, us, kHz
 from plot_utils import Plotting
 
 # --- Parameters ---
-trap_depth = 190*uK*0.75/0.82 # the latter is a correction factor on the trap depth
-temperature = 11*uK 
-waist_computed = 0.92*um
-m = 85*atomic_mass
-n_ho_basis = 130  
-number_x_grid_points = int(2**14) 
+trap_depth = 450*uK
+trap_frequency = 82*kHz
+#trap_depth = 190*uK*0.75/0.82 # the latter is a correction factor on the trap depth
+temperature = 5*uK 
+#waist_computed = 0.7*um
+m = 88*atomic_mass
+n_ho_basis = 150  
+number_x_grid_points = int(2**15) 
 max_radius = 8  # in HO units
-max_release_time_s = 60*us
+max_release_time_s = 80*us
 nr_tau_values = 30 
-use_exp_data = True
+use_exp_data = False
 
 # --- Derived parameters ---
-trap_frequency = 2*np.sqrt(Boltzmann*trap_depth/(m*waist_computed**2))/(2*pi)
+#trap_frequency= 2*np.sqrt(Boltzmann*trap_depth/(m*waist_computed**2))/(2*pi)
 print(f"Trap Frequency: {trap_frequency/kHz:.2f} kHz")
 
 U0 = Boltzmann*trap_depth/(hbar*2*pi*trap_frequency) 
@@ -98,7 +100,7 @@ class OpticalTweezer:
             psi_curr = self._norms[1]*(2*x)*np.exp(-x**2/2)
             basis_states[1] = psi_curr
             for n in range(1, self.n_ho_basis - 1):
-                psi_next = (np.sqrt(2/(n+1))*x*psi_curr - np.sqrt(n/(n + 1))*psi_prev)
+                psi_next = (np.sqrt(2/(n + 1))*x*psi_curr - np.sqrt(n/(n + 1))*psi_prev)
                 basis_states[n + 1] = psi_next
                 psi_prev, psi_curr = psi_curr, psi_next
         return basis_states
@@ -111,8 +113,8 @@ class OpticalTweezer:
         psi_matrix = self._harmonic_oscillator_wf_batch(x_grid)
         V_perturbation = self._gaussian_potential(x_grid) - (0.5*self.omega**2*x_grid**2)
         
-        weighted_psi = psi_matrix * V_perturbation[np.newaxis, :]
-        V_matrix = np.dot(weighted_psi, psi_matrix.T) * self.dx
+        weighted_psi = psi_matrix*V_perturbation[np.newaxis, :]
+        V_matrix = np.dot(weighted_psi, psi_matrix.T)*self.dx
         H += V_matrix
         
         energies, eigenvectors = eigh(H)
@@ -130,7 +132,7 @@ class OpticalTweezer:
         N = len(x)
         k = np.fft.fftshift(np.fft.fftfreq(N, dx/(2*pi)))
         phase = np.exp(-1j*k**2*tau/2)
-        psi_k_evolved = psi_k * phase
+        psi_k_evolved = psi_k*phase
         psi_t = np.fft.fftshift(np.fft.ifft(np.fft.ifftshift(psi_k_evolved)))*np.sqrt(2*pi)/dx
         return psi_t
 
@@ -138,42 +140,38 @@ class OpticalTweezer:
         overlaps = np.dot(bound_states_spatial, psi_evolved)*self.dx
         return np.abs(overlaps)**2
 
-    def thermal_recapture_scan_2D_weighted(self, tau_values, temp_natural):
+    def thermal_recapture_scan_2D_weighted(self, tau_values, temp_natural):        
         """
-        Computes 1D recapture and then applies the 2D weighting factor (n+1).
+        Computes 1D recapture and then applies the 2D weighting factor (n + 1).
         
         Returns:
             recapture_probs_2D: 2D weighted thermal average
         """
         
         # 1. Boltzmann Weights (1D)
-        ho_energies = (np.arange(self.n_ho_basis) + 0.5) * self.omega
+        ho_energies = (np.arange(self.n_ho_basis) + 0.5)*self.omega
         beta = 1.0/temp_natural if temp_natural > 0 else np.inf
         
         if np.isinf(beta):
-            thermal_weights_1d = np.zeros(self.n_ho_basis)
-            thermal_weights_1d[0] = 1.0
             # If T=0, 2D weighting is trivial (only ground state exists, n=0, factor=1)
-            weights_2d = thermal_weights_1d
+            weights_2d = np.zeros(self.n_ho_basis)
+            weights_2d[0] = 1.0
         else:
-            # P_n_1D = exp(-beta * E_n)
-            factors = np.exp(-beta * (ho_energies - ho_energies[0]))
+            # If T>0 we use the Boltzmann distribution, P_n_1D = exp(-beta*E_n)
+            factors = np.exp(-beta*(ho_energies - ho_energies[0]))
             
             # 2. 2D Weights
-            # The density of states in 2D is g_n = (n+1)
-            # Weight_2D_unnorm = (n+1) * exp(-beta * E_n)
+            # The density of states in 2D is g_n = (n + 1)
+            # Weight_2D_unnorm = (n + 1)*exp(-beta*E_n)
             degeneracy_factor = np.arange(self.n_ho_basis) + 1
-            factors_2d = factors * degeneracy_factor
+            factors_2d = factors*degeneracy_factor
             
             # Normalize
-            thermal_weights_1d = factors / np.sum(factors)
-            weights_2d = factors_2d / np.sum(factors_2d)
+            weights_2d = factors_2d/np.sum(factors_2d)
         
         # Identify significant states (using the 2D distribution as it's wider)
         significant_indices = np.where(weights_2d > 1e-7)[0]
-        
         gaussian_bound_wf = self.get_gaussian_bound_states_spatial()
-        
         recapture_probs_2d = []
         
         print(f"Running simulation scan (2D-weighted)...")
@@ -194,10 +192,11 @@ class OpticalTweezer:
                 p_n_recap = np.sum(probs_into_gauss)
                 
                 # --- Averaging ---
-                prob_recap_2d_t += w2 * p_n_recap
+                prob_recap_2d_t += w2*p_n_recap
             recapture_probs_2d.append(prob_recap_2d_t)
         return np.array(recapture_probs_2d)
 
+        
 
 def plot_gaussian_eigenstates(tweezer_obj):
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -236,7 +235,7 @@ def plot_gaussian_eigenstates(tweezer_obj):
 
 def load_exp_data(idx: str):
     folder_location = r'raw_data/release_recapture/'
-    x_data = np.load(folder_location + idx +'x.npy')
+    x_data = np.load(folder_location + idx  + 'x.npy')
     y_data = np.load(folder_location + idx + 'av.npy')
     y_errors = np.load(folder_location + idx + 'er.npy')
 
