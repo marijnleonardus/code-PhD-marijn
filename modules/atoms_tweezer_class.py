@@ -45,6 +45,22 @@ class AtomicMotion:
         return trap_freq_rad
     
     @staticmethod
+    def waist_from_trap_frequency(mass, trapfrequency, trapdepth):
+        """compute waist of tweezer from trap frequency and trap depth
+
+        Args:
+            mass (float): mass of atom in tweezer in [kg].
+            trapfrequency (float): trap frequency of atom in tweezer in [Hz].
+            trapdepth (float): trap depth of optical tweezer in [K].
+        Returns:
+            waist (float): waist of tweezer in [m].
+        """
+        trapdepth_joule = Boltzmann*trapdepth
+        omega_trap = 2*pi*trapfrequency
+        waist = np.sqrt(4*trapdepth_joule/(mass*omega_trap**2))
+        return waist
+    
+    @staticmethod
     def trap_frequency_axial(mass, waist, trapdepth):
         """compute axial trap freq
 
@@ -67,6 +83,8 @@ class AtomicMotion:
         wave_nr = 2*pi/lamb
         eta = wave_nr*np.sqrt(hbar/(2*mass*trap_freq))
         return eta
+
+
 
 class AtomicCalculations:
     def __init__(self, atomic_unit):

@@ -4,27 +4,28 @@ November 2025
 
 Code for computing recapture probability after turning off tweezers for variable duration.
 
-MODIFICATION:
-- Initialization is performed in the Harmonic Oscillator (HO) basis.
-- Evolution is performed in free space.
-- Recapture projection is performed onto the actual Gaussian bound states.
-- Visualization of Gaussian Potential + Eigenstates included.
-- ADDED: 2D Recapture Probability using (n + 1) degeneracy weighting.
+* Initialize atom as thermal distribution harmonic oscillator states
+* Free evolve each state for time tau
+* Compute recapture probability into bound states of Gaussian potential, found by diagonalization of the Hamiltonian
+
+If you have experimental data, you can load it and compute R^2 values for the fit.
+
+If you want to run this code yourself, it is easiest to clone the full repository, as the code
+relies on imports from other files in the repository.
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from scipy.linalg import eigh
 from scipy.constants import pi, Boltzmann, hbar, atomic_mass
 import math
-import time
-
-# add raw data import
 import os
 import sys
-script_dir = os.path.dirname(os.path.abspath(__file__))
 
-data_dir = os.path.join(script_dir,'../../raw_data/release_recapture/') # adjust as needed
+# --- Path Setup ---
+script_dir = os.path.dirname(os.path.abspath(__file__))
+data_dir = os.path.join(script_dir,'../../raw_data/release_recapture/') 
 modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 utils_dir = os.path.abspath(os.path.join(script_dir, '../../utils'))
 
@@ -32,71 +33,83 @@ sys.path.append(modules_dir)
 sys.path.append(utils_dir)
 sys.path.append(data_dir)
 
-# --- Unit conversions ---
 from units import uK, um, us, kHz
 from plot_utils import Plotting
+from statistics_utils import Stats
+from atoms_tweezer_class import AtomicMotion
 
 # --- Parameters ---
-trap_depth = 450*uK
-trap_frequency = 82*kHz
-#trap_depth = 190*uK*0.75/0.82 # the latter is a correction factor on the trap depth
-temperature = 5*uK 
-#waist_computed = 0.7*um
-m = 88*atomic_mass
-n_ho_basis = 150  
-number_x_grid_points = int(2**15) 
-max_radius = 8  # in HO units
+# physics parameters. Specify either waist, or trap frequency. One of them can be 'None'
+trap_depth = 190*uK*.75/.82
+tweezer_waist_m = None #0.92*um
+trap_frequency = 45*kHz # 82*kHz
+m = 85*atomic_mass
+temperatures_to_scan = np.array([2, 3])*uK
+
+# simulation parameters
+n_ho_basis = 100  # number of harmonic oscillator basis states to use
+number_x_grid_points = int(2**13) # discretization grid points, use power of 2 for FFT efficiency
+max_radius = 6  # in HO units, geometric cutoff for spatial grid
 max_release_time_s = 80*us
-nr_tau_values = 30 
-use_exp_data = False
+nr_tau_values = 15  # number of release times to simulate
+
+# loading exp. data
+use_exp_data = True 
+folder_location = r'raw_data/release_recapture/'
+dataset_name = '6'  # which dataset to load
 
 # --- Derived parameters ---
-#trap_frequency= 2*np.sqrt(Boltzmann*trap_depth/(m*waist_computed**2))/(2*pi)
-print(f"Trap Frequency: {trap_frequency/kHz:.2f} kHz")
-
-U0 = Boltzmann*trap_depth/(hbar*2*pi*trap_frequency) 
-t_natural = Boltzmann*temperature/(hbar*2*pi*trap_frequency) 
+# trap frequency and tweezer waist are related, and follow from each other
+# in combination with the specified trap depth in Kelvin
+if trap_frequency is None:
+    trap_frequency = AtomicMotion.trap_frequency_radial(m, tweezer_waist_m, trap_depth)
+    print(f"calc. trap Frequency: {trap_frequency/kHz:.2f} kHz")
+if tweezer_waist_m is None:
+    tweezer_waist_m = AtomicMotion.waist_from_trap_frequency(m, trap_frequency, trap_depth)
+    print(f"calc. tweezer waist: {tweezer_waist_m/um:.2f} um")
+trapdepth_dl = Boltzmann*trap_depth/(hbar*2*pi*trap_frequency) 
 trap_freq_rad = 2*pi*trap_frequency
-tweezer_waist_m = 2*np.sqrt(Boltzmann*trap_depth/(m*trap_freq_rad**2))
 
-# Grid setup
+# Grid setup, calculate spatial grid in dimensionless units (dl)
 spread_factor = np.sqrt(1 + (1.0*max_release_time_s*trap_freq_rad)**2)
-x_max = max(max_radius, max_radius*spread_factor) 
-x_grid = np.linspace(-x_max, x_max, number_x_grid_points)
+x_max_dl = max(max_radius, max_radius*spread_factor) 
+x_grid_dl = np.linspace(-x_max_dl, x_max_dl, number_x_grid_points)
 
 
-class OpticalTweezer:
+class RecaputureOpticalTweezer:
     """
     Compute recapture probability for an atom in a Gaussian optical tweezer.
     """
     
-    def __init__(self, U0, omega, x_grid, n_ho_basis=100):
-        self.U0 = U0
-        self.omega = omega
-        self.x_grid = x_grid
-        self.dx = x_grid[1] - x_grid[0]
+    def __init__(self, trapdepth_dl, omega_dl, x_grid_dl, n_ho_basis=100):
+        self.trapdepth_dl = trapdepth_dl
+        self.omega_dl = omega_dl
+        self.x_grid_dl = x_grid_dl
+        self.dx = x_grid_dl[1] - x_grid_dl[0]
         
-        self.a_ho = 1.0/np.sqrt(omega)
+        self.a_ho = 1.0/np.sqrt(omega_dl)
         self.n_ho_basis = n_ho_basis
-        self.waist = 2*self.a_ho*np.sqrt(U0/omega)
+        self.waist = 2*self.a_ho*np.sqrt(trapdepth_dl/omega_dl)
         
+        # calculate normalization constants for HO wavefunctions
         self._norms = np.array([1.0/np.sqrt(2**n*math.factorial(n)*self.a_ho*np.sqrt(pi)) 
             for n in range(n_ho_basis)])
         
         print("Solving Gaussian eigenstates...")
-        self.gauss_energies, self.gauss_eigenvectors = self._solve_gaussian_potential(x_grid)
+        self.gauss_energies, self.gauss_eigenvectors = self._solve_gaussian_potential(x_grid_dl)
         
         print("Pre-computing HO basis states...")
-        self.ho_eigenvectors = self._harmonic_oscillator_wf_batch(x_grid)
+        self.ho_eigenvectors = self._harmonic_oscillator_wf_batch(x_grid_dl)
 
     def _harmonic_oscillator_wf_batch(self, x):
-        """Stable computation of HO wavefunctions"""
+        """computation of HO wavefunctions"""
         x = x/self.a_ho
         basis_states = np.zeros((self.n_ho_basis, len(x)))
         psi_prev = self._norms[0]*np.exp(-x**2/2)
         basis_states[0] = psi_prev
 
         if self.n_ho_basis > 1:
+            # the wavefunctions are built up recursively
             psi_curr = self._norms[1]*(2*x)*np.exp(-x**2/2)
             basis_states[1] = psi_curr
             for n in range(1, self.n_ho_basis - 1):
@@ -106,50 +119,66 @@ class OpticalTweezer:
         return basis_states
     
     def _gaussian_potential(self, x):
-        return -self.U0*np.exp(-2*x**2/self.waist**2)
+        """1d gaussian potential"""
+        gaussian_1d = -self.trapdepth_dl*np.exp(-2*x**2/self.waist**2)
+        return gaussian_1d
     
-    def _solve_gaussian_potential(self, x_grid):
-        H = np.diag([(n + 0.5)*self.omega for n in range(self.n_ho_basis)])
-        psi_matrix = self._harmonic_oscillator_wf_batch(x_grid)
-        V_perturbation = self._gaussian_potential(x_grid) - (0.5*self.omega**2*x_grid**2)
+    def _solve_gaussian_potential(self, x_grid_dl):
+        """Diagonalize Hamiltonian in HO basis to find Gaussian bound states."""
+        # Build Hamiltonian 
+        H = np.diag([(n + 0.5)*self.omega_dl for n in range(self.n_ho_basis)])
+        psi_matrix = self._harmonic_oscillator_wf_batch(x_grid_dl)
+        V_perturbation = self._gaussian_potential(x_grid_dl) - (0.5*self.omega_dl**2*x_grid_dl**2)
         
         weighted_psi = psi_matrix*V_perturbation[np.newaxis, :]
         V_matrix = np.dot(weighted_psi, psi_matrix.T)*self.dx
         H += V_matrix
         
+        # Diagonalize
         energies, eigenvectors = eigh(H)
+
+        # Find bound states
         bound_mask = energies < 0
         return energies[bound_mask], eigenvectors[:, bound_mask]
 
     def get_gaussian_bound_states_spatial(self):
+        """Get Gaussian bound states in HO basis states."""
         coeffs = self.gauss_eigenvectors
         basis = self.ho_eigenvectors
         return np.dot(coeffs.T, basis)
 
     def free_evolution(self, psi_0, tau, x):
+        """compute free evolution of wavefunction psi_0 for time tau using propagator
+        The propagator is calculated in momentum space (p^2/2m)
+        
+        calculation to and from momentum space is done via FFT"""
         dx = x[1] - x[0]
+
+        # convert to momentum space
         psi_k = np.fft.fftshift(np.fft.fft(np.fft.ifftshift(psi_0)))*dx/np.sqrt(2*pi)
+        
+        # evolve wavefunction in momentum space
         N = len(x)
         k = np.fft.fftshift(np.fft.fftfreq(N, dx/(2*pi)))
         phase = np.exp(-1j*k**2*tau/2)
         psi_k_evolved = psi_k*phase
+
+        # convert back to spatial space: \phi(x,t)
         psi_t = np.fft.fftshift(np.fft.ifft(np.fft.ifftshift(psi_k_evolved)))*np.sqrt(2*pi)/dx
         return psi_t
 
     def compute_overlap_batch(self, psi_evolved, bound_states_spatial):
+        """Compute overlap of evolved state with multiple bound states at once."""
         overlaps = np.dot(bound_states_spatial, psi_evolved)*self.dx
-        return np.abs(overlaps)**2
+        overlaps_abs_squared = np.abs(overlaps)**2
+        return overlaps_abs_squared
 
     def thermal_recapture_scan_2D_weighted(self, tau_values, temp_natural):        
+        """Computes 1D recapture probability and extend to 2Dusing the density of states
+        for a 2D harmonic oscillator (n+1), then renormalizes.
         """
-        Computes 1D recapture and then applies the 2D weighting factor (n + 1).
-        
-        Returns:
-            recapture_probs_2D: 2D weighted thermal average
-        """
-        
-        # 1. Boltzmann Weights (1D)
-        ho_energies = (np.arange(self.n_ho_basis) + 0.5)*self.omega
+        # Boltzman factors (1d)
+        ho_energies = (np.arange(self.n_ho_basis) + 0.5)*self.omega_dl
         beta = 1.0/temp_natural if temp_natural > 0 else np.inf
         
         if np.isinf(beta):
@@ -159,54 +188,50 @@ class OpticalTweezer:
         else:
             # If T>0 we use the Boltzmann distribution, P_n_1D = exp(-beta*E_n)
             factors = np.exp(-beta*(ho_energies - ho_energies[0]))
-            
-            # 2. 2D Weights
+
             # The density of states in 2D is g_n = (n + 1)
             # Weight_2D_unnorm = (n + 1)*exp(-beta*E_n)
             degeneracy_factor = np.arange(self.n_ho_basis) + 1
             factors_2d = factors*degeneracy_factor
-            
-            # Normalize
             weights_2d = factors_2d/np.sum(factors_2d)
         
-        # Identify significant states (using the 2D distribution as it's wider)
+        # check in which HO states the wavefunction 'lives' and only consider those
         significant_indices = np.where(weights_2d > 1e-7)[0]
         gaussian_bound_wf = self.get_gaussian_bound_states_spatial()
         recapture_probs_2d = []
         
         print(f"Running simulation scan (2D-weighted)...")
-        print(f"Tracking {len(significant_indices)} states.")
-        
+        print(f"Tracking {len(significant_indices)} states.")   
+
         for i, tau in enumerate(tau_values):
             prob_recap_2d_t = 0.0
             for n_idx in significant_indices:
-                # Get weights
                 w2 = weights_2d[n_idx]
-                
-                # --- Physics Simulation 
                 psi_init = self.ho_eigenvectors[n_idx]
-                psi_t = self.free_evolution(psi_init, tau, self.x_grid)
-                
+
+                # evolve state
+                psi_t = self.free_evolution(psi_init, tau, self.x_grid_dl)
+
                 # Probability of this specific state 'n' being recaptured
                 probs_into_gauss = self.compute_overlap_batch(psi_t, gaussian_bound_wf)
                 p_n_recap = np.sum(probs_into_gauss)
-                
-                # --- Averaging ---
+
+                # averaging
                 prob_recap_2d_t += w2*p_n_recap
             recapture_probs_2d.append(prob_recap_2d_t)
         return np.array(recapture_probs_2d)
 
-        
 
 def plot_gaussian_eigenstates(tweezer_obj):
-    fig, ax = plt.subplots(figsize=(10, 6))
+    """Plot Gaussian potential and some of its bound states."""
+    fig, ax = plt.subplots(figsize=(5, 3))
     
-    r = tweezer_obj.x_grid
+    r = tweezer_obj.x_grid_dl
     scale_factor_um = tweezer_waist_m/(tweezer_obj.waist)/um
     r_plot = r*scale_factor_um
 
     V_gauss = tweezer_obj._gaussian_potential(r)
-    V_ho = 0.5*tweezer_obj.omega**2*r**2 - tweezer_obj.U0 
+    V_ho = 0.5*tweezer_obj.omega_dl**2*r**2 - tweezer_obj.trapdepth_dl 
     
     ax.plot(r_plot, V_gauss, 'k-', linewidth=2, label='Gaussian Potential')
     ax.plot(r_plot, V_ho, 'k--', alpha=0.5, label='Harmonic Approx.')
@@ -222,10 +247,9 @@ def plot_gaussian_eigenstates(tweezer_obj):
         ax.plot(r_plot, psi_scaled, lw=1.5)
         ax.text(r_plot[len(r_plot)//2 + 20], E, f'n={i}', fontsize=9, verticalalignment='bottom')
 
-    ax.set_title("Gaussian Trap Eigenstates")
     ax.set_xlabel(r'Position [$\mu$m]')
-    ax.set_ylabel(r'Energy [$\hbar\omega$]')
-    ax.set_ylim(-tweezer_obj.U0*1.1, 5) 
+    ax.set_ylabel(r'Energy [$\hbar\omega_dl$]')
+    ax.set_ylim(-tweezer_obj.trapdepth_dl*1.1, 5) 
     ax.set_xlim(-tweezer_waist_m/um*2, tweezer_waist_m/um*2)
     ax.legend(loc='upper right')
     ax.grid(True, alpha=0.3)
@@ -234,42 +258,99 @@ def plot_gaussian_eigenstates(tweezer_obj):
 
 
 def load_exp_data(idx: str):
-    folder_location = r'raw_data/release_recapture/'
+    """load experimental data from specified folder, 
+    x,y and y_err are stored in separate .npy files"""
     x_data = np.load(folder_location + idx  + 'x.npy')
     y_data = np.load(folder_location + idx + 'av.npy')
     y_errors = np.load(folder_location + idx + 'er.npy')
-
-    # rescale
-    y_data = y_data/np.max(y_data)
-    y_errors = y_errors/np.max(y_data)
     return x_data, y_data, y_errors
 
 
-omega = 1.0 
-Tweezer = OpticalTweezer(U0, omega, x_grid, n_ho_basis)
+def main():
+    # trap frequency in dimensionless units (dl)
+    omega_dl = 1.0 
+    Recapture = RecaputureOpticalTweezer(trapdepth_dl, omega_dl, x_grid_dl, n_ho_basis)
+    plot_gaussian_eigenstates(Recapture)
 
-# 1. Visualize the States
-plot_gaussian_eigenstates(Tweezer)
+    # load experimental data if desired
+    exp_x, exp_y, exp_err = None, None, None
+    if use_exp_data:
+        print("Loading experimental data...")
+        exp_x, exp_y, exp_err = load_exp_data(dataset_name)
 
-# 2. Run Scan (Compute both 1D and 2D)
-tau_values = np.linspace(0, max_release_time_s*trap_freq_rad, nr_tau_values)
-recap_2d = Tweezer.thermal_recapture_scan_2D_weighted(tau_values, t_natural)
+    # simulation release times in dimensionless units
+    tau_values_sim = np.linspace(0, max_release_time_s*trap_freq_rad, nr_tau_values)
+    tau_values_sim_us = tau_values_sim/trap_freq_rad/us
 
-# 3. Plot Recapture Comparison
-fig, ax = plt.subplots(figsize=(8,5))
-tau_us = tau_values/trap_freq_rad/us
+    results = {} # Store results: temp -> (y_sim, r_squared)
 
-ax.plot(tau_us, recap_2d, 'r.-', linewidth=2, label=f'2D Weighted Model (T = {temperature/uK:.1f} uK)')
-if use_exp_data:
-    for idx in ['6', '7', '8', '9']:
-        x, y, e = load_exp_data(idx)
-        ax.errorbar(x, y, yerr=e, fmt='o')
+    print(f"Starting scan for temperatures: {temperatures_to_scan/uK} uK")
 
-ax.set_xlabel(r'Release Time ($\mu$s)')
-ax.set_ylabel('Recapture Probability')
-ax.set_ylim(0, 1.05)
-ax.set_xlim(0, max_release_time_s/us)
-ax.grid(True, alpha=0.3)
-ax.legend()
-plt.tight_layout()
-plt.show()
+    # matrix to store R^2 values
+    r_squared_array = []
+
+    # do simulation for each temperature
+    for temp in temperatures_to_scan:
+        # convert temperature to dimensionless units
+        t_natural = Boltzmann*temp/(hbar*trap_freq_rad)
+
+        # run simulation
+        recap_prob = Recapture.thermal_recapture_scan_2D_weighted(tau_values_sim, t_natural)
+        
+        # calculate R^2 if experimental data is available
+        r_squared = None
+        if use_exp_data and exp_x is not None:
+            # recale curve to match (t=0) exp. data, as a result of SPAM errors and finite survival probability
+            scale_factor = np.max(exp_y)/recap_prob[0]
+            recap_prob *= scale_factor
+
+            # interpolate simulation result onto experimental time points
+            # exp_x is in microseconds, simulation x needs to be converted to microseconds
+            sim_interpolated = np.interp(exp_x, tau_values_sim_us, recap_prob)
+            
+            # calculate R^2
+            r_squared = Stats.calculate_r_squared(exp_y, sim_interpolated)
+            r_squared_array.append(r_squared)
+            print(f"T = {temp/uK:5.1f} uK | R^2 = {r_squared:.4f}")
+        else:
+            print(f"T = {temp/uK:5.1f} uK | Done (No Fit)")
+
+        # store results for easy retrtieval
+        results[temp] = (recap_prob, r_squared)
+
+    # plot theory curves and exp. data
+    fig, ax = plt.subplots(figsize=(5, 3))
+
+    # plot exp. data
+    if use_exp_data and exp_x is not None:
+        ax.errorbar(exp_x, exp_y, yerr=exp_err, fmt='ko', capsize=3, label='Exp Data', zorder=10)
+
+    # plot Simulations
+    colors = cm.viridis(np.linspace(0, 1, len(temperatures_to_scan)))
+    best_r2 = -np.inf
+    for (temp, (y_sim, r2)), color in zip(results.items(), colors):
+        label_str = f'T = {temp/uK:.1f} uK'
+        if r2 is not None:
+            label_str += f' ($R^2$={r2:.3f})'
+            if r2 > best_r2:
+                best_r2 = r2
+        ax.plot(tau_values_sim_us, y_sim, '-', color=color, linewidth=2, alpha=0.8, label=label_str)
+    ax.set_xlabel(r'Release Time ($\mu$s)')
+    ax.set_ylabel('Recapture Probability')
+    ax.set_ylim(0, 1.05)
+    ax.set_xlim(0, max_release_time_s/us)
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=9)
+
+    # plot R^2 values for each simulated temperature
+    fig2, ax2 = plt.subplots(figsize=(5, 3))
+    ax2.scatter(temperatures_to_scan/uK, r_squared_array)
+    ax2.set_xlabel(r'Temperature ($\mu$K)')
+    ax2.set_ylabel(r'$R^2$ fit')
+
+    plt.tight_layout()
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
