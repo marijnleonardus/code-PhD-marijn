@@ -44,12 +44,12 @@ trap_depth = 190*uK*.75/.82
 tweezer_waist_m = 0.92*um
 trap_frequency = None #45*kHz # 82*kHz
 m = 85*atomic_mass
-temperatures_to_scan = np.array([0, 2.5])*uK
+temperatures_to_scan = np.linspace(2.27, 2.57, 7)*uK
 
 # simulation parameters
 n_ho_basis = 150  # number of harmonic oscillator basis states to use
 number_x_grid_points = int(2**15) # discretization grid points, use power of 2 for FFT efficiency
-max_radius = 9  # in HO units, geometric cutoff for spatial grid
+max_radius = 8  # in HO units, geometric cutoff for spatial grid
 max_release_time_s = 100*us
 nr_tau_values = 50  # number of release times to simulate
 
@@ -284,8 +284,8 @@ def main():
 
     print(f"Starting scan for temperatures: {temperatures_to_scan/uK} uK")
 
-    # matrix to store R^2 values
-    r_squared_array = []
+    # matrix to store chi^2 values
+    sum_squares_array = []
 
     # do simulation for each temperature
     for temp in temperatures_to_scan:
@@ -295,8 +295,8 @@ def main():
         # run simulation
         recap_prob = Recapture.thermal_recapture_scan_2D_weighted(tau_values_sim, t_natural)
         
-        # calculate R^2 if experimental data is available
-        r_squared = None
+        # calculate chi^2 if experimental data is available
+        sum_squares = None
         if use_exp_data and exp_x is not None:
             # recale curve to match (t=0) exp. data, as a result of SPAM errors and finite survival probability
             scale_factor = np.max(exp_y)/recap_prob[0]
@@ -306,10 +306,10 @@ def main():
             # exp_x is in microseconds, simulation x needs to be converted to microseconds
             sim_interpolated = np.interp(exp_x, tau_values_sim_us, recap_prob)
             
-            # calculate R^2
-            r_squared = Stats.calculate_r_squared(exp_y, sim_interpolated)
-            r_squared_array.append(r_squared)
-            print(f"T = {temp/uK:5.1f} uK | R^2 = {r_squared:.4f}")
+            # calculate chi^2
+            sum_squares = Stats.weighted_sum_of_squares(exp_y, sim_interpolated, exp_err)
+            sum_squares_array.append(sum_squares)
+            print(fr"T = {temp/uK:5.1f} uK | $\chi^2$ = {sum_squares:.1f}")
         else:
             print(f"T = {temp/uK:5.1f} uK | Done (No Fit)")
         
@@ -318,7 +318,7 @@ def main():
         np.savetxt(filename, recap_prob)
 
         # store in single object results for easy retrieval further in this script
-        results[temp] = (recap_prob, r_squared)
+        results[temp] = (recap_prob, sum_squares)
 
     # plot theory curves and exp. data
     fig, ax = plt.subplots(figsize=(5, 3))
@@ -327,21 +327,35 @@ def main():
     if use_exp_data and exp_x is not None:
         ax.errorbar(exp_x, exp_y, yerr=exp_err, fmt='ko', capsize=3, label='Exp Data', zorder=10)
 
-        # plot R^2 values for each simulated temperature
+        # plot chi^2 values for each simulated temperature
         fig2, ax2 = plt.subplots(figsize=(5, 3))
-        ax2.scatter(temperatures_to_scan/uK, r_squared_array)
+        ax2.scatter(temperatures_to_scan/uK, sum_squares_array)
         ax2.set_xlabel(r'Temperature ($\mu$K)')
-        ax2.set_ylabel(r'$R^2$ fit')
+        ax2.set_ylabel(r'$\chi^2$ fit')
+
+        # fit parabola through chi^2 data
+        coefficients = np.polyfit(temperatures_to_scan, sum_squares_array, 2)
+        # coefficients = [a, b, c] for the parabola: y = a*x^2 + b*x + c
+        a, b, c = coefficients
+        print(coefficients)
+        temp_best = -b/(2*a)
+
+        # error of fit, follows from formula doi.org/10.1103/PhysRevA.78.033425
+        second_derivative = 2*a
+        temp_best_err = np.sqrt(2*second_derivative**(-1))
+        print(f"Best fit temperature: {temp_best/uK:.3f} uK +/- {temp_best_err/uK:.3f} uK")
+
+        # plot parabola
+        T_fit_range = np.linspace(temperatures_to_scan.min(), temperatures_to_scan.max(), 100)
+        chi_sq_fit = a*T_fit_range**2 + b*T_fit_range + c
+        ax2.plot(T_fit_range/uK, chi_sq_fit, 'r-', label='Parabolic Fit', zorder=3)
 
     # plot Simulations
     colors = cm.viridis(np.linspace(0, 1, len(temperatures_to_scan)))
-    best_r2 = -np.inf
     for (temp, (y_sim, r2)), color in zip(results.items(), colors):
         label_str = f'T = {temp/uK:.1f} uK'
         if r2 is not None:
-            label_str += f' ($R^2$={r2:.3f})'
-            if r2 > best_r2:
-                best_r2 = r2
+            label_str += f' (r$\chi^2$={r2:.3f})'
         ax.plot(tau_values_sim_us, y_sim, '-', color=color, linewidth=2, alpha=0.8, label=label_str)
     ax.set_xlabel(r'Release Time ($\mu$s)')
     ax.set_ylabel('Recapture Probability')
