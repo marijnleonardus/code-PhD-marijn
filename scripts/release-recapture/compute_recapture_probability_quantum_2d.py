@@ -41,17 +41,17 @@ from atoms_tweezer_class import AtomicMotion
 # --- Parameters ---
 # physics parameters. Specify either waist, or trap frequency. One of them can be 'None'
 trap_depth = 190*uK*.75/.82
-tweezer_waist_m = None #0.92*um
-trap_frequency = 45*kHz # 82*kHz
+tweezer_waist_m = 0.92*um
+trap_frequency = None #45*kHz # 82*kHz
 m = 85*atomic_mass
-temperatures_to_scan = np.array([2, 3])*uK
+temperatures_to_scan = np.array([0, 2.5])*uK
 
 # simulation parameters
-n_ho_basis = 100  # number of harmonic oscillator basis states to use
-number_x_grid_points = int(2**13) # discretization grid points, use power of 2 for FFT efficiency
-max_radius = 6  # in HO units, geometric cutoff for spatial grid
-max_release_time_s = 80*us
-nr_tau_values = 15  # number of release times to simulate
+n_ho_basis = 150  # number of harmonic oscillator basis states to use
+number_x_grid_points = int(2**15) # discretization grid points, use power of 2 for FFT efficiency
+max_radius = 9  # in HO units, geometric cutoff for spatial grid
+max_release_time_s = 100*us
+nr_tau_values = 50  # number of release times to simulate
 
 # loading exp. data
 use_exp_data = True 
@@ -243,12 +243,10 @@ def plot_gaussian_eigenstates(tweezer_obj):
         psi = wavefunctions[i]
         E = energies[i]
         psi_scaled = psi + E 
-        
         ax.plot(r_plot, psi_scaled, lw=1.5)
         ax.text(r_plot[len(r_plot)//2 + 20], E, f'n={i}', fontsize=9, verticalalignment='bottom')
-
     ax.set_xlabel(r'Position [$\mu$m]')
-    ax.set_ylabel(r'Energy [$\hbar\omega_dl$]')
+    ax.set_ylabel(r'Energy [$\hbar\omega$]')
     ax.set_ylim(-tweezer_obj.trapdepth_dl*1.1, 5) 
     ax.set_xlim(-tweezer_waist_m/um*2, tweezer_waist_m/um*2)
     ax.legend(loc='upper right')
@@ -314,8 +312,12 @@ def main():
             print(f"T = {temp/uK:5.1f} uK | R^2 = {r_squared:.4f}")
         else:
             print(f"T = {temp/uK:5.1f} uK | Done (No Fit)")
+        
+        # (optional) store recapture prob. curves for using in different scripts
+        filename = f"output/release_recapture/recap_prob_T_{temp/uK:.1f}uK_scaled.txt"
+        np.savetxt(filename, recap_prob)
 
-        # store results for easy retrtieval
+        # store in single object results for easy retrieval further in this script
         results[temp] = (recap_prob, r_squared)
 
     # plot theory curves and exp. data
@@ -324,6 +326,12 @@ def main():
     # plot exp. data
     if use_exp_data and exp_x is not None:
         ax.errorbar(exp_x, exp_y, yerr=exp_err, fmt='ko', capsize=3, label='Exp Data', zorder=10)
+
+        # plot R^2 values for each simulated temperature
+        fig2, ax2 = plt.subplots(figsize=(5, 3))
+        ax2.scatter(temperatures_to_scan/uK, r_squared_array)
+        ax2.set_xlabel(r'Temperature ($\mu$K)')
+        ax2.set_ylabel(r'$R^2$ fit')
 
     # plot Simulations
     colors = cm.viridis(np.linspace(0, 1, len(temperatures_to_scan)))
@@ -341,12 +349,6 @@ def main():
     ax.set_xlim(0, max_release_time_s/us)
     ax.grid(True, alpha=0.3)
     ax.legend(fontsize=9)
-
-    # plot R^2 values for each simulated temperature
-    fig2, ax2 = plt.subplots(figsize=(5, 3))
-    ax2.scatter(temperatures_to_scan/uK, r_squared_array)
-    ax2.set_xlabel(r'Temperature ($\mu$K)')
-    ax2.set_ylabel(r'$R^2$ fit')
 
     plt.tight_layout()
     plt.show()
