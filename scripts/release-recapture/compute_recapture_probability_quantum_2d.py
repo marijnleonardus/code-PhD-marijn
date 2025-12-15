@@ -48,10 +48,10 @@ temperatures_to_scan = np.linspace(2.27, 2.57, 7)*uK
 
 # simulation parameters
 n_ho_basis = 150  # number of harmonic oscillator basis states to use
-number_x_grid_points = int(2**15) # discretization grid points, use power of 2 for FFT efficiency
+number_x_grid_points = int(2**14) # discretization grid points, use power of 2 for FFT efficiency
 max_radius = 8  # in HO units, geometric cutoff for spatial grid
 max_release_time_s = 100*us
-nr_tau_values = 50  # number of release times to simulate
+nr_tau_values = 10  # number of release times to simulate
 
 # loading exp. data
 use_exp_data = True 
@@ -264,6 +264,31 @@ def load_exp_data(idx: str):
     return x_data, y_data, y_errors
 
 
+def plot_goodness_of_fit(x_data, y_data):
+    ## plot chi^2 as a function of temperature/avg_n
+    # plot chi^2 values for each simulated T/n
+    fig, ax = plt.subplots(figsize=(4, 4))
+    ax.scatter(x_data, y_data)
+    ax.set_xlabel(r'x')
+    ax.set_ylabel(r'$\chi^2$ fit')
+
+    # fit parabola through chi^2 data
+    coefficients = np.polyfit(x_data, y_data, 2)
+    # coefficients = [a, b, c] for the parabola: y = a*x^2 + b*x + c
+    a, b, c = coefficients
+    x_best = -b/(2*a)
+
+    # error of fit, follows from formula doi.org/10.1103/PhysRevA.78.033425
+    second_derivative = 2*a
+    x_best_err = np.sqrt(2*second_derivative**(-1))
+    print(f"Best fit: {x_best:.3e} +/- {x_best_err:.3e}")
+
+    # plot parabola
+    x_fit_range = np.linspace(x_data.min(), x_data.max(), 100)
+    chi_sq_fit = a*x_fit_range**2 + b*x_fit_range + c
+    ax.plot(x_fit_range, chi_sq_fit, 'r-', label='Parabolic Fit', zorder=3)
+
+
 def main():
     # trap frequency in dimensionless units (dl)
     omega_dl = 1.0 
@@ -327,35 +352,19 @@ def main():
     if use_exp_data and exp_x is not None:
         ax.errorbar(exp_x, exp_y, yerr=exp_err, fmt='ko', capsize=3, label='Exp Data', zorder=10)
 
-        # plot chi^2 values for each simulated temperature
-        fig2, ax2 = plt.subplots(figsize=(5, 3))
-        ax2.scatter(temperatures_to_scan/uK, sum_squares_array)
-        ax2.set_xlabel(r'Temperature ($\mu$K)')
-        ax2.set_ylabel(r'$\chi^2$ fit')
+        # plot chi^2 as a function of temperature
+        plot_goodness_of_fit(temperatures_to_scan, sum_squares_array)
 
-        # fit parabola through chi^2 data
-        coefficients = np.polyfit(temperatures_to_scan, sum_squares_array, 2)
-        # coefficients = [a, b, c] for the parabola: y = a*x^2 + b*x + c
-        a, b, c = coefficients
-        print(coefficients)
-        temp_best = -b/(2*a)
-
-        # error of fit, follows from formula doi.org/10.1103/PhysRevA.78.033425
-        second_derivative = 2*a
-        temp_best_err = np.sqrt(2*second_derivative**(-1))
-        print(f"Best fit temperature: {temp_best/uK:.3f} uK +/- {temp_best_err/uK:.3f} uK")
-
-        # plot parabola
-        T_fit_range = np.linspace(temperatures_to_scan.min(), temperatures_to_scan.max(), 100)
-        chi_sq_fit = a*T_fit_range**2 + b*T_fit_range + c
-        ax2.plot(T_fit_range/uK, chi_sq_fit, 'r-', label='Parabolic Fit', zorder=3)
+        # plot chi^2 as a function of n_avg
+        avg_n = (np.exp(hbar*trap_freq_rad/Boltzmann/temperatures_to_scan) - 1)**(-1)
+        plot_goodness_of_fit(avg_n, sum_squares_array)
 
     # plot Simulations
     colors = cm.viridis(np.linspace(0, 1, len(temperatures_to_scan)))
     for (temp, (y_sim, r2)), color in zip(results.items(), colors):
         label_str = f'T = {temp/uK:.1f} uK'
         if r2 is not None:
-            label_str += f' (r$\chi^2$={r2:.3f})'
+            label_str += f' ($\chi^2$={r2:.3f})'
         ax.plot(tau_values_sim_us, y_sim, '-', color=color, linewidth=2, alpha=0.8, label=label_str)
     ax.set_xlabel(r'Release Time ($\mu$s)')
     ax.set_ylabel('Recapture Probability')
