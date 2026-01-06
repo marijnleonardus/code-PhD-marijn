@@ -14,8 +14,9 @@ from setup_paths import add_local_paths
 add_local_paths(__file__, ['../../modules', '../../utils'])
 
 from units import nm, um, mm
-from camera_image_class import CameraImage
+from image_analysis_class import MOTPlot
 from plot_utils import Plotting
+from camera_image_class import CameraImage
 
 # constants
 wavelength = 461*nm  # in meters
@@ -26,7 +27,7 @@ magnification = 150/250  # magnification factor
 # data: path and image croppin settings
 #path = r'Z:/Strontium/Images/2024-10-21/442187/' # red MOT
 path = r"Z:/Strontium/Images/2025-11-25/638385/" # blue MOT
-x0=140
+x0=140 # px
 y0=475
 w=150
 h=150
@@ -68,19 +69,7 @@ def calculate_nr_atoms(od_image: np.ndarray):
     return nr_atoms
 
 
-def plot_with_scaled_axes(image: np.ndarray):
-    pixels_y = image.shape[0]
-    pixels_x = image.shape[1]
-    roi_size_y = CameraImage.pixels_to_m(pixels_y, magnification, px_size, binning)
-    roi_size_x = CameraImage.pixels_to_m(pixels_x, magnification, px_size, binning)
-    
-    figwidth = 0.5*3.375  # inches
-    figheight = (3.375*0.5)*0.61
-    fig, ax = plt.subplots(figsize=(figwidth, figheight))
-    ax.set_xlabel(r'x [mm]')
-    ax.set_ylabel(r'y [mm]')
-    im = ax.imshow(image, cmap="jet", extent=[0, roi_size_x/mm, 0, roi_size_y/mm])
-    fig.colorbar(im, ax=ax, label='Optical Density')
+
 
 
 if __name__ == "__main__":
@@ -99,8 +88,9 @@ if __name__ == "__main__":
 
     nr_atoms = calculate_nr_atoms(od_img)
     print(f"Number of atoms: {nr_atoms:.2e}")
-
-    plot_with_scaled_axes(od_img)
+    
+    AbsorptionPlot = MOTPlot(od_img, magnification, px_size, binning)
+    AbsorptionPlot.plot_with_scaled_axes()
     Plot = Plotting('output')
     Plot.savefig('absorp_blue_mot.png')
     plt.show()

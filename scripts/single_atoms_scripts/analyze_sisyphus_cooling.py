@@ -55,23 +55,21 @@ best_cooling_freq = x_grid[max_idx]
 
 print("best survival: ", max_surv_prob, " pm ", max_surv_prob_err, " at ", best_cooling_freq/MHz, " MHz")
 
-fig_width = 2  # inches, matches one column
-fig_height = 2
+fig_width = 2.5  # inches, matches one column
+fig_height = 1.5
 fig1, ax1 = plt.subplots(figsize = (fig_width, fig_height))
 ax1.errorbar(x_grid/MHz, glob_surv, yerr=glob_surv_sem, ms=1.5, fmt='o', color='blue')
-ax1.set_xlabel('Detuning [MHz]')
-ax1.set_ylabel('Avg. Surv. Prob')
+ax1.set_xlabel('Detuning (MHz))')
+ax1.set_ylabel('Avg. survival probability')
 ax1.set_xlim([-3.65, -1.65])
 
 #ax1.axvline(x=best_cooling_freq/MHz, color='red', linestyle='dashed', linewidth=1.5)
 
 # add line for AC Stark shifted resonance
 diff_ac_stark = trapdepth*(1 - pol_3p1_mj1/pol_1s0)
-ax1.axvline(x=diff_ac_stark/MHz, color='grey', 
-    linestyle='dashed', linewidth=1.5)
-print(diff_ac_stark)
+ax1.axvline(x=diff_ac_stark/MHz, color='red', linewidth=1.5)
 
 Plot=Plotting('output')
-Plot.savefig('sis_cooling_surv.png') 
-
+Plot.savefig('sis_cooling_surv.pdf') 
+print(diff_ac_stark)
 plt.show()

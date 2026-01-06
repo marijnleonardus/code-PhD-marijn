@@ -129,7 +129,7 @@ roi_counts_matrix_non_weighted = ROIsObject.calculate_roi_counts(images_path, fi
 photons_matrix_non_weighted = iXon888.counts_to_photons(roi_counts_matrix_non_weighted.ravel(), backgr_counts)
 rescale_factor = photons_matrix_non_weighted.mean()/photons_matrix.mean()
 
-fig_width = 3.375  # inches, matches one column
+fig_width = 3.375*.5-0.02  # inches, matches one column
 fig_height = fig_width*0.61
 fig3, ax3 = plt.subplots(figsize = (fig_width, fig_height))
 ax3.set_xlabel('Number of photons')
@@ -138,6 +138,7 @@ ax3.grid()
 ax3.hist(photons_matrix*rescale_factor, bins=nr_bins_hist_avg, edgecolor='black', density=True, label='Counts') 
 ax3.axvline(detection_threshold_photons*rescale_factor, color='grey', linestyle='--', label='Detection threshold')
 
+print(detection_threshold_photons*rescale_factor)
 # %%
 
 Plotting = Plotting('output')

@@ -6,17 +6,22 @@ from skimage.feature import blob_log
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
-
-# append modules dir
-import sys
+from matplotlib.transforms import ScaledTranslation
 import os
+import sys
+
+# add local modules
 script_dir = os.path.dirname(os.path.abspath(__file__))
-modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
-sys.path.append(modules_dir)
+lib_dir = os.path.abspath(os.path.join(script_dir, '../../lib'))
+if lib_dir not in sys.path:
+    sys.path.append(lib_dir)
+from setup_paths import add_local_paths
+add_local_paths(__file__, ['../../modules', '../../utils'])
 
 # user defined modules
 from fitting_functions_class import FittingFunctions
-
+from camera_image_class import CameraImage
+from units import mm
 
 
 class ManipulateImage:
@@ -194,20 +199,6 @@ class SpotDetectionFitting():
         return total_pixel_count
 
 
-class AbsorptionImage:
-    @staticmethod
-    def compute_od(image: np.ndarray):
-        # need to do this to avoid underflow (below zero) in the image
-        image = image.astype(np.int16)
-
-        # revert operation in artiq image module
-        optical_density = (image - 200)/1000
-
-        # avoid negative number
-        optical_density = np.maximum(optical_density, 0)
-        return optical_density
-
-
 class ImageStats():
     @staticmethod
     def calculate_uniformity(input_vector: np.ndarray):
@@ -222,3 +213,66 @@ class ImageStats():
 
         uniformity = 1 - (max(input_vector) - min(input_vector))/(max(input_vector) + min(input_vector))
         return uniformity
+
+
+class MOTPlot():
+    def __init__(self, image: np.ndarray, magnification: float, px_size: float, binning: int):
+        self.magnification = magnification
+        self.px_size = px_size
+        self.binning = binning
+        self.image = image
+        
+    def plot_with_scaled_axes(self):
+        pixels_y = self.image.shape[0]
+        pixels_x = self.image.shape[1]
+        roi_size_y = CameraImage.pixels_to_m(pixels_y, self.magnification, self.px_size, self.binning)
+        roi_size_x = CameraImage.pixels_to_m(pixels_x, self.magnification, self.px_size, self.binning)
+        
+        figwidth = 0.5*3.375  # inches
+        figheight = (3.375*0.5)*0.61
+        fig, ax = plt.subplots(figsize=(figwidth, figheight))
+        ax.set_xlabel(r'x [mm]')
+        ax.set_ylabel(r'y [mm]')
+        im = ax.imshow(self.image, cmap="jet", extent=[0, roi_size_x/mm, 0, roi_size_y/mm])
+        fig.colorbar(im, ax=ax, label='Optical Density')
+
+    def plot_withscalebar(self, scalebar_length_mm: float):
+        pixels_y = self.image.shape[0]
+        pixels_x = self.image.shape[1]
+        roi_size_y = CameraImage.pixels_to_m(pixels_y, self.magnification, self.px_size, self.binning)
+        roi_size_x = CameraImage.pixels_to_m(pixels_x, self.magnification, self.px_size, self.binning)
+
+        figwidth = 0.7  # inches
+        figheight = figwidth/0.61
+        fig, ax = plt.subplots(figsize=(figwidth, figheight))
+        im = ax.imshow(self.image, cmap="Blues", extent=[0, roi_size_x/mm, 0, roi_size_y/mm])
+        #fig.colorbar(im, ax=ax, label='Counts')
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title(r'$t=0\,\mathrm{ms}$')
+        ## add coordinate axes
+        origin_fraction = (0.1, 0.1) # Where the dot sits (bottom-left)
+        pixel_length = 10              # Length of arrows in points
+        arrow_props = dict(arrowstyle='-|>', lw=1.0, color='black', mutation_scale=5)
+        trans_x = ax.transAxes + ScaledTranslation(pixel_length/72, 0, fig.dpi_scale_trans)
+        trans_y = ax.transAxes + ScaledTranslation(0, pixel_length/72, fig.dpi_scale_trans)
+        ax.plot(*origin_fraction, 'ko', markersize=1, transform=ax.transAxes, clip_on=False)
+        ax.annotate('', 
+            xycoords=trans_x, xy=origin_fraction,      # Tip (moved by pixel_length)
+            textcoords=ax.transAxes, xytext=origin_fraction, # Tail (at origin)
+            arrowprops=arrow_props)
+        ax.annotate('', 
+            xycoords=trans_y, xy=origin_fraction,      # Tip (moved by pixel_length)
+            textcoords=ax.transAxes, xytext=origin_fraction, # Tail (at origin)
+            arrowprops=arrow_props)
+        ax.text(*origin_fraction, ' x', transform=trans_x, va='center', ha='left')
+        ax.text(*origin_fraction, ' y', transform=trans_y, va='bottom', ha='center')
+
+        # add scale bar
+        scalebar_length_m = scalebar_length_mm*mm
+        scalebar_x_start = 0.2*roi_size_x/mm
+        scalebar_y_start = 0.9*roi_size_y/mm
+        ax.hlines(y=scalebar_y_start, xmin=scalebar_x_start,
+            xmax=scalebar_x_start + scalebar_length_m/mm, colors='black', linewidth=3)
+        ax.text(scalebar_x_start + scalebar_length_m/(2*mm), scalebar_y_start - 0.02*(roi_size_y/mm),
+            f'{scalebar_length_mm} mm', ha='center', va='top')

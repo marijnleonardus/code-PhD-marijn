@@ -22,7 +22,7 @@ from units import ms, um, uK
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-folder_name = r'T:\\KAT1\\Marijn\\thesis_measurements\\mot\\sf_time_of_flight\\second try\\'
+folder_name = r"C:/Users/s163673/OneDrive - TU Eindhoven\Desktop/"
 
 # load data from origin file
 data_x = np.genfromtxt(folder_name + "logresult_sizexprocessed.csv", delimiter=',')
@@ -47,15 +47,15 @@ popt_x, pcov_x = curve_fit(FittingFunctions.fit_tof_data, t, sx, sigma=error_sx,
 fig_width = 3.375  # inches, matches one column
 fig_height = fig_width*0.61
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-ax.errorbar(t/ms, sx/um, yerr=error_sx/um, fmt='o', markersize=3, capsize=3, color='blue')
-ax.errorbar(t/ms, sy/um, yerr=error_sy/um, fmt='o', markersize=3, capsize=3, color='orange')
+ax.errorbar(t/ms, sx/um, yerr=error_sx/um, fmt='o', markersize=1.5, color='blue')
+ax.errorbar(t/ms, sy/um, yerr=error_sy/um, fmt='o', markersize=1.5, color='orange')
 
 x_fit = np.linspace(0, np.max(t), 1000)
 ax.plot(x_fit/ms, FittingFunctions.fit_tof_data(x_fit, *popt_x)/um, color='darkblue')
 ax.plot(x_fit/ms, FittingFunctions.fit_tof_data(x_fit, *popt_y)/um, color='darkorange')
 
-ax.set_xlabel('Time of flight [ms]')
-ax.set_ylabel(r'Gaussian fit $\sigma$ [$\mu$m]')
+ax.set_xlabel('ToF (ms)')
+ax.set_ylabel(r'$\sigma_{\mathrm{x,y}}$ ($\mu$m)')
 
 Plot = Plotting('output')
 Plot.savefig("temperature_tof.pdf")

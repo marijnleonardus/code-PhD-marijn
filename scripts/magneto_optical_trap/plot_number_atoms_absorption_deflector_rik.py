@@ -23,9 +23,9 @@ fig_width = 3.375*0.5 # inches, matches one column
 fig_height = fig_width*0.61
 
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-ax.errorbar(power, number_atoms_array, yerr=errors_number_atoms, ms=1.5, fmt='o', color='blue')
-ax.set_ylabel("Number of atoms $N$")
-ax.set_xlabel("Deflector Beam Power [mW]")
+ax.errorbar(power, number_atoms_array/1e6, yerr=errors_number_atoms/1e6, ms=1.5, fmt='o', color='blue')
+ax.set_ylabel(r"$N\,(\times 10^6)$")
+ax.set_xlabel(r'$P_{\mathrm{defl}}\,(\mathrm{mW})$')
 
 Plot = Plotting('output')
 Plot.savefig("number_atoms_deflector.pdf")

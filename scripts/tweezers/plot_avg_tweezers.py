@@ -50,21 +50,24 @@ roi_size_y = CameraImage.pixels_to_m(pixels_y, magnification, pixel_size, bin_fa
 
 # %% plotting'
 
-fig1, (ax1, ax2) = plt.subplots(1, 2, figsize=(3, 1.5))
-fig1.subplots_adjust(wspace=0.5)  # Adjust horizontal space between subplots
+Plot = Plotting('output')
+
+figwidth=3.37*0.5 - 0.01
+figheight=figwidth*0.61
+fig1, ax1 = plt.subplots(figsize=(figwidth,figheight))
 
 ax1.imshow(random_image, cmap='gist_yarg', extent=[0, roi_size_x/um, 0, roi_size_y/um])
 ax1.set_xlabel(r'x ($\mu$m)')
 ax1.set_ylabel(r'y ($\mu$m)') 
 ax1.tick_params(axis='both', direction='in')  
+Plot.savefig('tweezers_random_image.png')
 
+fig2, ax2 = plt.subplots(figsize=(figwidth,figheight))
 ax2.imshow(z_project, cmap='gist_yarg', extent=[0, roi_size_x/um, 0, roi_size_y/um])
 ax2.set_xlabel(r'x ($\mu$m)')
 ax2.set_ylabel(r'y ($\mu$m)')
 ax2.tick_params(axis='both', direction='in')  
+Plot.savefig('tweezers_avg_image.pdf')
 
-Plot = Plotting('output')
-Plot.savefig('tweezers_avg_image.png')
-plt.show()
 
 # %%
