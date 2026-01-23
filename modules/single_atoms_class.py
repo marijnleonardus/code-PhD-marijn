@@ -118,31 +118,6 @@ class ROIs:
 
         return roi_counts
     
-    @staticmethod
-    def calculate_histogram_detection_threshold(fit_params: np.ndarray,  p1: float=0.5):
-        """calculate detection threshold for double gaussian fit found by 
-        maximing the imaging fidelity by setting the derivative of the fidelity 
-        to 0 and solving for x_t where x_t is the detection threshold."""
-
-        #print(fit_params)
-        # obtain fit parameters
-        ampl0 = fit_params[0]
-        mu0 = fit_params[1]
-        sigma0 = fit_params[2]
-        ampl1 = fit_params[3]
-        mu1 = fit_params[4]
-        sigma1 = fit_params[5]
-
-        A = 1/sigma1**2 - 1/sigma0**2
-        B = 2*mu0/sigma0**2 - 2*mu1/sigma1**2
-        C = mu1**2/sigma1**2 - mu0**2/sigma0**2 - 2*np.log(ampl1*p1/(ampl0*(1 - p1)))
-        sols = Math.solve_quadratic_equation(A, B, C)
-        
-        # take solution between mu0 and mu1
-        valid_sol = [x for x in [sols[0], sols[1]] if mu0 <= x <= mu1]
-        valid_sol = np.round(valid_sol, 0)
-        return valid_sol
-    
 
 class SingleAtoms():
     def __init__(self, binary_threshold: int, images_path: str):
@@ -163,7 +138,7 @@ class SingleAtoms():
         - survival_matrix_binary (numpy.ndarray): 
             Survival matrix indicating survival status of atoms in ROIs as 0 or 1
         """
-        roi_counts_matrix = np.load(self.images_path + 'roi_counts_matrix.npy')
+        roi_counts_matrix = np.load(os.path.join(self.images_path,'roi_counts_matrix.npy'))
         print("raw data: nr ROIs, nr images: ", np.shape(roi_counts_matrix))
 
         # Perform binary thresholding: entries above threshold become 1, others become 0
@@ -255,17 +230,32 @@ class BinaryThresholding():
         
         return FittingFunctions.gaussian_function(x, 0, self.ampl0, self.mu0, self.sigma0)
 
-
     def gauss_function_1peak(self, x):
         """Gaussian function with 1 peak, used for fitting"""
 
         return FittingFunctions.gaussian_function(x, 0, self.ampl1, self.mu1, self.sigma1)
 
+    def calculate_histogram_detection_threshold(self, filling_fraction):
+        """calculate detection threshold for double gaussian fit found by 
+        maximing the imaging fidelity by setting the derivative of the fidelity 
+        to 0 and solving for x_t where x_t is the detection threshold."""
 
-    def calculate_imaging_fidelity(self, filling_fraction, threshold):
+        A = 1/self.sigma1**2 - 1/self.sigma0**2
+        B = 2*self.mu0/self.sigma0**2 - 2*self.mu1/self.sigma1**2
+        C = self.mu1**2/self.sigma1**2 - self.mu0**2/self.sigma0**2 - 2*np.log(self.ampl1*filling_fraction/(self.ampl0*(1 - filling_fraction)))
+        sols = Math.solve_quadratic_equation(A, B, C)
+        
+        # take solution between mu0 and mu1
+        valid_sol = [x for x in [sols[0], sols[1]] if self.mu0 <= x <= self.mu1]
+        valid_sol = np.round(valid_sol, 0)
+        return valid_sol
+
+    def calculate_imaging_fidelity(self, filling_fraction):
         """Calculate the imaging fidelity based on the area under the Gaussian 
         curves above the detection threshold.
         see Madjarov thesis, eq. 2.110"""
+
+        threshold = self.calculate_histogram_detection_threshold(filling_fraction)
 
         # contribute contribution of 0 peak for total integrand
         contrib_peak0, _ = scipy.integrate.quad(self.gauss_function_0peak, -np.inf, threshold)
@@ -279,7 +269,7 @@ class BinaryThresholding():
 
         fidelity = (1 - filling_fraction)*fidelity_0 + filling_fraction*fidelity_1
         return fidelity
-
+    
 
 def main():
     # variables

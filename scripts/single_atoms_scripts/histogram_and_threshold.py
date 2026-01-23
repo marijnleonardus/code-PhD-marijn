@@ -6,18 +6,17 @@
 saves to the files 
 - detection_threshold.npy
 - roi_counts_matrix.npy
+- histogram_fit_params.csv
+- histogram_fit_errors.csv
 
 that are used by other analysis scripts
 """
 
-# %%
 
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-from scipy.constants import pi
-import scipy 
 
 # append modules dir
 import sys
@@ -46,15 +45,11 @@ roi_radius = 2
 log_thresh = 10
 plot_only_initial = True # of each set of 2 images (inital, survival) throw away survival
 
-# %% 
-
 # Calculate counts in each ROI using weighted pixel boxes and save to npy array for other functions to use
 ROIsObject = ROIs(roi_radius, log_thresh)
 roi_counts_matrix = ROIsObject.calculate_roi_counts(images_path, file_name_suffix, use_weighted_count=True)
 print("raw data: (nr ROIs, nr shots): ", np.shape(roi_counts_matrix))
 np.save(images_path + 'roi_counts_matrix.npy', roi_counts_matrix)
-
-# %% 
 
 # compute histograms for each ROI
 if plot_only_initial:
@@ -80,29 +75,34 @@ bin_centers = (bin_edges[:-1] + bin_edges[1:])/2
 init_guess = [max(hist_vals), np.mean(counts)*0.9, np.std(counts)*0.5,
     max(hist_vals)/4, np.mean(counts)*1.1, np.std(counts)]
 fit_limits = (0, [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
-popt, _ = curve_fit(FittingFunctions.double_gaussian, bin_centers, hist_vals, p0=init_guess, bounds=fit_limits)
+popt, pcov = curve_fit(FittingFunctions.double_gaussian, bin_centers, hist_vals, p0=init_guess, bounds=fit_limits)
 
 # produce data with finer grid for ploting double gaussian function
 x_fit_counts = np.linspace(bin_centers[0], bin_centers[-1], 200)
 y_fit_counts = FittingFunctions.double_gaussian(x_fit_counts, *popt)
 
 # calculate detection threshold
-detection_treshold_counts = ROIs.calculate_histogram_detection_threshold(popt, 0.45)
+DoubleGauss = BinaryThresholding(popt)
+
+# calculate filling fraction from the fit itself, which we need to find the detection threshold (confusing)
+# later we calculate the actual filling fraction from the EMMCCD counts, but we can only do this when we know the filling fraction
+# Area ~ Amplitude * Sigma (the sqrt(2pi) cancels out in the fraction)
+area_background = popt[0]*popt[2]
+area_signal = popt[3]*popt[5]
+filling_fraction_from_fit = area_signal/(area_background + area_signal)
+print(f"Filling fraction derived from fit: {filling_fraction_from_fit:.3f}")
+      
+detection_treshold_counts =DoubleGauss.calculate_histogram_detection_threshold(filling_fraction=filling_fraction_from_fit)
 print('detection threshold: ', detection_treshold_counts)
 np.save(images_path + 'detection_threshold.npy', detection_treshold_counts)
 
 # calculate area 1 peak
 filling_fraction = np.sum(counts > detection_treshold_counts)/len(counts)
-print(f"Filling fraction: {filling_fraction:.3f}")
-
-# %% calculate imaging fidelity
-
-BinaryThresholding = BinaryThresholding(popt)
-fidelity = BinaryThresholding.calculate_imaging_fidelity(filling_fraction, detection_treshold_counts)
+print(f"Filling fraction obtained from EMCCD counts: {filling_fraction:.3f}")
+fidelity = DoubleGauss.calculate_imaging_fidelity(filling_fraction)
 print(f"Imaging fidelity: {fidelity:.5f}")
 
-#%% plotting
-
+## plotting
 # plot avg histogram using EMCCD counts as x axis
 fig2, ax2 = plt.subplots()
 ax2.set_xlabel('EMCCD Counts')
@@ -129,7 +129,7 @@ roi_counts_matrix_non_weighted = ROIsObject.calculate_roi_counts(images_path, fi
 photons_matrix_non_weighted = iXon888.counts_to_photons(roi_counts_matrix_non_weighted.ravel(), backgr_counts)
 rescale_factor = photons_matrix_non_weighted.mean()/photons_matrix.mean()
 
-fig_width = 3.375*.5-0.02  # inches, matches one column
+fig_width = 3.375*.5 - 0.02  # inches, matches one column
 fig_height = fig_width*0.61
 fig3, ax3 = plt.subplots(figsize = (fig_width, fig_height))
 ax3.set_xlabel('Number of photons')
@@ -139,12 +139,11 @@ ax3.hist(photons_matrix*rescale_factor, bins=nr_bins_hist_avg, edgecolor='black'
 ax3.axvline(detection_threshold_photons*rescale_factor, color='grey', linestyle='--', label='Detection threshold')
 
 print(detection_threshold_photons*rescale_factor)
-# %%
 
 Plotting = Plotting('output')
 Plotting.savefig('roi_histogram.pdf')
 
-# %%
-
-plt.show()
-# %%
+# save files to be used by other scripts
+np.savetxt(images_path + "popt.csv", popt, delimiter = ',')
+np.savetxt(images_path + "pcov.csv", pcov, delimiter = ',')
+np.save(images_path + "filling_fraction.npy", filling_fraction)

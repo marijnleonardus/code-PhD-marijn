@@ -22,8 +22,8 @@ binning = 4  # binning factor
 magnification = 0.85  # magnification factor
 
 path = r'//physstor/cqt-t/KAT1/Marijn/thesis_measurements/mot/sf_time_of_flight/second try/scan091510/'
-file_name = '0007fluorescence.tif' # t=0ms
-#file_name = '0017fluorescence.tif' # t=10ms
+#file_name = '0007fluorescence.tif' # t=0ms
+file_name = '0017fluorescence.tif' # t=10ms
 x0=258 # px
 y0=200
 w=70
@@ -36,5 +36,5 @@ fluor_img = ImageObject.crop_image_around_point(fluor_img, x0=x0, y0=y0, w=w, h=
 FluorescencePlot = MOTPlot(fluor_img, magnification, px_size, binning)
 FluorescencePlot.plot_withscalebar(scalebar_length_mm=0.5)
 Plot = Plotting('output')
-Plot.savefig('fluor_red_0ms.png')
+Plot.savefig('fluor_red_10ms.png')
 plt.show()

@@ -249,7 +249,7 @@ class MOTPlot():
         #fig.colorbar(im, ax=ax, label='Counts')
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_title(r'$t=0\,\mathrm{ms}$')
+        ax.set_title(r'$\mathrm{ToF}=10\,\mathrm{ms}$')
         ## add coordinate axes
         origin_fraction = (0.1, 0.1) # Where the dot sits (bottom-left)
         pixel_length = 10              # Length of arrows in points

@@ -33,13 +33,14 @@ os.system('cls' if os.name == 'nt' else 'clear')
 #%%
 
 # variables
-images_path = 'T:\\KAT1\\Marijn\scan174612\\'
-binary_threshold = np.load(images_path + 'detection_threshold.npy')
+images_path = r"\\physstor\cqt-t\KAT1\Marijn\scan174612"
+file_name = os.path.join(images_path, "detection_threshold.npy")
+binary_threshold = np.load(file_name)
 roi_radius = 1
 center_weight = 3
 
 # load x values 
-df = pd.read_csv(images_path + 'log.csv')
+df = pd.read_csv(os.path.join(images_path, 'log.csv'))
 
 # calculate survival probability from x values, threshold and images list
 SingleAtomsStats = SingleAtoms(binary_threshold, images_path)
@@ -81,7 +82,6 @@ fig1.supylabel('Survival probabiility')
 
 # calculate uniformity
 detunings = np.array([arr[2] for arr in popt_list])
-detunings_stddev = np.array([np.sqrt(pcov[2, 2]) for pcov in pcov_list])
 avg_detuning = np.mean(detunings)
 sem_detuning = sem(detunings)
 std_deviation_detuning = np.std(detunings)

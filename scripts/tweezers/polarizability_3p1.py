@@ -5,9 +5,10 @@ import matplotlib.pyplot as plt
 # polarizabilit 1S0 in atomic units. source: rydberg simulation platform. 
 pol_1s0 = 274.4 + 6.4
 
-# polarizability 3p1 in atomic units source: rydberg simulation platform. 
+# polarizability 3p1(mj=0) in atomic units source: rydberg simulation platform. 
 alpha_s_3p1 = 251.9 + 43.9
 alpha_t_3p1 = 53.0
+print(alpha_s_3p1)
               
 # formula from young, madjarov theses
 theta_rad = np.linspace(0, np.pi/2, 100)
