@@ -8,7 +8,6 @@ def corrected_surv_prob(image_fid, surv_prob, filling_frac):
     S0 = surv_prob
     p = filling_frac
 
-    # 
     S = (S0 + F - 1)*(p*F + (1 - p)*(1 - F))/(p*F*(2*F - 1))
     return S
 

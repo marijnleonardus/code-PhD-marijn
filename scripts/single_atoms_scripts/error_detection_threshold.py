@@ -24,7 +24,7 @@ from single_atoms_class import BinaryThresholding
 
 # obtain double gaussian fit parameters, detection treshold, filling fraction
 # saved by `histogram_and_treshold.py`
-images_path = 'Z:\\Strontium\\Images\\2025-07-31\\scan145702\\'
+images_path = 'Z:\\Strontium\\Images\\2026-01-23\\scan172311\\'
 filling_fraction = np.load(images_path + 'filling_fraction.npy')
 x_t = np.load(images_path + 'filling_fraction.npy')
 params_best = np.loadtxt(images_path + 'popt.csv', delimiter=',')

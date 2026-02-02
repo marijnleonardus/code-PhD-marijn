@@ -8,6 +8,7 @@ saves to the files
 - roi_counts_matrix.npy
 - histogram_fit_params.csv
 - histogram_fit_errors.csv
+to the defined output directory (private)
 
 that are used by other analysis scripts
 """
@@ -17,6 +18,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from pathlib import Path
 
 # append modules dir
 import sys
@@ -37,7 +39,15 @@ from plot_utils import Plotting
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-images_path = 'Z:\\Strontium\\Images\\2025-07-31\\scan145702\\'
+# images_path = 'Z:\\Strontium\\Images\\2026-01-23\\scan172311\\'
+#images_path = 'Z:\\Strontium\\Images\\2026-01-28\\scan222752\\'
+images_path = 'Z:\\Strontium\\Images\\2026-01-27\\' # single atom rydberg rabi oscillations
+rid = 'scan193823'
+
+# RoI geometry
+nr_rows = 5
+nr_cols = 5
+
 file_name_suffix = 'image'  # import files ending with image.tiff
 nr_bins_hist_roi = 15
 nr_bins_hist_avg = 30
@@ -45,19 +55,30 @@ roi_radius = 2
 log_thresh = 10
 plot_only_initial = True # of each set of 2 images (inital, survival) throw away survival
 
-# Calculate counts in each ROI using weighted pixel boxes and save to npy array for other functions to use
+# Calculate counts in each ROI using weighted pixel boxes 
 ROIsObject = ROIs(roi_radius, log_thresh)
-roi_counts_matrix = ROIsObject.calculate_roi_counts(images_path, file_name_suffix, use_weighted_count=True)
+import_path = images_path + rid + '\\'
+roi_counts_matrix = ROIsObject.calculate_roi_counts(import_path, file_name_suffix, use_weighted_count=True)
 print("raw data: (nr ROIs, nr shots): ", np.shape(roi_counts_matrix))
-np.save(images_path + 'roi_counts_matrix.npy', roi_counts_matrix)
+
+# save to output folder to be used for other scripts
+output_path = Path(f'output/processed_data/roi_counts/{rid}')
+output_path.mkdir(parents=True, exist_ok=True)
+np.save(output_path / 'roi_counts_matrix.npy', roi_counts_matrix)
 
 # compute histograms for each ROI
 if plot_only_initial:
     roi_counts_matrix = roi_counts_matrix[:, ::2]
+
 nr_rois = np.shape(roi_counts_matrix)[0]
-fig1, ax1 = plt.subplots(ncols=int(np.sqrt(nr_rois)), nrows=int(np.sqrt(nr_rois)),
+fig1, ax1 = plt.subplots(nrows=nr_rows, ncols=nr_cols, 
+    figsize=(2*nr_cols, 2*nr_rows), # Dynamic scaling
     sharex=True, sharey=True)
-axs = ax1.ravel()
+
+# Flatten axs in case of a 1D grid or a single ROI
+axs = np.atleast_1d(ax1).ravel()
+
+# plot each ROI
 for roi_idx in range(nr_rois):
     axs[roi_idx].hist(roi_counts_matrix[roi_idx, :], bins=nr_bins_hist_roi, edgecolor='black')
 fig1.supxlabel('EMCCD Counts')
@@ -94,7 +115,7 @@ print(f"Filling fraction derived from fit: {filling_fraction_from_fit:.3f}")
       
 detection_treshold_counts =DoubleGauss.calculate_histogram_detection_threshold(filling_fraction=filling_fraction_from_fit)
 print('detection threshold: ', detection_treshold_counts)
-np.save(images_path + 'detection_threshold.npy', detection_treshold_counts)
+np.save(output_path / 'detection_threshold.npy', detection_treshold_counts)
 
 # calculate area 1 peak
 filling_fraction = np.sum(counts > detection_treshold_counts)/len(counts)
@@ -125,7 +146,7 @@ x_fit_photons = iXon888.counts_to_photons(x_fit_counts, backgr_counts)
 # we need to apply a scaling factor to correct for the weighted pixel count
 # this will disturb the absolute photon number. 
 # Rescale by computing the non-weighted pixel count
-roi_counts_matrix_non_weighted = ROIsObject.calculate_roi_counts(images_path, file_name_suffix, use_weighted_count=False)
+roi_counts_matrix_non_weighted = ROIsObject.calculate_roi_counts(import_path, file_name_suffix, use_weighted_count=False)
 photons_matrix_non_weighted = iXon888.counts_to_photons(roi_counts_matrix_non_weighted.ravel(), backgr_counts)
 rescale_factor = photons_matrix_non_weighted.mean()/photons_matrix.mean()
 
@@ -144,6 +165,8 @@ Plotting = Plotting('output')
 Plotting.savefig('roi_histogram.pdf')
 
 # save files to be used by other scripts
-np.savetxt(images_path + "popt.csv", popt, delimiter = ',')
-np.savetxt(images_path + "pcov.csv", pcov, delimiter = ',')
-np.save(images_path + "filling_fraction.npy", filling_fraction)
+np.savetxt(output_path / "popt.csv", popt, delimiter = ',')
+np.savetxt(output_path / "pcov.csv", pcov, delimiter = ',')
+np.save(output_path / "filling_fraction.npy", filling_fraction)
+
+plt.show()

@@ -12,16 +12,17 @@ from scipy.constants import pi
 # append path with 'modules' dir in parent folder
 import sys
 import os
-from scipy.constants import pi
-
 script_dir = os.path.dirname(os.path.abspath(__file__))
-modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
-sys.path.append(modules_dir)
+lib_dir = os.path.abspath(os.path.join(script_dir, '../../../lib'))
+if lib_dir not in sys.path:
+    sys.path.append(lib_dir)
+from setup_paths import add_local_paths
+add_local_paths(__file__, ['../../../modules', '../../../utils'])
 
 from optics_class import GaussianBeam, EllipticalGaussianBeam
 from laser_class import AtomLightInteraction 
 from atom_class import Rydberg
-from utils.units import mW, MHz, um
+from units import mW, MHz, um
 
 ## variables
 # array of n values
