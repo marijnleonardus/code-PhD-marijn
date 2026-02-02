@@ -1,16 +1,10 @@
 # author: Marijn Venderbosch
 # April 2025
 
-""""script that calculates the detection threshold from a histogram of the counts in the ROIs
-
-saves to the files 
-- detection_threshold.npy
-- roi_counts_matrix.npy
-- histogram_fit_params.csv
-- histogram_fit_errors.csv
-to the defined output directory (private)
-
-that are used by other analysis scripts
+""""script that
+* calculates ROI counts in a dataset
+* calculates the histogram, and corresopnding optimal detection threshold
+* saves these processed data to output folder to be used by follow up scripts
 """
 
 
@@ -19,6 +13,7 @@ import os
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from pathlib import Path
+import shutil
 
 # append modules dir
 import sys
@@ -168,5 +163,14 @@ Plotting.savefig('roi_histogram.pdf')
 np.savetxt(output_path / "popt.csv", popt, delimiter = ',')
 np.savetxt(output_path / "pcov.csv", pcov, delimiter = ',')
 np.save(output_path / "filling_fraction.npy", filling_fraction)
+
+# also copy the `log.csv` file, that is needed by other scripts, to private folder
+source_log = Path(import_path) / 'log.csv'
+destination_log = output_path / 'log.csv'
+if source_log.exists():
+    shutil.copy2(source_log, destination_log)
+    print(f"Successfully copied log.csv to {output_path}")
+else:
+    print(f"Warning: log.csv not found in {import_path}")
 
 plt.show()

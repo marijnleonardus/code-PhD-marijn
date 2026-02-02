@@ -25,7 +25,7 @@ from fitting_functions_class import FittingFunctions
 from image_analysis_class import ImageStats
 from single_atoms_class import SingleAtoms
 from plot_utils import Plotting
-from units import MHz
+from units import us
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
@@ -33,26 +33,37 @@ os.system('cls' if os.name == 'nt' else 'clear')
 #%%
 
 # variables
-images_path = r"\\physstor\cqt-t\KAT1\Marijn\Scan123600"
-file_name = os.path.join(images_path, "detection_threshold.npy")
-binary_threshold = np.load(file_name)
-roi_radius = 1
-center_weight = 3
+processed_data_path = 'output/processed_data/roi_counts/'
+rid = 'scan193823'
+path = processed_data_path + rid + '/'
+detection_threshold_file_name = os.path.join(path, "detection_threshold.npy")
+binary_threshold = np.load(detection_threshold_file_name)
 
 # load x values 
-df = pd.read_csv(os.path.join(images_path, 'log.csv'))
+df = pd.read_csv(os.path.join(path, 'log.csv'))
 
 # calculate survival probability from x values, threshold and images list
-SingleAtomsStats = SingleAtoms(binary_threshold, images_path)
+SingleAtomsStats = SingleAtoms(binary_threshold, path)
 x_grid, surv_matrix = SingleAtomsStats.reshape_survival_matrix(df)
-print("sorted data: nr ROIs, nr x_values: ", np.shape(surv_matrix))
+print("sorted data: nr ROIs, nr x_values, nr_avg: ", np.shape(surv_matrix))
 
 # calculate mean and standard error per ROI and globally
 statistics_matrix = SingleAtomsStats.calculate_survival_statistics(df) 
-surv_prob = statistics_matrix[0]
-sem_surv_prob = statistics_matrix[2]
+surv_prob_per_roi, surv_prob_global, sem_per_roi, global_sem = statistics_matrix
+print(surv_prob_per_roi.shape, surv_prob_global.shape, sem_per_roi.shape, global_sem.shape)
 
-# plot for each ROI the survival plobability as function of detuning and fit with Gaussian
-nr_rois = np.shape(surv_matrix)[0]
-fig1, axs = plt.subplots(figsize = (7, 6), sharex=True, sharey=True,
-    ncols=int(np.sqrt(nr_rois)), nrows=int(np.sqrt(nr_rois)))
+fig, ax = plt.subplots(figsize=(4, 1.5))
+for roi_idx in range(np.shape(surv_prob_per_roi)[0]):
+    ax.errorbar(x_grid/us, surv_prob_per_roi[roi_idx, :], yerr=sem_per_roi[roi_idx, :],
+    fmt='o', markersize=1.5, color='blue')
+ax.set_xlabel('us')
+ax.set_ylabel('surv. prob.')
+ax.set_xlim(0, 3.0)
+
+fig2, ax2 = plt.subplots(figsize=(3, 2))
+ax2.errorbar(x_grid/us, surv_prob_global, global_sem, fmt='o', markersize=1.5, color='blue')
+ax2.set_xlabel('us')
+ax2.set_ylabel('global survival')
+ax2.set_xlim(0, 1.5)
+
+plt.show()
