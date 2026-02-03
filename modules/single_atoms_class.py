@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import pandas as pd
 import scipy.integrate
+import matplotlib as mpl
+
 
 # append modules dir
 import sys
@@ -45,22 +47,82 @@ class ROIs:
         x_idx = np.rint(x_coords).astype(int)
 
         for i, (y, x) in enumerate(zip(y_idx, x_idx)):
-            rois[i] = padded[:, y:y+p, x:x+p]
+            rois[i] = padded[:, y:y + p, x:x + p]
 
         return rois
 
     def _plot_single_roi(self, avg_patches: np.ndarray):
         """(optional) quick sanity plot for single ROI, e.g. ROI #0"""
         fig, ax = plt.subplots(figsize=(3.5, 2.5))
-
-        # internally, the counts are not multiplied, for the conversino to photons to work
+        # internally, the counts are not multiplied, for the conversion to photons to work
         # but for visualization we multiply by patch_size^2, otherwise it is confusing to have 
         # a weight matrix that sums to 1
         im = ax.imshow(avg_patches[3]*self.patch_size**2, cmap='viridis') 
         #ax.set_title("Average patch used as filter for ROI #1")
+        #ax.set_xlabel('px')
+        #ax.set_ylabel('px')
         fig.colorbar(im, ax=ax)
-        ax.axis('off')
         #plt.savefig("output/average_patch.png", dpi=300, bbox_inches='tight')
+
+    def _plot_avg_stack(self, avg_stack: np.ndarray, detected_spots: list[np.ndarray]):
+        fig, ax = plt.subplots(figsize=(4, 4))
+        im = ax.imshow(avg_stack, cmap='viridis')
+
+        # annotate ROIs with circles
+        y_coords, x_coords = detected_spots
+        ax.scatter(x_coords, y_coords, s=30, facecolors='none', edgecolors='r', label='Detected ROIs')
+
+        # annotate with ROI index
+        for i, (x, y) in enumerate(zip(x_coords, y_coords)):
+            ax.text(
+                x + 2, y + 2, # small offset so text doesn't sit on the marker
+                str(i), color='white', fontsize=8, ha='left', va='bottom', bbox=dict(
+                    facecolor='black', alpha=0.5, edgecolor='none', pad=1
+                )
+            )
+        ax.set_title('Average image (z-projection)')
+        ax.set_xlabel('x [px]')
+        ax.set_ylabel('y [px]')
+        fig.colorbar(im, ax=ax, label='Counts')
+        ax.legend()
+
+    def _sort_to_reading_order(self, spots, row_tolerance=10):
+        """
+        Sorts spots from top-left to bottom-right (reading order).
+        It groups spots into rows based on Y-proximity (tolerance) to handle 
+        slight grid rotation, then sorts each row by X.
+        
+        Args:
+            spots: np.ndarray of shape (N, 3) -> (y, x, sigma)
+            row_tolerance: float, pixels. Points within this Y-distance are considered same row.
+        """
+        if len(spots) == 0:
+            return spots
+
+        # Sort strictly by Y first to order them roughly top-to-bottom
+        sorted_by_y = spots[spots[:, 0].argsort()]
+        final_sorted_spots = []
+        current_row = []
+        
+        # Initialize first row reference
+        current_row_y_ref = sorted_by_y[0, 0]
+        
+        for spot in sorted_by_y:
+            # Check if this spot belongs to the current row (is within tolerance of the row's Y)
+            if abs(spot[0] - current_row_y_ref) < row_tolerance:
+                current_row.append(spot)
+            else:
+                # Row finished: Sort the current row by X (column index) and add to final list
+                current_row.sort(key=lambda k: k[1])
+                final_sorted_spots.extend(current_row)
+                # Start a new row
+                current_row = [spot]
+                current_row_y_ref = spot[0]
+        # Don't forget to append and sort the very last row
+        if current_row:
+            current_row.sort(key=lambda k: k[1])
+            final_sorted_spots.extend(current_row)
+        return np.array(final_sorted_spots)
 
     def calculate_roi_counts(self, images_path: str, file_name_suffix: str, use_weighted_count: bool):
         """calculate ROI counts for each image in the stack
@@ -81,12 +143,18 @@ class ROIs:
         if image_stack.size == 0:
             raise ValueError("No images loaded, check path/suffix")
         print("loaded images:", image_stack.shape)
-
-        # find spot centers via LoG on the mean image
+        
+        # find detected spots and plot on top of average image
         mean_img = image_stack.mean(axis=0)
         spots = blob_log(mean_img, max_sigma=3, min_sigma=1, num_sigma=5, threshold=self.log_thresh)
-        y_coor, x_coor = spots[:,0], spots[:,1]
+
+        # sort spots from top-left to bottom-right (reading order)
+        spots = self._sort_to_reading_order(spots, row_tolerance=12)
+
+        y_coor, x_coor = spots[:, 0], spots[:, 1]
+        detected_spots = [y_coor, x_coor]
         print(f"Detected {len(spots)} spots")
+        self._plot_avg_stack(mean_img, detected_spots)
 
         # extract all patches into a 4D array of shape (n_rois, n_images, p, p)
         rois_mat = self._extract_rois(image_stack, y_coor, x_coor)
@@ -96,10 +164,10 @@ class ROIs:
             avg_patches = rois_mat.mean(axis=1)                
 
             # Optional: clip negatives if you want purely positive templates
-            avg_patches = avg_patches - avg_patches.min(axis=(1,2), keepdims=True)
+            avg_patches = avg_patches - avg_patches.min(axis=(1, 2), keepdims=True)
 
             # normalize so ∑_{m,n} templates[i,m,n] == 1
-            sums = avg_patches.sum(axis=(1,2), keepdims=True)
+            sums = avg_patches.sum(axis=(1, 2), keepdims=True)
             templates = avg_patches/sums  # (n_rois, p, p)
         else:
             # plain average (= uniform) template also sums to 1 now

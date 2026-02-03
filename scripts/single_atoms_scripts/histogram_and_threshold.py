@@ -35,9 +35,13 @@ os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
 # images_path = 'Z:\\Strontium\\Images\\2026-01-23\\scan172311\\'
-#images_path = 'Z:\\Strontium\\Images\\2026-01-28\\scan222752\\'
-images_path = 'Z:\\Strontium\\Images\\2026-01-27\\' # single atom rydberg rabi oscillations
-rid = 'scan193823'
+
+# single atom rabi oscillations
+# images_path = 'Z:\\Strontium\\Images\\2026-01-27\\'
+# rid = 'scan193823'
+
+images_path = 'Z:\\Strontium\\Images\\2026-01-29\\'
+rid = 'scan164420'
 
 # RoI geometry
 nr_rows = 5
@@ -49,6 +53,7 @@ nr_bins_hist_avg = 30
 roi_radius = 2
 log_thresh = 10
 plot_only_initial = True # of each set of 2 images (inital, survival) throw away survival
+show_photon_histogram = False # show histogram of counts per photon
 
 # Calculate counts in each ROI using weighted pixel boxes 
 ROIsObject = ROIs(roi_radius, log_thresh)
@@ -108,7 +113,7 @@ area_signal = popt[3]*popt[5]
 filling_fraction_from_fit = area_signal/(area_background + area_signal)
 print(f"Filling fraction derived from fit: {filling_fraction_from_fit:.3f}")
       
-detection_treshold_counts =DoubleGauss.calculate_histogram_detection_threshold(filling_fraction=filling_fraction_from_fit)
+detection_treshold_counts = DoubleGauss.calculate_histogram_detection_threshold(filling_fraction=filling_fraction_from_fit)
 print('detection threshold: ', detection_treshold_counts)
 np.save(output_path / 'detection_threshold.npy', detection_treshold_counts)
 
@@ -130,34 +135,35 @@ ax2.plot(x_fit_counts, y_fit_counts, 'r-', label='Double Gaussian fit')
 ax2.axvline(detection_treshold_counts, color='grey', linestyle='--', label='Detection threshold')
 ax2.legend()
 
-# same histogram but rescaled in terms of photon number 
-# convert photon number from Ixon conversion formula using background count nr
-backgr_counts = popt[1]
-iXon888 = EMCCD()
-photons_matrix = iXon888.counts_to_photons(counts, backgr_counts)
-detection_threshold_photons = iXon888.counts_to_photons(detection_treshold_counts, backgr_counts)
-x_fit_photons = iXon888.counts_to_photons(x_fit_counts, backgr_counts)
+if show_photon_histogram:
+    # same histogram but rescaled in terms of photon number 
+    # convert photon number from Ixon conversion formula using background count nr
+    backgr_counts = popt[1]
+    iXon888 = EMCCD()
+    photons_matrix = iXon888.counts_to_photons(counts, backgr_counts)
+    detection_threshold_photons = iXon888.counts_to_photons(detection_treshold_counts, backgr_counts)
+    x_fit_photons = iXon888.counts_to_photons(x_fit_counts, backgr_counts)
 
-# we need to apply a scaling factor to correct for the weighted pixel count
-# this will disturb the absolute photon number. 
-# Rescale by computing the non-weighted pixel count
-roi_counts_matrix_non_weighted = ROIsObject.calculate_roi_counts(import_path, file_name_suffix, use_weighted_count=False)
-photons_matrix_non_weighted = iXon888.counts_to_photons(roi_counts_matrix_non_weighted.ravel(), backgr_counts)
-rescale_factor = photons_matrix_non_weighted.mean()/photons_matrix.mean()
+    # we need to apply a scaling factor to correct for the weighted pixel count
+    # this will disturb the absolute photon number. 
+    # Rescale by computing the non-weighted pixel count
+    roi_counts_matrix_non_weighted = ROIsObject.calculate_roi_counts(import_path, file_name_suffix, use_weighted_count=False)
+    photons_matrix_non_weighted = iXon888.counts_to_photons(roi_counts_matrix_non_weighted.ravel(), backgr_counts)
+    rescale_factor = photons_matrix_non_weighted.mean()/photons_matrix.mean()
 
-fig_width = 3.375*.5 - 0.02  # inches, matches one column
-fig_height = fig_width*0.61
-fig3, ax3 = plt.subplots(figsize = (fig_width, fig_height))
-ax3.set_xlabel('Number of photons')
-ax3.set_ylabel('Probability')
-ax3.grid()
-ax3.hist(photons_matrix*rescale_factor, bins=nr_bins_hist_avg, edgecolor='black', density=True, label='Counts') 
-ax3.axvline(detection_threshold_photons*rescale_factor, color='grey', linestyle='--', label='Detection threshold')
+    fig_width = 3.375*.5 - 0.02  # inches, matches one column
+    fig_height = fig_width*0.61
+    fig3, ax3 = plt.subplots(figsize = (fig_width, fig_height))
+    ax3.set_xlabel('Number of photons')
+    ax3.set_ylabel('Probability')
+    ax3.grid()
+    ax3.hist(photons_matrix*rescale_factor, bins=nr_bins_hist_avg, edgecolor='black', density=True, label='Counts') 
+    ax3.axvline(detection_threshold_photons*rescale_factor, color='grey', linestyle='--', label='Detection threshold')
 
-print(detection_threshold_photons*rescale_factor)
+    print(detection_threshold_photons*rescale_factor)
 
-Plotting = Plotting('output')
-Plotting.savefig('roi_histogram.pdf')
+    Plotting = Plotting('output')
+    Plotting.savefig('roi_histogram.pdf')
 
 # save files to be used by other scripts
 np.savetxt(output_path / "popt.csv", popt, delimiter = ',')
