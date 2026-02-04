@@ -1,7 +1,5 @@
 # author: Marijn VEnderbosch
 # January 2023
-"""to do: clean up some of these classes: some are redundant.
-e.g. there is 2 gaussian beam intensity functions now"""
 
 import numpy as np
 from scipy.constants import pi

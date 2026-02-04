@@ -6,19 +6,9 @@ from scipy.constants import electron_mass, c, hbar, alpha, pi
 from scipy.constants import epsilon_0 as eps0
 from scipy.constants import elementary_charge as e0
 import scipy.constants
-import os
-import sys
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
-modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
-if modules_dir not in sys.path:
-    sys.path.append(modules_dir)
-
-utils_dir = os.path.abspath(os.path.join(script_dir, '../../utils'))
-if utils_dir not in sys.path:
-    sys.path.append(utils_dir)
-
-from units import MHz
+# user defined libraries
+from utils.units import MHz
 
 
 a0 = scipy.constants.physical_constants['Bohr radius'][0] # m

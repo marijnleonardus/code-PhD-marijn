@@ -6,17 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.constants import hbar, pi
 from arc import Strontium88, PairStateInteractions
 
-import sys
-import os
-# add local modules
-script_dir = os.path.dirname(os.path.abspath(__file__))
-lib_dir = os.path.abspath(os.path.join(script_dir, '../lib'))
-if lib_dir not in sys.path:
-    sys.path.append(lib_dir)
-from setup_paths import add_local_paths
-add_local_paths(__file__, ['../modules', '../utils'])
-
-from units import GHz, h, us, um, MHz
+from utils.units import GHz, h, us, um, MHz
 
 Sr88 = Strontium88()
 

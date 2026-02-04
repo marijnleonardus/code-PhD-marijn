@@ -3,7 +3,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 
-
 # 1) Set up your LaTeX/PGF rcParams once, but do NOT call mpl.use("pgf") here.
 #    That way your default backend (usually Agg) stays in place for PNG/PDF exports.
 latex_fontsize_pt = 10
@@ -24,7 +23,6 @@ mpl.rcParams.update({
         \usepackage{sfmath}        
     """,
 })
-
 
 
 class Plotting:

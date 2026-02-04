@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Stats():
     @staticmethod
     def calculate_r_squared(y_true: np.ndarray, y_pred: np.ndarray):

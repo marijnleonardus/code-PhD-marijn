@@ -7,7 +7,6 @@
 * saves these processed data to output folder to be used by follow up scripts
 """
 
-
 import numpy as np
 import os
 import matplotlib.pyplot as plt
@@ -15,40 +14,30 @@ from scipy.optimize import curve_fit
 from pathlib import Path
 import shutil
 
-# append modules dir
-import sys
-import os
-script_dir = os.path.dirname(os.path.abspath(__file__))
-lib_dir = os.path.abspath(os.path.join(script_dir, '../../lib'))
-if lib_dir not in sys.path:
-    sys.path.append(lib_dir)
-from setup_paths import add_local_paths
-add_local_paths(__file__, ['../../modules', '../../utils'])
-
 # user defined libraries
-from fitting_functions_class import FittingFunctions
-from single_atoms_class import ROIs, BinaryThresholding
-from camera_image_class import EMCCD
-from plot_utils import Plotting
+from modules.fitting_functions_class import FittingFunctions
+from modules.single_atoms_class import ROIs, BinaryThresholding
+from modules.camera_image_class import EMCCD
+from utils.plot_utils import Plotting
 
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
 # images_path = 'Z:\\Strontium\\Images\\2026-01-23\\scan172311\\'
 
-images_path = 'Z:\\Strontium\\Images\\2026-01-27\\'
-rid = 'scan193823'
 # single atom rabi oscillations
+#images_path = 'Z:\\Strontium\\Images\\2026-01-27\\'
+#rid = 'scan193823'
 #images_path = 'Z:\\Strontium\\Images\\2026-01-28\\'
 #rid = 'scan193223'
 
 # random 200 point dataset for debugging
-#images_path = 'Z:\\Strontium\\Images\\2026-01-29\\'
-#rid = 'scan164420'
+images_path = 'Z:\\Strontium\\Images\\2026-01-29\\'
+rid = 'scan164420'
 
 # clock rabi
-images_path = 'Z:\\Strontium\\Images\\2026-02-04\\'
-rid = 'scan001915'
+#images_path = 'Z:\\Strontium\\Images\\2026-02-04\\'
+#rid = 'scan001915'
 
 # RoI geometry
 nr_rows = 3

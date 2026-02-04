@@ -2,24 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import pandas as pd
 import scipy.integrate
-
-# append modules dir
-import sys
-import os
-script_dir = os.path.dirname(os.path.abspath(__file__))
-lib_dir = os.path.abspath(os.path.join(script_dir, '../lib'))
-if lib_dir not in sys.path:
-    sys.path.append(lib_dir)
-from setup_paths import add_local_paths
-add_local_paths(__file__, ['../../modules', '../../utils'])
-
-# user defined modules
-from math_class import Math
-from data_handling import sort_raw_measurements
-from camera_image_class import CameraImage
 from skimage.feature import blob_log
 from scipy.stats import sem
-from fitting_functions_class import FittingFunctions
+import os
+
+# user defined modules
+from modules.math_class import Math
+from modules.camera_image_class import CameraImage
+from modules.fitting_functions_class import FittingFunctions
+from utils.data_handling import sort_raw_measurements
 
 
 class ROIs:

@@ -3,25 +3,16 @@
 
 """first run histogram_and_threshold.py """
 
-
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import pandas as pd
 
-# append path with 'modules' dir in parent folder
-import sys
-script_dir = os.path.dirname(os.path.abspath(__file__))
-modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
-utils_dir = os.path.abspath(os.path.join(script_dir, '../../utils'))
-sys.path.append(modules_dir)
-sys.path.append(utils_dir)
-
 # user defined libraries
-from single_atoms_class import SingleAtoms
-from units import MHz, pol_1s0, pol_3p1_mj1
-from plot_utils import Plotting
+from modules.single_atoms_class import SingleAtoms
+from utils.units import MHz, pol_1s0, pol_3p1_mj1
+from utils.plot_utils import Plotting
 
 os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -69,7 +60,7 @@ ax1.set_xlim([-3.65, -1.65])
 diff_ac_stark = trapdepth*(1 - pol_3p1_mj1/pol_1s0)
 ax1.axvline(x=diff_ac_stark/MHz, color='red', linewidth=1.5)
 
-Plot=Plotting('output')
+Plot = Plotting('output')
 Plot.savefig('sis_cooling_surv.pdf') 
 print(diff_ac_stark)
 plt.show()

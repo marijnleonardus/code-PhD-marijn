@@ -10,20 +10,12 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 
-# add local modules
-script_dir = os.path.dirname(os.path.abspath(__file__))
-lib_dir = os.path.abspath(os.path.join(script_dir, '../../lib'))
-if lib_dir not in sys.path:
-    sys.path.append(lib_dir)
-from setup_paths import add_local_paths
-add_local_paths(__file__, ['../../modules', '../../utils'])
-
 # user defined libraries
-from fitting_functions_class import FittingFunctions
-from single_atoms_class import SingleAtoms
-from plot_utils import Plotting
-from units import us, ms
-from statistics_utils import Stats
+from modules.fitting_functions_class import FittingFunctions
+from modules.single_atoms_class import SingleAtoms
+from utils.plot_utils import Plotting
+from utils.units import us, ms
+from utils.statistics_utils import Stats
 
 # clear terminal
 os.system('cls' if os.name == 'nt' else 'clear')
@@ -56,7 +48,7 @@ statistics_matrix = SingleAtomsStats.calculate_survival_statistics(df)
 surv_prob_per_roi, surv_prob_global, sem_per_roi, global_sem = statistics_matrix
 print(surv_prob_per_roi)
 # construct RoI geometry, will also work for missing ROI
-# Example: If the 4th spot in the 2nd row is missing do: 1,3
+# Example: If the 4th c in the 2nd row is missing do: 1,3
 #missing_row, missing_col = 4, 0
 missing_row, missing_col = None, None
 

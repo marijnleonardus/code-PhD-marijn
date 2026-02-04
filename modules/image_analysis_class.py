@@ -7,26 +7,17 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 from matplotlib.transforms import ScaledTranslation
-import os
-import sys
-
-# add local modules
-script_dir = os.path.dirname(os.path.abspath(__file__))
-lib_dir = os.path.abspath(os.path.join(script_dir, '../../lib'))
-if lib_dir not in sys.path:
-    sys.path.append(lib_dir)
-from setup_paths import add_local_paths
-add_local_paths(__file__, ['../../modules', '../../utils'])
 
 # user defined modules
-from fitting_functions_class import FittingFunctions
-from camera_image_class import CameraImage
-from units import mm
+from modules.fitting_functions_class import FittingFunctions
+from modules.camera_image_class import CameraImage
+from uitls.units import mm
 
 
 class ManipulateImage:
     """to do; need to merge some of these cropping functions that are similar
     crop_array_edge and crop_array_center can be static methods i think"""
+
     def crop_array_edge(self, array: np.ndarray, crop_range_x: int, crop_range_y: int):
         """
         Crops an array by removing `x` number of rows and columns from each side.

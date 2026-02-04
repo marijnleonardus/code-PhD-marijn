@@ -9,13 +9,7 @@ from qutip import *
 from qutip.ui.progressbar import TextProgressBar
 
 # add local modules
-import os
-import sys
-script_dir = os.path.dirname(os.path.abspath(__file__))
-modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
-if modules_dir not in sys.path:
-    sys.path.append(modules_dir)
-from atoms_tweezer_class import AtomicMotion
+from modules.atoms_tweezer_class import AtomicMotion
 
 
 class SisyphusCooling:

@@ -5,20 +5,11 @@ import numpy as np
 from scipy.constants import pi, hbar, c, epsilon_0, elementary_charge
 import scipy.constants
 import allantools
-import os 
-import sys
 
 # add local modules
-script_dir = os.path.dirname(os.path.abspath(__file__))
-lib_dir = os.path.abspath(os.path.join(script_dir, '../lib'))
-if lib_dir not in sys.path:
-    sys.path.append(lib_dir)
-from setup_paths import add_local_paths
-add_local_paths(__file__, ['../modules', '../utils'])
-
-from units import MHz, um, mW, nm
-from optics_class import GaussianBeam
-from atom_class import Sr
+from modules.optics_class import GaussianBeam
+from modules.atom_class import Sr
+from utils.units import MHz, um, mW, nm
 
 
 class AllanDevFromDataset:
