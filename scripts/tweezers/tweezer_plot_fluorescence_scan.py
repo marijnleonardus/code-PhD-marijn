@@ -20,7 +20,7 @@ sys.path.append(modules_dir)
 
 # user defined libraries
 from fitting_functions_class import FittingFunctions
-from single_atoms_class import SingleAtoms
+from roi_analysis_class import SingleAtoms
 from data_handling_class import sort_raw_measurements
 
 # clear terminal

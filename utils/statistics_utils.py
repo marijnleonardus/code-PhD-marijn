@@ -45,18 +45,26 @@ class Stats():
         return chi_squared
     
     @staticmethod
-    def propagate_standard_error(sem_array: np.ndarray):       
+    def weighted_average_and_se(means, sems):
         """
-    General purpose error propagation for the mean of independent uncertainties.
-    Propagated SEM = sqrt(sum(sem^2)/n)
-    
-    Args:
-        sem_array (np.ndarray): Array of SEM values.
-                   
-    Returns:
-        np.ndarray: The propagated SEM.
-    """
+        Calculates the inverse-variance weighted mean and propagated SE.
+        Args:
+            means: List of arrays (the y-values of the datasets)
+            sems:  List of arrays (the SE values of the datasets
+        """
+        # Convert lists to 2D numpy arrays for vectorization
+        means = np.array(means)
+        sems = np.array(sems)
         
-        n = len(sem_array)
-        return np.sqrt(np.sum(np.square(sem_array)**2))/n
+        # Calculate weights (w = 1 / SE^2)
+        # Adding a tiny epsilon to avoid division by zero if SE is 0
+        weights = 1.0/(sems**2 + 1e-15)
+        
+        # Calculate weighted mean
+        weighted_mean = np.sum(means*weights, axis=0)/np.sum(weights, axis=0)
+        
+        # Calculate propagated standard error (SE = sqrt(1 / sum(weights)))
+        propagated_se = np.sqrt(1.0/np.sum(weights, axis=0))
+        
+        return weighted_mean, propagated_se
     

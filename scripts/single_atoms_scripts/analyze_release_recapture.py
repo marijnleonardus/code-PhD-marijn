@@ -15,7 +15,7 @@ modules_dir = os.path.abspath(os.path.join(script_dir, '../../modules'))
 sys.path.append(modules_dir)
 
 # user defined libraries
-from single_atoms_class import SingleAtoms
+from roi_analysis_class import SingleAtoms
 from plotting_class import Plotting
 from utils.units import us
 

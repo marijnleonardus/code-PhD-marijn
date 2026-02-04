@@ -21,7 +21,7 @@ add_local_paths(__file__, ['../../modules', '../../utils'])
 # user defined libraries
 from fitting_functions_class import FittingFunctions
 from image_analysis_class import ImageStats
-from single_atoms_class import SingleAtoms
+from roi_analysis_class import SingleAtoms
 from plot_utils import Plotting
 from units import kHz
 

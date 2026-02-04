@@ -11,7 +11,7 @@ from matplotlib.transforms import ScaledTranslation
 # user defined modules
 from modules.fitting_functions_class import FittingFunctions
 from modules.camera_image_class import CameraImage
-from uitls.units import mm
+from utils.units import mm
 
 
 class ManipulateImage:
