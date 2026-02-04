@@ -2,8 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import pandas as pd
 import scipy.integrate
-import matplotlib as mpl
-
 
 # append modules dir
 import sys
@@ -124,7 +122,7 @@ class ROIs:
             final_sorted_spots.extend(current_row)
         return np.array(final_sorted_spots)
 
-    def calculate_roi_counts(self, images_path: str, file_name_suffix: str, use_weighted_count: bool):
+    def calculate_roi_counts(self, images_path: str, file_name_suffix: str, use_weighted_count: bool, roi_index_tolerance: int):
         """calculate ROI counts for each image in the stack
 
         Args:
@@ -135,6 +133,7 @@ class ROIs:
             ValueError: if no images are loaded
 
         Returns:
+            spots: np.ndarray of shape (N, 3) -> (y, x, sigma)
             roi_counts: ROI counts for each image in the stack, per ROI
         """
       
@@ -149,7 +148,7 @@ class ROIs:
         spots = blob_log(mean_img, max_sigma=3, min_sigma=1, num_sigma=5, threshold=self.log_thresh)
 
         # sort spots from top-left to bottom-right (reading order)
-        spots = self._sort_to_reading_order(spots, row_tolerance=12)
+        spots = self._sort_to_reading_order(spots, row_tolerance=roi_index_tolerance)
 
         y_coor, x_coor = spots[:, 0], spots[:, 1]
         detected_spots = [y_coor, x_coor]
@@ -183,7 +182,7 @@ class ROIs:
 
         # at the end multiply by nr of pixels, to get the number of counts in total ROI
         roi_counts *= (self.patch_size**2)
-        return roi_counts
+        return spots, roi_counts
     
 
 class SingleAtoms():
@@ -240,14 +239,32 @@ class SingleAtoms():
         - survival_matrix (np.ndarray): survival probability (nr_rois, nr_x_values, nr_averages)
         """
 
-        # sort the binary matrix based on x values
+        # sort the binary matrix based on x values, possibly number of x_values not equivalent to nr images
+        # if exp stopped before
         survival_matrix_binary = self._calculate_survival_probability_binary()
         nr_avg, x_grid, survival_matrix_sorted = sort_raw_measurements(df, survival_matrix_binary)
     
-        # Reshape now that duplicates are consecutive
-        nr_rois = np.shape(survival_matrix_binary)[0]
-        survival_matrix = survival_matrix_sorted.reshape(nr_rois, len(x_grid), nr_avg)
-        return x_grid, np.array(survival_matrix)
+        # Use the fixed sort_raw_measurements from the previous step
+        # This will return survival_matrix_sorted with shape (nr_rois, n_actual_samples)
+        _, x_grid, survival_matrix_sorted = sort_raw_measurements(df, survival_matrix_binary)
+
+        nr_rois = survival_matrix_sorted.shape[0]
+        n_samples = survival_matrix_sorted.shape[1]
+        n_unique_x = len(x_grid)
+
+        # Calculate the maximum number of FULL averages available for ALL x values
+        # This ensures every x-value in the grid has the same number of shots
+        nr_avg_complete = n_samples // n_unique_x
+
+        # Truncate the sorted matrix to fit the perfect grid
+        # We take only the first (n_unique_x * nr_avg_complete) columns
+        valid_total_size = n_unique_x * nr_avg_complete
+        survival_matrix_truncated = survival_matrix_sorted[:, :valid_total_size]
+
+        # Reshape safely
+        survival_matrix = survival_matrix_truncated.reshape(nr_rois, n_unique_x, nr_avg_complete)
+        
+        return x_grid, survival_matrix
     
     def calculate_survival_statistics(self, df: pd.DataFrame):
         """from the survival probabilty matrix in form (nr_rois, nr_x_values, nr_averages)
@@ -337,16 +354,3 @@ class BinaryThresholding():
         fidelity = (1 - filling_fraction)*fidelity_0 + filling_fraction*fidelity_1
         return fidelity
     
-
-def main():
-    # variables
-    images_path = 'Z:\\Strontium\\Images\\2025-04-17\\scan131340\\'  # path to images
-    file_name_suffix = 'image'  # import files ending with image.tif
-    ROIobject = ROIs(roi_radius=2, log_thresh=5)
-    ROIobject.calculate_roi_counts(images_path, file_name_suffix, use_weighted_count=True)
-    plt.show()
-    # Plotting.savefig("output", "average_patch.png")
-
-
-if __name__ == "__main__":
-    main()

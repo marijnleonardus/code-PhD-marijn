@@ -1,7 +1,6 @@
 import numpy as np
 
 class Stats():
-
     @staticmethod
     def calculate_r_squared(y_true: np.ndarray, y_pred: np.ndarray):
         """
@@ -43,4 +42,20 @@ class Stats():
         weighted_sq_residuals = weights*residuals_squared
         chi_squared = np.sum(weighted_sq_residuals)
         return chi_squared
+    
+    @staticmethod
+    def propagate_standard_error(sem_array: np.ndarray):       
+        """
+    General purpose error propagation for the mean of independent uncertainties.
+    Propagated SEM = sqrt(sum(sem^2)/n)
+    
+    Args:
+        sem_array (np.ndarray): Array of SEM values.
+                   
+    Returns:
+        np.ndarray: The propagated SEM.
+    """
+        
+        n = len(sem_array)
+        return np.sqrt(np.sum(np.square(sem_array)**2))/n
     

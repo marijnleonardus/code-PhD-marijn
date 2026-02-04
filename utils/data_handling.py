@@ -88,15 +88,24 @@ def sort_raw_measurements(df, input_matrix):
         x_values_unique: number of unique x 
         matrix_sorted: sorted the input matrix based on x values
     """
-    # sort based on x values and get unique x values 
-    x_values_duplicates = df.iloc[:, 0].to_numpy() 
+    # determine nr of experiments performed (can be larger than x_values size)
+    # if exp. stopped halfway somewhere
+    n_samples = input_matrix.shape[1]
+
+    # truncaate the df to the number of samples
+    x_values_duplicates = df.iloc[:n_samples, 0].to_numpy()    
+
+    # sort based on truncated x values
     sort_idx = np.argsort(x_values_duplicates)
     sorted_x = x_values_duplicates[sort_idx]
     x_values_unique = np.unique(sorted_x)
 
     # compute nr of identical x values
-    nr_avg = int(len(sorted_x)/len(x_values_unique))
-
+    # this could change if exp stopped before
+    if len(x_values_unique) > 0:
+        nr_avg = int(len(sorted_x) / len(x_values_unique))
+    else:
+        nr_avg = 0
     # sort the matrix based on x values
     matrix_sorted = input_matrix[:, sort_idx]
     return nr_avg, x_values_unique, matrix_sorted

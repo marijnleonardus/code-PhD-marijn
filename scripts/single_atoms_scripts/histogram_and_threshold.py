@@ -36,21 +36,29 @@ os.system('cls' if os.name == 'nt' else 'clear')
 # variables
 # images_path = 'Z:\\Strontium\\Images\\2026-01-23\\scan172311\\'
 
+images_path = 'Z:\\Strontium\\Images\\2026-01-27\\'
+rid = 'scan193823'
 # single atom rabi oscillations
-# images_path = 'Z:\\Strontium\\Images\\2026-01-27\\'
-# rid = 'scan193823'
+#images_path = 'Z:\\Strontium\\Images\\2026-01-28\\'
+#rid = 'scan193223'
 
-images_path = 'Z:\\Strontium\\Images\\2026-01-29\\'
-rid = 'scan164420'
+# random 200 point dataset for debugging
+#images_path = 'Z:\\Strontium\\Images\\2026-01-29\\'
+#rid = 'scan164420'
+
+# clock rabi
+images_path = 'Z:\\Strontium\\Images\\2026-02-04\\'
+rid = 'scan001915'
 
 # RoI geometry
-nr_rows = 5
-nr_cols = 5
+nr_rows = 3
+nr_cols = 3
 
 file_name_suffix = 'image'  # import files ending with image.tiff
-nr_bins_hist_roi = 15
-nr_bins_hist_avg = 30
-roi_radius = 2
+roi_index_tolerance = 4
+nr_bins_hist_roi = 12
+nr_bins_hist_avg = 50
+roi_radius = 1
 log_thresh = 10
 plot_only_initial = True # of each set of 2 images (inital, survival) throw away survival
 show_photon_histogram = False # show histogram of counts per photon
@@ -58,7 +66,7 @@ show_photon_histogram = False # show histogram of counts per photon
 # Calculate counts in each ROI using weighted pixel boxes 
 ROIsObject = ROIs(roi_radius, log_thresh)
 import_path = images_path + rid + '\\'
-roi_counts_matrix = ROIsObject.calculate_roi_counts(import_path, file_name_suffix, use_weighted_count=True)
+spots, roi_counts_matrix = ROIsObject.calculate_roi_counts(import_path, file_name_suffix, use_weighted_count=True, roi_index_tolerance=roi_index_tolerance)
 print("raw data: (nr ROIs, nr shots): ", np.shape(roi_counts_matrix))
 
 # save to output folder to be used for other scripts
@@ -168,6 +176,7 @@ if show_photon_histogram:
 # save files to be used by other scripts
 np.savetxt(output_path / "popt.csv", popt, delimiter = ',')
 np.savetxt(output_path / "pcov.csv", pcov, delimiter = ',')
+np.savetxt(output_path / "roi_geometry.csv", [nr_rows, nr_cols], fmt="%d", delimiter=",")
 np.save(output_path / "filling_fraction.npy", filling_fraction)
 
 # also copy the `log.csv` file, that is needed by other scripts, to private folder
