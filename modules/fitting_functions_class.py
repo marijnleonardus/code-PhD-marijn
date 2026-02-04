@@ -136,20 +136,39 @@ class FittingFunctions:
         return lorentzian1d
     
     @staticmethod
-    def damped_sin_wave(t, A, damping_time, f, phase, offset):
-        """damped sin for trap freq. measurement from thesis Labuhn p. 55
-        Args:
-            t (np.ndarray): time array
-            A (float): 
-            gamma (float): 
-            f (float): 
-            phase (float): 
-            offset (float): 
+    def damped_sin_wave(t, ampl: float, damping_time: float, freq: float, phase: float, offset: float): 
+        """damped sin in both amplitude, and offset (T1 decay involved)"""
+
+        omega = 2*pi*freq
+        damped_sin = (ampl*np.sin(omega*t + phase) + offset) *np.exp(-t/damping_time)
+        return damped_sin
+    
+
+class EstimateFit:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def estimate_sin_params(self):
+        """estimates offset, amplitude, and frequency guesses using FFT analysis
 
         Returns:
-            damp_sin: 
+            ampl_guess, freq_guess, offset_guess: tuple
         """
-        omega_trap = 2*pi*f
-        damp_sin = offset + A*np.exp(-t/damping_time)*np.sin(2*omega_trap*t + phase) 
-        return damp_sin
-    
+        offset_guess = np.mean(self.y)
+        ampl_guess = (np.max(self.y) - np.min(self.y))/2
+
+        # estimate frequency using fft
+        y_centered = self.y - offset_guess
+        n = len(self.x)
+        dt = (self.x[-1] - self.x[0])/(n - 1) # Assume uniform spacing
+        
+        # Perform Real FFT
+        fft_values = np.abs(np.fft.rfft(y_centered))
+        frequencies = np.fft.rfftfreq(n, d=dt)
+
+        # Find peak frequency (ignoring the 0 component if it lingers)
+        peak_idx = np.argmax(fft_values[1:]) + 1
+        freq_guess = frequencies[peak_idx]
+
+        return ampl_guess, freq_guess, offset_guess

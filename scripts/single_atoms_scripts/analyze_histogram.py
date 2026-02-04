@@ -14,10 +14,8 @@ from utils.units import us
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # raw data and processed data locations
-#rid = 'scan193823' # rydberg rabi single
-rid = 'Scan172435'
-#rid = 'scan001915' # clock rabi
-raw_path = 'Z:\\Strontium\\Images\\2026-01-28\\'
+rid = 'scan184404' # rydberg ramsey
+raw_path = 'Z:\\Strontium\\Images\\2026-01-29\\'
 processed_root = 'output/processed_data/'
 
 # ROI Analysis Settings (Only needed if running analysis from scratch)
@@ -27,8 +25,8 @@ roi_config = {
     'index_tolerance': 5
 }
 hist_config = {
-    'nr_bins_roi': 15,
-    'nr_bins_avg': 50,
+    'nr_bins_roi': 30,
+    'nr_bins_avg': 60,
     'plot_only_initial': True
 }
 

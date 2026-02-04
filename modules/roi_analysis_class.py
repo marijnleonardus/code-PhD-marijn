@@ -335,7 +335,7 @@ class BinaryThresholding:
 
         A = 1/self.sigma1**2 - 1/self.sigma0**2
         B = 2*self.mu0/self.sigma0**2 - 2*self.mu1/self.sigma1**2
-        C = self.mu1**2/self.sigma1**2 - self.mu0**2/self.sigma0**2 - 2*np.log(self.ampl1*filling_fraction/(self.ampl0*(1 - filling_fraction)))
+        C =(self.mu1**2/self.sigma1**2) - (self.mu0**2/self.sigma0**2) - 2*np.log(self.ampl1/self.ampl0)
         sols = Math.solve_quadratic_equation(A, B, C)
         
         # take solution between mu0 and mu1
@@ -482,7 +482,7 @@ class ROICounts:
         fidelity = dg_obj.calculate_imaging_fidelity(filling_fraction)
 
         fidelity_mean_mc, fidelity_err = dg_obj.calculate_fidelity_error(pcov, filling_fraction, n_samples=5000)
-        print(f"Imaging fidelity: {fidelity:.5f} ± {fidelity_err:.5f}")
+        print(f"Imaging fidelity: {fidelity:.3} ± {fidelity_err:.4f}")
 
         # Save Metadata
         np.savetxt(output_dir / "popt.csv", popt, delimiter=',')
