@@ -22,7 +22,7 @@ processed_root = 'output/processed_data/'
 # ROI Analysis Settings (Only needed if running analysis from scratch)
 roi_config = {
     'radius': 2,
-    'log_thresh': 10,
+    'log_thresh': 8,
     'index_tolerance': 5
 }
 hist_config = {
@@ -56,5 +56,8 @@ for r in range(nr_cols):
             ax.set_title(f"ROI {roi_idx}")
         else: 
             ax.set_title("Empty", color='red')
+
+fig2, ax2 = plt.subplots()
+ax2.errorbar(x_grid/us, glob_surv, yerr=glob_surv_sem, fmt='o', markersize=5, alpha=0.5)
 
 plt.show()

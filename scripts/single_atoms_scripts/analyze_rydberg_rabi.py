@@ -15,14 +15,13 @@ from utils.units import us, MHz
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # raw data and processed data locations
-rid = 'scan193823' # rydberg rabi single
-#rid = 'scan001915' # clock rabi
+rid = 'scan193223' # rydberg rabi single
 raw_path = 'Z:\\Strontium\\Images\\2026-01-28\\'
 processed_root = 'output/processed_data/'
 
 # ROI Analysis Settings (Only needed if running analysis from scratch)
 roi_config = {
-    'radius': 2,
+    'radius': 3,
     'log_thresh': 10,
     'index_tolerance': 5
 }
@@ -34,13 +33,12 @@ hist_config = {
 
 # ROI geometry. Missing row/cols starting at 0 (python index notation)
 geometry = (5, 5) # rows, cols
-missing_spots = [
-    (4, 0),  
-    (1, 0),
-    (1, 1),  
-    (2, 1),
-    (2, 2)
-]
+missing_spots = [(4, 0)]
+
+## physics parameters
+# rabi sinuois decay
+decay_guess = 4*us
+phase_guess = 0.8
 
 # obtain processed survival probability data
 x_grid, glob_surv, glob_surv_sem, roi_surv, roi_sem, df = SurvivalAnalysis.get_survival_data(
@@ -63,6 +61,8 @@ for r in range(nr_cols):
             ax.set_title(f"ROI {roi_idx}")
         else: 
             ax.set_title("Empty", color='red')
+fig1.supxlabel('Time [ms]')
+fig1.supylabel('Surv. prob.')
 
 # column averaging
 fig2, ax2 = plt.subplots(nrows=nr_rows, ncols=1, figsize=(1.5*nr_cols, 2*nr_cols), sharex=True, sharey=True)
@@ -70,10 +70,7 @@ fig2, ax2 = plt.subplots(nrows=nr_rows, ncols=1, figsize=(1.5*nr_cols, 2*nr_cols
 # Create a high-resolution time axis for the fit curve
 x_fit = np.linspace(x_grid[0], x_grid[-1], 1000)
 
-decay_guess = 4*us
-phase_guess = 0.8
 rabi_freqs = []
-
 for target_col in range(nr_cols):
     # Get all valid ROI indices for this column
     col_indices = [i for i in range(len(roi_surv)) if i % nr_cols == target_col]
@@ -102,14 +99,14 @@ for target_col in range(nr_cols):
                 x_grid, roi_column, p0=init_guess, sigma=sem_column, maxfev=10000)
             y_fit = FittingFunctions.damped_sin_wave(x_fit, *popt)
             ax.plot(x_fit/us, y_fit, color='red', linestyle='-', linewidth=2, label=f'Fit: {popt[2]:.2f} MHz')
-
+            ax.set_xlabel('us')
             # save rabi freq
             rabi_freqs.append(popt[2])
         except RuntimeError:
             print(f"Failed to fit column {target_col}")
             continue
 fig2.supylabel("Survival Probability")
-fig2.supxlabel("Time (us)")
+#fig2.supxlabel("Time (us)")
 plt.tight_layout()
 
 # plot Rabi frequencies

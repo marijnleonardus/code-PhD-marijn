@@ -14,8 +14,12 @@ from utils.units import us
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # raw data and processed data locations
-rid = 'scan184404' # rydberg ramsey
-raw_path = 'Z:\\Strontium\\Images\\2026-01-29\\'
+# rydberg ramsey
+#rid = 'scan184404' 
+#raw_path = 'Z:\\Strontium\\Images\\2026-01-29\\'
+rid = 'scan193823' # rydberg rabi 
+raw_path = 'Z:\\Strontium\\Images\\2026-01-27\\'
+
 processed_root = 'output/processed_data/'
 
 # ROI Analysis Settings (Only needed if running analysis from scratch)

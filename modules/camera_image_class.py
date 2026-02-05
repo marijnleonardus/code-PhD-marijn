@@ -4,6 +4,7 @@
 import numpy as np
 from PIL import Image
 import os
+import re
 import glob
 from PIL import Image
 from concurrent.futures import ThreadPoolExecutor
@@ -17,22 +18,23 @@ class CameraImage:
             return np.array(img)
         
     def import_image_sequence(self, image_path, file_name_suffix):
-        """Imports a sequence of images from a given path and file name suffix
-        make faster using executor.map
-
-        Args:
-            image_path (str): The path to the directory containing the images.
-            file_name_suffix (str): The suffix that should be present in each image file name.
-
-        Returns:
-            numpy.ndarray: A 3D array representing the stack of images.
-        """
+        """Imports a sequence of images from a given path and file name suffix"""
 
         image_filenames = glob.glob(os.path.join(image_path, f"*{file_name_suffix}.tif"))
+        
+        # --- FIX START ---
+        # Define a helper for natural sorting (turns "123" into integer 123)
+        def natural_keys(text):
+            return [int(c) if c.isdigit() else c for c in re.split(r'(\d+)', text)]
+        
+        # Sort the filenames strictly by their numeric value
+        image_filenames.sort(key=natural_keys)
+        # --- FIX END ---
 
         # Use multithreading for faster image loading
         with ThreadPoolExecutor(max_workers=8) as executor:
             image_stack = list(executor.map(self._load_image, image_filenames))
+            
         return np.array(image_stack)
     
     @staticmethod
@@ -69,16 +71,13 @@ class CameraImage:
     
     @staticmethod
     def load_image_from_file(location, name):
-    
         """spits out numpy array of BMP image loaded into memory"""
         
-        # load image and convert to greyscale
         image_file = Image.open(location + name)
-        #image_file_grey = image_file.convert("I;16") 
-        #for 8 bit 
+
+        # convert to gray scale
         image_file_grey = image_file.convert("L")
 
-        # convert to numpy format
         array = np.array(image_file_grey)
         return array
 
