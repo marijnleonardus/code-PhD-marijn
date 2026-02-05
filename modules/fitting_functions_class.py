@@ -3,6 +3,7 @@
 
 import numpy as np
 from scipy.constants import Boltzmann, proton_mass, pi
+from scipy.optimize import curve_fit
 
 
 class FittingFunctions:
@@ -142,14 +143,42 @@ class FittingFunctions:
         omega = 2*pi*freq
         damped_sin = (ampl*np.sin(omega*t + phase) + offset) *np.exp(-t/damping_time)
         return damped_sin
+
+    @staticmethod
+    def dephasing_sin_exponential(t, ampl, tau, freq, phase, offset):
+        """Sine wave with exponential amplitude decay, constant offset."""
+        omega = 2*np.pi*freq
+        return ampl*np.exp(-t/tau)*np.sin(omega*t + phase) + offset
+    
+    @staticmethod
+    def dephasing_sin_gaussian(t, ampl, tau, freq, phase, offset):
+        """Sine wave with Gaussian amplitude decay (Inhomogeneous dephasing)."""
+        omega = 2*np.pi*freq
+        # tau here represents the 1/e width of the envelope
+        return ampl*np.exp(-(t/tau)**2)*np.sin(omega*t + phase) + offset
+    
+    @staticmethod
+    def get_model(model_name):
+        """Returns the function handle associated with a model name"""
+        mapping = {
+            'full_decay': FittingFunctions.damped_sin_wave,
+            'dephasing_exponential': FittingFunctions.dephasing_sin_exponential,
+            'dephasing_sin_gaussian': FittingFunctions.dephasing_sin_gaussian
+        }
+        # Returns the requested model, or defaults to Gaussian if not found
+        return mapping.get(model_name, FittingFunctions.dephasing_sin_gaussian)
     
 
-class EstimateFit:
-    def __init__(self, x, y):
+class FitRabiOscillations:
+    def __init__(self, x, y, yerr, phase_guess, tau, model='damped_sin_wave'):
         self.x = x
         self.y = y
+        self.yerr = yerr
+        self.phase_guess = phase_guess
+        self.tau_guess = tau
+        self.model = model
 
-    def estimate_sin_params(self):
+    def _estimate_fit_params(self):
         """estimates offset, amplitude, and frequency guesses using FFT analysis
 
         Returns:
@@ -170,5 +199,22 @@ class EstimateFit:
         # Find peak frequency (ignoring the 0 component if it lingers)
         peak_idx = np.argmax(fft_values[1:]) + 1
         freq_guess = frequencies[peak_idx]
-
         return ampl_guess, freq_guess, offset_guess
+    
+    def perform_fit(self):
+        """Estimates parameters and fits a damped sine wave.
+        
+        Returns:
+            popt: tuple of fit parameters
+        """
+
+        try:
+            ampl, freq, offset = self._estimate_fit_params()
+            p0 = [ampl, self.tau_guess, freq, self.phase_guess, offset]
+            func = FittingFunctions.get_model(self.model)
+            popt, _ = curve_fit(func, self.x, self.y, p0=p0, sigma=self.yerr, maxfev=500000)
+            return popt
+        except Exception as e:
+            # Print the error to console for debugging
+            print(f"Fit failed: {e}")
+            return None

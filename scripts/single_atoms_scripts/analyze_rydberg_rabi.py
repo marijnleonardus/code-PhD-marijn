@@ -1,118 +1,113 @@
-# author marijn Venderbosch
-# january 2026
-
+# author marijn Venderbosch | Refactored January 2026
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
 
-# User defined libraries
 from modules.roi_analysis_class import SurvivalAnalysis
-from modules.fitting_functions_class import FittingFunctions, EstimateFit
+from modules.fitting_functions_class import FittingFunctions, FitRabiOscillations
 from utils.statistics_utils import Stats
 from utils.units import us, MHz
 
 os.system('cls' if os.name == 'nt' else 'clear')
 
-# raw data and processed data locations
-rid = 'scan193223' # rydberg rabi single
-raw_path = 'Z:\\Strontium\\Images\\2026-01-28\\'
+# --- Configuration & Data Loading ---
+rid = 'scan184404'
+raw_path = 'Z:\\Strontium\\Images\\2026-01-29\\'
 processed_root = 'output/processed_data/'
 
-# ROI Analysis Settings (Only needed if running analysis from scratch)
 roi_config = {
     'radius': 3,
     'log_thresh': 10,
-    'index_tolerance': 5
-}
+     'index_tolerance': 5
+    }
+
 hist_config = {
     'nr_bins_roi': 15,
     'nr_bins_avg': 50,
     'plot_only_initial': True
-}
+    }
 
-# ROI geometry. Missing row/cols starting at 0 (python index notation)
-geometry = (5, 5) # rows, cols
+# ROI geometry
+geometry = (5, 5) 
 missing_spots = [(4, 0)]
 
-## physics parameters
-# rabi sinuois decay
-decay_guess = 4*us
-phase_guess = 0.8
+# physics parameters
+decay_guess = 14*us
+phase_guess = -1
 
-# obtain processed survival probability data
-x_grid, glob_surv, glob_surv_sem, roi_surv, roi_sem, df = SurvivalAnalysis.get_survival_data(
+# load data
+x_grid, glob_surv, glob_sem, roi_surv, roi_sem, _ = SurvivalAnalysis.get_survival_data(
     rid, raw_path, processed_root, roi_config, hist_config, geometry)
 
-# grid of ROI indices. Initialize with -1 (meaning "no ROI detected here")
+# map ROIs to correct geometry
 roi_grid = SurvivalAnalysis.map_rois_to_grid(geometry, missing_coords=missing_spots)
+x_fit = np.linspace(x_grid[0], x_grid[-1], 1000)
 
-# plot individual ROIs, if missing, don't plot
-nr_rows = geometry[0]
-nr_cols = geometry[1]
-fig1, ax1 = plt.subplots(nrows=nr_rows, ncols=nr_cols, figsize=(2*nr_cols, 2*nr_rows), sharex=True, sharey=True)
-axs = np.atleast_1d(ax1).ravel()
-for r in range(nr_cols):
+# plot individual ROIs
+fig1, ax1 = plt.subplots(*geometry, figsize=(10, 10), sharex=True, sharey=True)
+rabi_map = np.full(geometry, np.nan) 
+target_func = 'full_decay'
+fit_func = FittingFunctions.get_model(target_func)
+for r in range(geometry[0]):
     for c in range(geometry[1]):
         ax = ax1[r, c]
         roi_idx = roi_grid[r, c]
-        if roi_idx != -1: # Valid ROI
-            ax.errorbar(x_grid/us, roi_surv[roi_idx, :], yerr=roi_sem[roi_idx, :], fmt='o', markersize=5, alpha=0.5)
-            ax.set_title(f"ROI {roi_idx}")
-        else: 
-            ax.set_title("Empty", color='red')
-fig1.supxlabel('Time [ms]')
-fig1.supylabel('Surv. prob.')
-
-# column averaging
-fig2, ax2 = plt.subplots(nrows=nr_rows, ncols=1, figsize=(1.5*nr_cols, 2*nr_cols), sharex=True, sharey=True)
-
-# Create a high-resolution time axis for the fit curve
-x_fit = np.linspace(x_grid[0], x_grid[-1], 1000)
-
-rabi_freqs = []
-for target_col in range(nr_cols):
-    # Get all valid ROI indices for this column
-    col_indices = [i for i in range(len(roi_surv)) if i % nr_cols == target_col]
-    
-    if col_indices:
-        # Extract the relevant means and SEMs for this column
-        current_means = [roi_surv[i] for i in col_indices]
-        current_sems = [roi_sem[i] for i in col_indices]
         
-        # Calculate weighted average and propagated SE, and plot result
-        roi_column, sem_column = Stats.weighted_average_and_se(current_means, current_sems)
+        if roi_idx != -1:
+            y, y_err = roi_surv[roi_idx, :], roi_sem[roi_idx, :]
+            ax.errorbar(x_grid/us, y, yerr=y_err, fmt='o', ms=4, alpha=0.4, label='Data')
+            fitter = FitRabiOscillations(x_grid, y, y_err, phase_guess, decay_guess, model=target_func)
+            popt = fitter.perform_fit()
+            if popt is not None:
+                rabi_map[r, c] = popt[2]/MHz 
+                ax.plot(x_fit/us, FittingFunctions.damped_sin_wave(x_fit, *popt), 'r-', lw=1.5)
+                ax.set_title(f"ROI {roi_idx}")
+            else:
+                ax.set_title(f"ROI {roi_idx}: Fit Fail", color='orange')
+        else:
+            ax.set_title("Empty", color='gray')
 
-        # plot datapoints
-        ax = ax2[target_col]
-        ax.errorbar(x_grid/us, roi_column, yerr=sem_column, fmt='o', markersize=5, alpha=0.5)
-        ax.set_title(f"Column {target_col}")
-
-        # fit data. [amplitude, damping time, frequency, phase, offset]
-        try:
-            # guess fit params from combination of automatic and manual
-            ampl_guess, freq_guess, offset_guess = EstimateFit(x_fit, roi_column).estimate_sin_params()
-            init_guess = [ampl_guess, decay_guess ,freq_guess, phase_guess, offset_guess]
-
-            # perform fit
-            popt, pcov = curve_fit(FittingFunctions.damped_sin_wave, 
-                x_grid, roi_column, p0=init_guess, sigma=sem_column, maxfev=10000)
-            y_fit = FittingFunctions.damped_sin_wave(x_fit, *popt)
-            ax.plot(x_fit/us, y_fit, color='red', linestyle='-', linewidth=2, label=f'Fit: {popt[2]:.2f} MHz')
-            ax.set_xlabel('us')
-            # save rabi freq
-            rabi_freqs.append(popt[2])
-        except RuntimeError:
-            print(f"Failed to fit column {target_col}")
-            continue
-fig2.supylabel("Survival Probability")
-#fig2.supxlabel("Time (us)")
+fig1.supxlabel('Time [us]')
+fig1.supylabel('Survival Probability')
 plt.tight_layout()
 
-# plot Rabi frequencies
-fig3, ax3 = plt.subplots()
-ax3.plot(np.array(rabi_freqs)/MHz)
-ax3.set_xlabel('column index')
-ax3.set_ylabel('Rabi frequency (MHz)')
+# Heatmap of Rabi Frequencies ---
+fig_map, ax_map = plt.subplots(figsize=(5, 4))
+current_cmap = plt.cm.viridis.copy()
+current_cmap.set_bad(color='white')
 
+im = ax_map.imshow(rabi_map, cmap=current_cmap, interpolation='nearest')
+plt.colorbar(im, ax=ax_map, label='Rabi Frequency (MHz)')
+
+ax_map.set_title(f"Rabi Frequency Heatmap: {rid}")
+ax_map.set_xticks(range(geometry[1])); ax_map.set_yticks(range(geometry[0]))
+ax_map.set_xlabel("Column Index"); ax_map.set_ylabel("Row Index")
+
+# column averaging
+fig2, ax2 = plt.subplots(geometry[1], 1, figsize=(6, 10), sharex=True)
+for c in range(geometry[1]):
+    # Find all valid ROIs in this column
+    indices = [roi_grid[r, c] for r in range(geometry[0]) if roi_grid[r, c] != -1]
+    
+    if indices:
+        y_col, err_col = Stats.weighted_average_and_se(roi_surv[indices], roi_sem[indices])
+        ax2[c].errorbar(x_grid/us, y_col, yerr=err_col, fmt='ko', ms=4, alpha=0.5)
+        popt = FitRabiOscillations(x_grid, y_col, err_col, phase_guess, decay_guess, model=target_func).perform_fit()
+        if popt is not None:
+            print(f'ampl: {popt[0]}, tau: {popt[1]/us}, freq: {popt[2]/MHz}, phase: {popt[3]}, offset: {popt[4]}')
+            ax2[c].plot(x_fit/us, FittingFunctions.damped_sin_wave(x_fit, *popt), 'r-')
+            ax2[c].set_title(f"Column {c}: {popt[2]/MHz:.2f} MHz")
+
+# global averaging
+target_model_glob = 'dephasing_sin_exponential'
+decay_guess_glob = 1.8*us
+fit_func_glob = FittingFunctions.get_model(target_model_glob)
+
+fig3, ax3 = plt.subplots()
+ax3.errorbar(x_grid/us, glob_surv, yerr=glob_sem, fmt='ko', ms=4, alpha=0.5)
+popt_glob = FitRabiOscillations(x_grid, glob_surv, glob_sem, phase_guess, decay_guess_glob, model=target_model_glob).perform_fit()
+if popt_glob is not None:
+    ax3.plot(x_fit/us, fit_func_glob(x_fit, *popt_glob), 'r-')
+
+plt.tight_layout()
 plt.show()
