@@ -145,14 +145,17 @@ class FittingFunctions:
         return damped_sin
 
     @staticmethod
-    def dephasing_sin_exponential(t, ampl, tau, freq, phase, offset):
-        """Sine wave with exponential amplitude decay, constant offset."""
+    def dephasing_sin_exponential(t, contrast, tau, freq, phase, offset):
+        """Sine wave with exponential amplitude decay, constant offset.
+        see Ivo thesis p.75"""
+        
         omega = 2*np.pi*freq
-        return ampl*np.exp(-t/tau)*np.sin(omega*t + phase) + offset
+        return contrast*(0.5 + 0.5*np.exp(-t/tau)*np.sin(omega*t + phase)) + offset
     
     @staticmethod
     def dephasing_sin_gaussian(t, ampl, tau, freq, phase, offset):
         """Sine wave with Gaussian amplitude decay (Inhomogeneous dephasing)."""
+        
         omega = 2*np.pi*freq
         # tau here represents the 1/e width of the envelope
         return ampl*np.exp(-(t/tau)**2)*np.sin(omega*t + phase) + offset
@@ -160,6 +163,7 @@ class FittingFunctions:
     @staticmethod
     def get_model(model_name):
         """Returns the function handle associated with a model name"""
+        
         mapping = {
             'full_decay': FittingFunctions.damped_sin_wave,
             'dephasing_exponential': FittingFunctions.dephasing_sin_exponential,
@@ -203,32 +207,35 @@ class FitRabiOscillations:
         return ampl_guess, freq_guess, offset_guess
     
     def perform_fit(self):
-        """Estimates parameters and fits a damped sine wave.
-        
-        Returns:
-            popt: tuple of fit parameters
-        """
-
         try:
             ampl, freq, offset = self._estimate_fit_params()
             p0 = [ampl, self.tau_guess, freq, self.phase_guess, offset]
+
             func = FittingFunctions.get_model(self.model)
 
-            fit_kwargs = dict(
+            sigma = None
+            if self.yerr is not None:
+                sigma = np.clip(self.yerr, 1e-12, None)
+
+            sigma = np.asarray(self.yerr, dtype=float)
+            sigma[~np.isfinite(sigma)] = np.nan
+            sigma = np.nan_to_num(sigma, nan=np.nanmedian(sigma))
+            sigma = np.clip(sigma, 1e-6, None)
+
+            popt, _ = curve_fit(
+                func,
+                self.x,
+                self.y,
                 p0=p0,
-                bounds=self.bounds,
-                sigma=self.yerr,
-                maxfev=500000,
-                method='trf'
+                sigma = sigma,
+                bounds=self.bounds if self.bounds is not None else (-np.inf, np.inf),
+                method='trf',
+                maxfev=500000
             )
 
-            if self.bounds is not None:
-                fit_kwargs['bounds'] = self.bounds
-
-            popt, _ = curve_fit(func, self.x, self.y, **fit_kwargs)
             return popt
-        
+
         except Exception as e:
-            # Print the error to console for debugging
             print(f"Fit failed: {e}")
             return None
+        
