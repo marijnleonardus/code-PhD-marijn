@@ -32,7 +32,7 @@ geometry = (5, 5)
 missing_spots = [(4, 0)]
 
 # physics parameters
-decay_guess = 14*us
+decay_guess = 14# us
 phase_guess = -1
 
 # load data
@@ -42,6 +42,10 @@ x_grid, glob_surv, glob_sem, roi_surv, roi_sem, _ = SurvivalAnalysis.get_surviva
 # map ROIs to correct geometry
 roi_grid = SurvivalAnalysis.map_rois_to_grid(geometry, missing_coords=missing_spots)
 x_fit = np.linspace(x_grid[0], x_grid[-1], 1000)
+
+# scale time in units of us, which improves fitting accuracy. For 1e-6 times, close to machine presicion
+t_us = x_grid/us
+t_us_fit = np.linspace(t_us[0], t_us[-1], 1000)
 
 # plot individual ROIs
 fig1, ax1 = plt.subplots(*geometry, figsize=(10, 10), sharex=True, sharey=True)
@@ -55,12 +59,12 @@ for r in range(geometry[0]):
         
         if roi_idx != -1:
             y, y_err = roi_surv[roi_idx, :], roi_sem[roi_idx, :]
-            ax.errorbar(x_grid/us, y, yerr=y_err, fmt='o', ms=4, alpha=0.4, label='Data')
-            fitter = FitRabiOscillations(x_grid, y, y_err, phase_guess, decay_guess, model=target_func)
+            ax.errorbar(t_us, y, yerr=y_err, fmt='o', ms=4, alpha=0.4, label='Data')
+            fitter = FitRabiOscillations(t_us, y, y_err, phase_guess, decay_guess, model=target_func)
             popt = fitter.perform_fit()
             if popt is not None:
-                rabi_map[r, c] = popt[2]/MHz 
-                ax.plot(x_fit/us, FittingFunctions.damped_sin_wave(x_fit, *popt), 'r-', lw=1.5)
+                rabi_map[r, c] = popt[2] 
+                ax.plot(t_us_fit, fit_func(t_us_fit, *popt), 'r-', lw=1.5)
                 ax.set_title(f"ROI {roi_idx}")
             else:
                 ax.set_title(f"ROI {roi_idx}: Fit Fail", color='orange')
@@ -77,6 +81,7 @@ current_cmap = plt.cm.viridis.copy()
 current_cmap.set_bad(color='white')
 
 im = ax_map.imshow(rabi_map, cmap=current_cmap, interpolation='nearest')
+print(np.nanmean(rabi_map), ' MHz')
 plt.colorbar(im, ax=ax_map, label='Rabi Frequency (MHz)')
 
 ax_map.set_title(f"Rabi Frequency Heatmap: {rid}")
@@ -91,23 +96,27 @@ for c in range(geometry[1]):
     
     if indices:
         y_col, err_col = Stats.weighted_average_and_se(roi_surv[indices], roi_sem[indices])
-        ax2[c].errorbar(x_grid/us, y_col, yerr=err_col, fmt='ko', ms=4, alpha=0.5)
-        popt = FitRabiOscillations(x_grid, y_col, err_col, phase_guess, decay_guess, model=target_func).perform_fit()
+        ax2[c].errorbar(t_us, y_col, yerr=err_col, fmt='o', ms=4, alpha=0.5)
+        popt = FitRabiOscillations(t_us, y_col, err_col, phase_guess, decay_guess, model=target_func).perform_fit()
         if popt is not None:
-            print(f'ampl: {popt[0]}, tau: {popt[1]/us}, freq: {popt[2]/MHz}, phase: {popt[3]}, offset: {popt[4]}')
-            ax2[c].plot(x_fit/us, FittingFunctions.damped_sin_wave(x_fit, *popt), 'r-')
-            ax2[c].set_title(f"Column {c}: {popt[2]/MHz:.2f} MHz")
+            ax2[c].plot(t_us_fit, fit_func(t_us_fit, *popt), 'r-')
+            ax2[c].set_title(f"Column {c}: {popt[2]:.2f} MHz")
 
 # global averaging
-target_model_glob = 'dephasing_sin_exponential'
-decay_guess_glob = 1.8*us
+target_model_glob = 'damped_sin_gaussian'
+decay_guess_glob = 1.8# us
+bounds_glob = (
+    [0, 0, 0, -2*np.pi, 0],
+    [2, 10,10, 2*np.pi, 1]
+)
 fit_func_glob = FittingFunctions.get_model(target_model_glob)
 
 fig3, ax3 = plt.subplots()
-ax3.errorbar(x_grid/us, glob_surv, yerr=glob_sem, fmt='ko', ms=4, alpha=0.5)
-popt_glob = FitRabiOscillations(x_grid, glob_surv, glob_sem, phase_guess, decay_guess_glob, model=target_model_glob).perform_fit()
+ax3.errorbar(t_us, glob_surv, yerr=glob_sem, fmt='o', ms=4, alpha=0.5)
+popt_glob = FitRabiOscillations(t_us, glob_surv, glob_sem, 
+    phase_guess, decay_guess_glob, bounds=bounds_glob, model=target_model_glob).perform_fit()
 if popt_glob is not None:
-    ax3.plot(x_fit/us, fit_func_glob(x_fit, *popt_glob), 'r-')
+    ax3.plot(t_us_fit, fit_func_glob(t_us_fit, *popt_glob), 'r-')
 
 plt.tight_layout()
 plt.show()

@@ -170,12 +170,13 @@ class FittingFunctions:
     
 
 class FitRabiOscillations:
-    def __init__(self, x, y, yerr, phase_guess, tau, model='damped_sin_wave'):
+    def __init__(self, x, y, yerr, phase_guess, tau, bounds=None, model='damped_sin_wave'):
         self.x = x
         self.y = y
         self.yerr = yerr
         self.phase_guess = phase_guess
         self.tau_guess = tau
+        self.bounds = bounds if bounds is not None else (-np.inf, np.inf) 
         self.model = model
 
     def _estimate_fit_params(self):
@@ -212,8 +213,21 @@ class FitRabiOscillations:
             ampl, freq, offset = self._estimate_fit_params()
             p0 = [ampl, self.tau_guess, freq, self.phase_guess, offset]
             func = FittingFunctions.get_model(self.model)
-            popt, _ = curve_fit(func, self.x, self.y, p0=p0, sigma=self.yerr, maxfev=500000)
+
+            fit_kwargs = dict(
+                p0=p0,
+                bounds=self.bounds,
+                sigma=self.yerr,
+                maxfev=500000,
+                method='trf'
+            )
+
+            if self.bounds is not None:
+                fit_kwargs['bounds'] = self.bounds
+
+            popt, _ = curve_fit(func, self.x, self.y, **fit_kwargs)
             return popt
+        
         except Exception as e:
             # Print the error to console for debugging
             print(f"Fit failed: {e}")
