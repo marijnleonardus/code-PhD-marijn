@@ -13,17 +13,12 @@ from scipy.constants import proton_mass, pi, hbar
 import sys
 import os
 
-# Update sys.path to include the 'modules' directory
-script_dir = os.path.dirname(os.path.abspath(__file__))
-modules_dir = os.path.abspath(os.path.join(script_dir, '../../../modules'))
-sys.path.append(modules_dir)
-
 # Import custom modules
-from atom_class import Rydberg, Sr
-from atoms_tweezer_class import AtomicMotion
-from optics_class import GaussianBeam
-from conversion_class import Conversion
-from laser_class import AtomLightInteraction
+from modules.atom_class import Rydberg, Sr
+from modules.atoms_tweezer_class import AtomicMotion
+from modules.optics_class import GaussianBeam
+from modules.conversion_class import Conversion
+from modules.laser_class import AtomLightInteraction
 from utils.units import uK, um, mW, h, nm
 
 plt.style.use('default')
