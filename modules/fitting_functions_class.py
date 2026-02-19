@@ -174,42 +174,47 @@ class FittingFunctions:
     
 
 class FitRabiOscillations:
-    def __init__(self, x, y, yerr, phase_guess, tau, bounds=None, model='damped_sin_wave'):
+    def __init__(self, x, y, yerr, tau, bounds=None, model='damped_sin_wave'):
         self.x = x
         self.y = y
         self.yerr = yerr
-        self.phase_guess = phase_guess
         self.tau_guess = tau
         self.bounds = bounds if bounds is not None else (-np.inf, np.inf) 
         self.model = model
 
     def _estimate_fit_params(self):
-        """estimates offset, amplitude, and frequency guesses using FFT analysis
+        offset_guess = np.nanmean(self.y)
+        ampl_guess = (np.nanmax(self.y) - np.nanmin(self.y)) / 2
 
-        Returns:
-            ampl_guess, freq_guess, offset_guess: tuple
-        """
-        offset_guess = np.mean(self.y)
-        ampl_guess = (np.max(self.y) - np.min(self.y))/2
-
-        # estimate frequency using fft
+        # Frequency Guess using FFT (ensure data is centered)
         y_centered = self.y - offset_guess
         n = len(self.x)
-        dt = (self.x[-1] - self.x[0])/(n - 1) # Assume uniform spacing
+        # Use the average spacing if not perfectly uniform
+        dt = np.mean(np.diff(self.x))
         
-        # Perform Real FFT
         fft_values = np.abs(np.fft.rfft(y_centered))
         frequencies = np.fft.rfftfreq(n, d=dt)
-
-        # Find peak frequency (ignoring the 0 component if it lingers)
+        
+        # Ignore DC and low-frequency noise
         peak_idx = np.argmax(fft_values[1:]) + 1
         freq_guess = frequencies[peak_idx]
-        return ampl_guess, freq_guess, offset_guess
+
+        # Phase Guess: Calculate phase at the first data point
+        # y = A*sin(w*t + phi) + offset => phi = arcsin((y-offset)/A) - w*t
+        try:
+            w_guess = 2 * np.pi * freq_guess
+            val = (self.y[0] - offset_guess) / ampl_guess
+            # Clip to avoid math domain errors
+            phase_guess = np.arcsin(np.clip(val, -1, 1)) - w_guess * self.x[0]
+        except:
+            phase_guess = 0
+
+        return ampl_guess, freq_guess, offset_guess, phase_guess
     
     def perform_fit(self):
         try:
-            ampl, freq, offset = self._estimate_fit_params()
-            p0 = [ampl, self.tau_guess, freq, self.phase_guess, offset]
+            ampl, freq, offset, phase_guess = self._estimate_fit_params()
+            p0 = [ampl, self.tau_guess, freq, phase_guess,  offset]
 
             func = FittingFunctions.get_model(self.model)
 
@@ -222,18 +227,12 @@ class FitRabiOscillations:
             sigma = np.nan_to_num(sigma, nan=np.nanmedian(sigma))
             sigma = np.clip(sigma, 1e-6, None)
 
-            popt, _ = curve_fit(
-                func,
-                self.x,
-                self.y,
-                p0=p0,
-                sigma = sigma,
+            popt, pcov = curve_fit(func, self.x, self.y, p0=p0, sigma = sigma,
                 bounds=self.bounds if self.bounds is not None else (-np.inf, np.inf),
-                method='trf',
-                maxfev=500000
+                method='trf', maxfev=500000
             )
 
-            return popt
+            return popt, pcov
 
         except Exception as e:
             print(f"Fit failed: {e}")
