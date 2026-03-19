@@ -12,12 +12,12 @@ os.system('cls' if os.name == 'nt' else 'clear')
 
 # data loading
 # ramsey
-#rid = 'scan184404' 
-#raw_path = 'Z:\\Strontium\\Images\\2026-01-29\\'
+rid = 'scan090101' 
+raw_path = 'Z:\\Strontium\\Images\\2026-03-19\\'
 
 # rabi
-rid = 'scan065532' #rabi individual
-raw_path = 'Z:\\Strontium\\Images\\2026-02-13\\'
+#rid = 'scan065532' #rabi individual
+#raw_path = 'Z:\\Strontium\\Images\\2026-02-13\\'
 
 processed_root = 'output/processed_data/'
 
@@ -35,14 +35,15 @@ hist_config = {
 
 # ROI geometry
 geometry = (5, 5) 
-missing_spots = [(None, None)
-    ]
+missing_spots = [
+    (0, 4) # missing first row, 5th col
+]
 
 # physics parameters. fitting functions and parameters
-decay_guess = 10 # us
+decay_guess = 20 # us
 fit_bounds = (# ampl, tau, rabi freq (MHz), phase, offset
-    [0, 0, 0.5, -2*np.pi, 0],
-    [1, 100,5, 2*np.pi, 1]
+    [0.1, 0, 0.5, -2*np.pi, 0],
+    [0.5, 200, 2, 2*np.pi, 1]
 )
 target_func = 'dephasing_exponential'
 target_model_glob = 'dephasing_sin_gaussian'
@@ -72,10 +73,23 @@ for r in range(geometry[0]):
         if roi_idx != -1:
             y, y_err = roi_surv[roi_idx, :], roi_sem[roi_idx, :]
             ax.errorbar(t_us, y, yerr=y_err, fmt='o', ms=4, alpha=0.4, label='Data')
+
+            # perform the fit
             fitter = FitRabiOscillations(t_us, y, y_err, decay_guess, model=target_func)
             popt, pcov = fitter.perform_fit()
+
+            # check fit makes sense, or otherwise don't plot result
             if popt is not None:
-                fit_param_grid[r, c] = popt[1] 
+                lower_b, upper_b = fit_bounds
+                # Check if ANY parameter in popt is less than its lower bound or greater than its upper bound
+                out_of_bounds = any(p < lower or p > upper for p, lower, upper in zip(popt, lower_b, upper_b))
+                
+                if out_of_bounds:
+                    print(f"ROI {roi_idx} rejected: Parameters out of bounds.")
+                    popt = None  # Force it to act like a failed fit
+
+            if popt is not None:
+                fit_param_grid[r, c] = popt[2] # 2 is rabi freq, 1 is decay time
                 ax.plot(t_us_fit, fit_func(t_us_fit, *popt), 'b-', lw=1.5)
                 ax.set_title(f"ROI {roi_idx}")
             else:
@@ -102,60 +116,48 @@ ax_map.set_xlabel("Column Index"); ax_map.set_ylabel("Row Index")
 # column averaging
 fig2, ax2 = plt.subplots(geometry[1], 1, figsize=(6, 10), sharex=True)
 for c in range(geometry[1]):
-    # Find all valid ROIs in this column
-    indices = [roi_grid[r, c] for r in range(geometry[0]) if roi_grid[r, c] != -1]
+    # Find all valid ROIs in this column. if fit not succesful, don't use for averaging
+    indices = [
+        roi_grid[r, c] 
+        for r in range(geometry[0]) 
+        if roi_grid[r, c] != -1 and not np.isnan(fit_param_grid[r, c])
+    ]
     
     if indices:
         y_col, err_col = Stats.weighted_average_and_se(roi_surv[indices], roi_sem[indices])
         ax2[c].errorbar(t_us, y_col, yerr=err_col, fmt='o', ms=4, alpha=0.5)
+        
+        # Fit the averaged column data
         popt, pcov = FitRabiOscillations(t_us, y_col, err_col, decay_guess, model=target_func).perform_fit()
+        
         if popt is not None:
             ax2[c].plot(t_us_fit, fit_func(t_us_fit, *popt), 'b-')
             ax2[c].set_title(f"Column {c}: {popt[2]:.2f} MHz")
+            
             rabi = np.round(popt[2], 2)
             rabi_error = np.sqrt(pcov[2, 2])
             tau = np.round(popt[1], 2)
             tau_error = np.sqrt(pcov[1, 1])
-            print(f"Column {c}: {popt[2]:.2f}  +/- {rabi_error:.2f} MHz, {tau:.2f} us +/- {tau_error:.2f} us")
-
-# --- Isolated 3rd Column Analysis ---
-target_col = 3  # The 3rd column (0-indexed)
-fig_col3, ax_col3 = plt.subplots(figsize=(4, 3))
-
-# Find all valid ROIs in the 3rd column
-indices = [roi_grid[r, target_col] for r in range(geometry[0]) if roi_grid[r, target_col] != -1]
-
-if indices:
-    y_col, err_col = Stats.weighted_average_and_se(roi_surv[indices], roi_sem[indices])
-    ax_col3.errorbar(t_us, y_col, yerr=err_col, fmt='o', ms=6, alpha=0.6)
-    fitter = FitRabiOscillations(t_us, y_col, err_col, decay_guess, model=target_func)
-    popt, pcov = fitter.perform_fit()
-    
-    if popt is not None:
-        ax_col3.plot(t_us_fit, fit_func(t_us_fit, *popt), 'b-', lw=2)
-ax_col3.set_xlabel(r'Rydberg pulse duration ($\mu$s)')
-ax_col3.set_ylabel(r'Average survival probability')
-ax_col3.legend()
-plt.tight_layout()
+            print(f"Column {c} (Averaged from {len(indices)} ROIs): {popt[2]:.2f}  +/- {rabi_error:.2f} MHz, {tau:.2f} us +/- {tau_error:.2f} us")
+    else:
+        # Fallback if an entire column failed
+        ax2[c].set_title(f"Column {c}: All Fits Failed", color='red')
+        print(f"Column {c}: Skipped (no valid data)")
 
 # global averaging
 fit_func_glob = FittingFunctions.get_model(target_model_glob)
 
-mask = t_us <= 3
-
-t_us = t_us[mask]
-glob_surv = glob_surv[mask]
-glob_sem = glob_sem[mask]
-
-fig3, ax3 = plt.subplots()
-ax3.errorbar(t_us, glob_surv, yerr=glob_sem, fmt='o', ms=4, alpha=0.5)
+fig3, ax3 = plt.subplots(figsize=(4, 3))
+ax3.errorbar(t_us, glob_surv, yerr=glob_sem, fmt='o', ms=4, alpha=0.5, color="#B94406")
 popt_glob, pcov_glob = FitRabiOscillations(t_us, glob_surv, glob_sem, decay_guess, bounds=fit_bounds, model=target_model_glob).perform_fit()
 if popt_glob is not None:
-    ax3.plot(t_us_fit, fit_func_glob(t_us_fit, *popt_glob), 'b-')
-ax3.set_xlabel('time (us)')
-ax3.set_ylabel('survival probability')
+    ax3.plot(t_us_fit, fit_func_glob(t_us_fit, *popt_glob), '-', color="#B94406")
+ax3.set_xlabel('t (us)')
+ax3.set_ylabel('Average survival probability')
 plt.tight_layout()
+print(popt_glob)
 
-#print(np.round(popt_glob[1], 2), ' us')
+print(np.round(popt_glob[1], 2), ' +/-', np.round(np.sqrt(pcov_glob[1, 1]), 2), ' us')
+print(np.round(popt_glob[2], 2), ' +/-', np.round(np.sqrt(pcov_glob[2, 2]), 2), ' MHz')
 
 plt.show()

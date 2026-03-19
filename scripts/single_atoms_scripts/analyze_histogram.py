@@ -17,8 +17,8 @@ os.system('cls' if os.name == 'nt' else 'clear')
 # rydberg ramsey
 #rid = 'scan184404' 
 #raw_path = 'Z:\\Strontium\\Images\\2026-01-29\\'
-rid = 'scan193823' # rydberg rabi 
-raw_path = 'Z:\\Strontium\\Images\\2026-01-27\\'
+rid = 'scan180056' # rydberg rabi 
+raw_path = 'Z:\\Strontium\\Images\\2026-03-16\\'
 
 processed_root = 'output/processed_data/'
 
@@ -29,7 +29,7 @@ roi_config = {
     'index_tolerance': 5
 }
 hist_config = {
-    'nr_bins_roi': 30,
+    'nr_bins_roi': 25,
     'nr_bins_avg': 60,
     'plot_only_initial': True
 }

@@ -332,10 +332,11 @@ class BinaryThresholding:
         """calculate detection threshold for double gaussian fit found by 
         maximing the imaging fidelity by setting the derivative of the fidelity 
         to 0 and solving for x_t where x_t is the detection threshold."""
-
+        
         A = 1/self.sigma1**2 - 1/self.sigma0**2
         B = 2*self.mu0/self.sigma0**2 - 2*self.mu1/self.sigma1**2
         C =(self.mu1**2/self.sigma1**2) - (self.mu0**2/self.sigma0**2) - 2*np.log(self.ampl1/self.ampl0)
+       
         sols = Math.solve_quadratic_equation(A, B, C)
         
         # take solution between mu0 and mu1
