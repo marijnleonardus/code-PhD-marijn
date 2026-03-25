@@ -202,7 +202,7 @@ class ImageStats():
             uniformity (float): uniformity value between 0 and 1. 1 = perfect uniformity
         """    
 
-        uniformity = 1 - (max(input_vector) - min(input_vector))/(max(input_vector) + min(input_vector))
+        uniformity = 1 - (np.max(input_vector) - np.min(input_vector))/(np.max(input_vector) + np.min(input_vector))
         return uniformity
 
 

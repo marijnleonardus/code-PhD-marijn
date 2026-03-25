@@ -483,7 +483,7 @@ class ROICounts:
         fidelity = dg_obj.calculate_imaging_fidelity(filling_fraction)
 
         fidelity_mean_mc, fidelity_err = dg_obj.calculate_fidelity_error(pcov, filling_fraction, n_samples=5000)
-        print(f"Imaging fidelity: {fidelity:.3} ± {fidelity_err:.4f}")
+        print(f"Imaging fidelity: {fidelity:.4} ± {fidelity_err:.4f}")
 
         # Save Metadata
         np.savetxt(output_dir / "popt.csv", popt, delimiter=',')

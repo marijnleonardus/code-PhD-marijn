@@ -18,8 +18,8 @@ from utils.units import MHz
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # variables
-rid = 'scan174612'
-raw_path = 'T:\\KAT1\\Marijn\\'
+rid = 'scan191007'
+raw_path = 'Z:\\Strontium\\Images\\2026-03-20\\'
 processed_root = 'output/processed_data/'
 
 # ROI Analysis Settings (Only needed if running analysis from scratch)
@@ -49,7 +49,7 @@ fig1, axs = plt.subplots(figsize = (7, 6), sharex=True, sharey=True,
 
 # needs to be 1d to iterate. prep intial guess for fitting
 axs = axs.ravel()
-initial_guess = [1, -0.5, 3.5e6, 200e3] #  offset, amplitude, middle, width
+initial_guess = [1, -0.7, 4.5e6, 200e3] #  offset, amplitude, middle, width
 popt_list = []
 pcov_list = []
 
@@ -60,7 +60,7 @@ for roi_idx in range(nr_rois):
     print(nr_rois)
     axs[roi_idx].errorbar(x_grid/MHz, roi_surv[roi_idx, :], roi_sem[roi_idx, :],
         fmt='o', ms=2, capsize=1, capthick=1)
-    axs[roi_idx].set_title(f'ROI {roi_idx}')
+    #axs[roi_idx].set_title(f'ROI {roi_idx}')
 
     # fit datapoints and plot result
     popt, pcov = curve_fit(FittingFunctions.gaussian_function, x_grid, roi_surv[roi_idx, :], p0=initial_guess)
@@ -77,6 +77,11 @@ avg_detuning = np.mean(detunings)
 sem_detuning = sem(detunings)
 std_deviation_detuning = np.std(detunings)
 uniformity = ImageStats.calculate_uniformity(detunings)
+
+fig2, ax2 = plt.subplots()
+im = ax2.imshow(detunings.reshape(geometry), cmap='viridis')
+cbar = plt.colorbar(im)
+cbar.set_label('detuning (MHz)', rotation=270, labelpad=15)
 
 print("Fit position:  ", np.round(avg_detuning/MHz, 2), "p/m ", np.round(sem_detuning/MHz, 2), "MHz")
 print("Standard deviation: ", 100*np.round(std_deviation_detuning/avg_detuning, 3), "%")
